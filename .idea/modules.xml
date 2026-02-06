@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/byte_bite.iml" filepath="$PROJECT_DIR$/byte_bite.iml" />
+      <module fileurl="file://$PROJECT_DIR$/android/byte_bite_android.iml" filepath="$PROJECT_DIR$/android/byte_bite_android.iml" />
+    </modules>
+  </component>
+</project>
