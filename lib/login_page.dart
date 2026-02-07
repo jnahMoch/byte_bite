@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'user_storage.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,10 +17,8 @@ class _LoginPageState extends State<LoginPage> {
     String username = _userController.text.trim();
     String password = _passController.text.trim();
 
-    // Check against the demo credentials shown in your UI
-    if ((username == 'owner' && password == 'owner123') || 
-        (username == 'helper' && password == 'helper123')) {
-      
+    // Check against registered users
+    if (UserStorage.validateUser(username, password)) {
       // Navigate to Dashboard and remove Login from the backstack
       Navigator.pushReplacementNamed(context, '/dashboard');
     } else {

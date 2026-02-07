@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'user_storage.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -37,7 +38,14 @@ class _SignUpPageState extends State<SignUpPage> {
       return;
     }
 
-    // For now, just show success and navigate back to login
+    // Check if username already exists
+    if (UserStorage.userExists(username)) {
+      _showSnackBar('Username already taken', Colors.redAccent);
+      return;
+    }
+
+    // Save user to storage
+    UserStorage.addUser(username, password, _selectedRole);
     _showSnackBar('Account created successfully! You can now login.', Colors.green);
     
     Future.delayed(const Duration(seconds: 2), () {
