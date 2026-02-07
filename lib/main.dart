@@ -1,4 +1,5 @@
 import 'package:byte_bite/owner/homepage.dart';
+import 'package:byte_bite/helper/homepage.dart';
 import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'signup_page.dart';
@@ -25,6 +26,7 @@ class ByteAndBiteApp extends StatelessWidget {
       // Define routes for easy navigation
       routes: {
         '/dashboard': (context) => const POSHomePage(),
+        '/helper-dashboard': (context) => const HelperHomePage(),
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignUpPage(),
       },

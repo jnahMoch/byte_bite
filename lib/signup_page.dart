@@ -78,15 +78,13 @@ class _SignUpPageState extends State<SignUpPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircleAvatar(
-                  radius: 35,
-                  backgroundColor: Color(0xFFE0F2F1),
-                  child: Icon(Icons.person_add_outlined, size: 40, color: Color(0xFF009661)),
+                Image.asset(
+                  'assets/images/byte and bite logo.jpg',
+                  height: 140,
                 ),
                 const SizedBox(height: 16),
                 const Text('Create Account', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                const Text('Join Byte & Bite POS', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
 
                 // Username
                 _buildTextField(

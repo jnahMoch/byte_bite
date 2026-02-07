@@ -19,8 +19,13 @@ class _LoginPageState extends State<LoginPage> {
 
     // Check against registered users
     if (UserStorage.validateUser(username, password)) {
-      // Navigate to Dashboard and remove Login from the backstack
-      Navigator.pushReplacementNamed(context, '/dashboard');
+      // Get user role and navigate to appropriate dashboard
+      String? role = UserStorage.getUserRole(username);
+      if (role == 'Helper') {
+        Navigator.pushReplacementNamed(context, '/helper-dashboard');
+      } else {
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      }
     } else {
       // Show error if credentials don't match
       ScaffoldMessenger.of(context).showSnackBar(
@@ -48,15 +53,11 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircleAvatar(
-                  radius: 35,
-                  backgroundColor: Color(0xFFE0F2F1),
-                  child: Icon(Icons.person_outline, size: 40, color: Color(0xFF009661)),
+                Image.asset(
+                  'assets/images/byte and bite logo.jpg',
+                  height: 180,
                 ),
-                const SizedBox(height: 16),
-                const Text('Byte & Bite', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                const Text('Smart POS Solution', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
 
                 // Username
                 _buildTextField(label: 'Username', hint: 'Enter username', controller: _userController),
