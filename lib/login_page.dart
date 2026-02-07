@@ -81,9 +81,25 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
 
-                _buildDemoBox(),
+                // Sign Up Link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('New user? ', style: TextStyle(color: Colors.grey)),
+                    GestureDetector(
+                      onTap: () => Navigator.pushNamed(context, '/signup'),
+                      child: const Text(
+                        'Sign Up',
+                        style: TextStyle(
+                          color: Color(0xFF009661),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -112,19 +128,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildDemoBox() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(10)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Demo Credentials:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          Text('Owner: owner / owner123', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-          Text('Helper: helper / helper123', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-        ],
-      ),
-    );
-  }
 }
