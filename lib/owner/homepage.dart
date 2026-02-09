@@ -23,7 +23,68 @@ class POSItem {
 
 // --- SHARED INVENTORY DATA ---
 class InventoryData {
-  static final List<POSItem> items = [];
+  static final List<POSItem> items = [
+    // Siomai - Beef
+    POSItem(name: "Siomai Beef 4pcs", price: 35, stock: 50, unit: "orders", category: "Food", lowStockAlert: 10),
+    POSItem(name: "Siomai Beef 6pcs", price: 50, stock: 50, unit: "orders", category: "Food", lowStockAlert: 10),
+    // Siomai - Chicken
+    POSItem(name: "Siomai Chicken 4pcs", price: 35, stock: 50, unit: "orders", category: "Food", lowStockAlert: 10),
+    POSItem(name: "Siomai Chicken 6pcs", price: 50, stock: 50, unit: "orders", category: "Food", lowStockAlert: 10),
+    // Siomai - Japanese
+    POSItem(name: "Siomai Japanese 4pcs", price: 35, stock: 50, unit: "orders", category: "Food", lowStockAlert: 10),
+    POSItem(name: "Siomai Japanese 6pcs", price: 50, stock: 50, unit: "orders", category: "Food", lowStockAlert: 10),
+    
+    // Empanada
+    POSItem(name: "Empanada Beef", price: 45, stock: 30, unit: "pieces", category: "Food", lowStockAlert: 10),
+    POSItem(name: "Empanada Chicken", price: 45, stock: 30, unit: "pieces", category: "Food", lowStockAlert: 10),
+    
+    // Corndog
+    POSItem(name: "Corndog Hotdog w/ Cheese", price: 35, stock: 30, unit: "pieces", category: "Food", lowStockAlert: 10),
+    POSItem(name: "Corndog Hotdog Only", price: 30, stock: 30, unit: "pieces", category: "Food", lowStockAlert: 10),
+    POSItem(name: "Corndog Cheese Only", price: 20, stock: 30, unit: "pieces", category: "Food", lowStockAlert: 10),
+    
+    // Chicken Meals
+    POSItem(name: "Chicken with Rice", price: 70, stock: 30, unit: "servings", category: "Food", lowStockAlert: 10),
+    POSItem(name: "Chicken Only", price: 55, stock: 30, unit: "servings", category: "Food", lowStockAlert: 10),
+    POSItem(name: "Rice Only", price: 15, stock: 50, unit: "servings", category: "Food", lowStockAlert: 15),
+    
+    // Shakes - Mango
+    POSItem(name: "Mango Shake 12oz", price: 60, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Mango Shake 16oz", price: 80, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Mango Shake 22oz", price: 120, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    // Shakes - Avocado
+    POSItem(name: "Avocado Shake 12oz", price: 60, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Avocado Shake 16oz", price: 80, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Avocado Shake 22oz", price: 120, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    // Shakes - Chocolate
+    POSItem(name: "Chocolate Shake 12oz", price: 60, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Chocolate Shake 16oz", price: 80, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Chocolate Shake 22oz", price: 120, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    // Shakes - Cookies and Cream
+    POSItem(name: "Cookies & Cream 12oz", price: 60, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Cookies & Cream 16oz", price: 80, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Cookies & Cream 22oz", price: 120, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    // Shakes - Ube
+    POSItem(name: "Ube Shake 12oz", price: 60, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Ube Shake 16oz", price: 80, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Ube Shake 22oz", price: 120, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    // Shakes - Strawberry
+    POSItem(name: "Strawberry Shake 12oz", price: 60, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Strawberry Shake 16oz", price: 80, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Strawberry Shake 22oz", price: 120, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    
+    // Lemonade
+    POSItem(name: "Lemonade 12oz", price: 40, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Lemonade 16oz", price: 60, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Lemonade 22oz", price: 80, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    POSItem(name: "Lemonade w/ Yakult 22oz", price: 90, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
+    
+    // Water & Softdrinks
+    POSItem(name: "Bottled Water 500ml", price: 20, stock: 50, unit: "bottles", category: "Beverage", lowStockAlert: 10),
+    POSItem(name: "Coke Swakto", price: 20, stock: 48, unit: "bottles", category: "Beverage", lowStockAlert: 10),
+    POSItem(name: "Royal Swakto", price: 20, stock: 48, unit: "bottles", category: "Beverage", lowStockAlert: 10),
+    POSItem(name: "Sprite Swakto", price: 20, stock: 48, unit: "bottles", category: "Beverage", lowStockAlert: 10),
+  ];
 }
 
 class POSHomePage extends StatefulWidget {
