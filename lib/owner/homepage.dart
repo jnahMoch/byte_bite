@@ -23,18 +23,7 @@ class POSItem {
 
 // --- SHARED INVENTORY DATA ---
 class InventoryData {
-  static final List<POSItem> items = [
-    POSItem(name: "Chicken with Rice", price: 45, stock: 50, unit: "servings", category: "Food", lowStockAlert: 10),
-    POSItem(name: "Corndog", price: 25, stock: 30, unit: "pieces", category: "Food", lowStockAlert: 5),
-    POSItem(name: "Siomai", price: 20, stock: 100, unit: "pieces", category: "Food", lowStockAlert: 20),
-    POSItem(name: "Empanada", price: 15, stock: 40, unit: "pieces", category: "Food", lowStockAlert: 10),
-    POSItem(name: "Shake", price: 35, stock: 25, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Lemonade", price: 30, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Coke", price: 20, stock: 48, unit: "bottles", category: "Beverage", lowStockAlert: 10),
-    POSItem(name: "Royal", price: 20, stock: 36, unit: "bottles", category: "Beverage", lowStockAlert: 10),
-    POSItem(name: "Sprite", price: 20, stock: 36, unit: "bottles", category: "Beverage", lowStockAlert: 10),
-    POSItem(name: "Bottled Water", price: 15, stock: 60, unit: "bottles", category: "Beverage", lowStockAlert: 15),
-  ];
+  static final List<POSItem> items = [];
 }
 
 class POSHomePage extends StatefulWidget {
@@ -1720,11 +1709,7 @@ class Bill {
 }
 
 class _BillsViewState extends State<BillsView> {
-  final List<Bill> _bills = [
-    Bill(name: 'Electricity Bill', category: 'Utilities', amount: 1500.00, isPaid: true),
-    Bill(name: 'Water Bill', category: 'Utilities', amount: 500.00, isPaid: true),
-    Bill(name: 'Rent', category: 'Rent', amount: 5000.00, isPaid: true),
-  ];
+  final List<Bill> _bills = [];
 
   List<Bill> get overdueBills => _bills.where((b) => !b.isPaid && b.dueDate != null && b.dueDate!.isBefore(DateTime.now())).toList();
   List<Bill> get upcomingBills => _bills.where((b) => !b.isPaid && (b.dueDate == null || !b.dueDate!.isBefore(DateTime.now()))).toList();
@@ -3768,12 +3753,8 @@ class NotificationsView extends StatefulWidget {
 class _NotificationsViewState extends State<NotificationsView> {
   String _selectedTab = 'All';
 
-  // Sample bills data
-  final List<Map<String, dynamic>> _bills = [
-    {'name': 'Electricity Bill', 'category': 'Utilities', 'amount': 1500.0, 'isPaid': true, 'type': 'bill'},
-    {'name': 'Water Bill', 'category': 'Utilities', 'amount': 500.0, 'isPaid': true, 'type': 'bill'},
-    {'name': 'Rent', 'category': 'Rent', 'amount': 5000.0, 'isPaid': true, 'type': 'bill'},
-  ];
+  // Bills data - starts empty
+  final List<Map<String, dynamic>> _bills = [];
 
   List<Map<String, dynamic>> get lowStockAlerts {
     return InventoryData.items
