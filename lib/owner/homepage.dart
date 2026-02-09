@@ -3085,9 +3085,7 @@ class DashboardView extends StatelessWidget {
         // Navigate to the page by finding the parent state
         final state = context.findAncestorStateOfType<_POSHomePageState>();
         if (state != null) {
-          state.setState(() {
-            state._currentIndex = pageIndex;
-          });
+          (state as dynamic)._updateCurrentIndex(pageIndex);
         }
       },
       child: Container(

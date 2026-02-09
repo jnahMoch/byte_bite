@@ -18,10 +18,16 @@ class _HelperHomePageState extends State<HelperHomePage> {
   void initState() {
     super.initState();
     _pages = [
-      const HelperDashboardView(),  // Index 0: Dashboard
+      HelperDashboardView(onNavigate: _navigateToPage),  // Index 0: Dashboard
       const HelperPOSView(),        // Index 1: POS
       const HelperBillsView(),      // Index 2: Bills
     ];
+  }
+
+  void _navigateToPage(int pageIndex) {
+    setState(() {
+      _currentIndex = pageIndex;
+    });
   }
 
   @override
@@ -261,7 +267,8 @@ class HelperBillsView extends StatelessWidget {
 
 // Dashboard View for Helper
 class HelperDashboardView extends StatelessWidget {
-  const HelperDashboardView({super.key});
+  final Function(int)? onNavigate;
+  const HelperDashboardView({super.key, this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -483,12 +490,7 @@ class HelperDashboardView extends StatelessWidget {
   Widget _actionCard(BuildContext context, IconData icon, String label, Color color, int pageIndex) {
     return GestureDetector(
       onTap: () {
-        final state = context.findAncestorStateOfType<_HelperHomePageState>();
-        if (state != null) {
-          state.setState(() {
-            state._currentIndex = pageIndex;
-          });
-        }
+        onNavigate?.call(pageIndex);
       },
       child: Container(
         padding: const EdgeInsets.all(20),
