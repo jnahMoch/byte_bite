@@ -1,6 +1,8 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'menu_page.dart';
+import '../owner/homepage.dart';
 
 class HelperHomePage extends StatefulWidget {
   const HelperHomePage({super.key});
@@ -18,9 +20,9 @@ class _HelperHomePageState extends State<HelperHomePage> {
   void initState() {
     super.initState();
     _pages = [
-      HelperDashboardView(onNavigate: _navigateToPage),  // Index 0: Dashboard
-      const HelperPOSView(),        // Index 1: POS
-      const HelperBillsView(),      // Index 2: Bills
+      HelperDashboardView(onNavigate: _navigateToPage), // Index 0: Dashboard
+      const MenuContent(), // Index 1: Menu (shows inline content)
+      const NotificationsView(), // Index 2: Alerts (same as Owner)
     ];
   }
 
@@ -71,7 +73,12 @@ class _HelperHomePageState extends State<HelperHomePage> {
 
     if (isCenter) {
       return GestureDetector(
-        onTap: () => setState(() => _currentIndex = index),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MenuPage()),
+          );
+        },
         child: Container(
           width: 56,
           height: 56,
