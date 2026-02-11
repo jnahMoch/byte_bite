@@ -1,6 +1,10 @@
 // Simple in-memory user storage (will be replaced with database later)
 class UserStorage {
-  static final Map<String, Map<String, String>> _users = {};
+  static final Map<String, Map<String, String>> _users = {
+    // Default test users so app works on first launch
+    'owner': {'password': 'owner123', 'role': 'Owner'},
+    'helper': {'password': 'helper123', 'role': 'Helper'},
+  };
 
   static void addUser(String username, String password, String role) {
     _users[username] = {'password': password, 'role': role};

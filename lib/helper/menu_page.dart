@@ -169,7 +169,8 @@ class _MenuContentState extends State<MenuContent> {
     }
 
     final paid = amountPaid;
-    final change = paid - _cartTotal;
+    final total = _cartTotal; // Save total before clearing
+    final change = paid - total;
 
     setState(() {
       _cart.clear();
@@ -185,7 +186,7 @@ class _MenuContentState extends State<MenuContent> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Total: ₱$_cartTotal'),
+            Text('Total: ₱$total'),
             Text('Paid: ₱${paid.toStringAsFixed(0)}'),
             Text('Change: ₱${change.toStringAsFixed(2)}'),
           ],
