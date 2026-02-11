@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../owner/homepage.dart' show InventoryData;
 
 class MenuPage extends StatelessWidget {
   const MenuPage({super.key});
@@ -49,14 +50,13 @@ class MenuContent extends StatefulWidget {
 class _MenuContentState extends State<MenuContent> {
   String _selected = 'All';
 
-  final List<Map<String, String>> _items = [
-    {'name': 'Siomai Beef 4pcs', 'price': '₱35', 'stock': '50 orders', 'category': 'Food'},
-    {'name': 'Siomai Beef 6pcs', 'price': '₱50', 'stock': '50 orders', 'category': 'Food'},
-    {'name': 'Chicken with Rice', 'price': '₱45', 'stock': '50 servings', 'category': 'Food'},
-    {'name': 'Corndog', 'price': '₱25', 'stock': '30 pieces', 'category': 'Food'},
-    {'name': 'Empanada', 'price': '₱15', 'stock': '40 pieces', 'category': 'Food'},
-    {'name': 'Iced Tea', 'price': '₱20', 'stock': '100 bottles', 'category': 'Beverage'},
-  ];
+  // Use shared InventoryData - synced with Owner
+  List<Map<String, String>> get _items => InventoryData.items.map((item) => {
+    'name': item.name,
+    'price': '₱${item.price}',
+    'stock': '${item.stock} ${item.unit}',
+    'category': item.category,
+  }).toList();
 
   List<Map<String, String>> get _filteredItems {
     if (_selected == 'All') return _items;
@@ -158,14 +158,14 @@ class _MenuContentState extends State<MenuContent> {
       return;
     }
 
-    // Deduct stock from string like '50 orders'
+    // Deduct stock from shared InventoryData (synced with Owner)
     for (var c in _cart) {
-      final item = c['item'] as Map<String, String>;
+      final itemName = (c['item'] as Map<String, String>)['name'] ?? '';
       final qty = c['quantity'] as int;
-      final stockText = item['stock'] ?? '';
-      final stockNum = int.tryParse(stockText.split(' ').first) ?? 0;
-      final remaining = stockNum - qty;
-      item['stock'] = remaining > 0 ? '$remaining ${stockText.split(' ').skip(1).join(' ')}' : '0 ${stockText.split(' ').skip(1).join(' ')}';
+      final inventoryItem = InventoryData.items.where((i) => i.name == itemName).firstOrNull;
+      if (inventoryItem != null) {
+        inventoryItem.stock = (inventoryItem.stock - qty).clamp(0, inventoryItem.stock);
+      }
     }
 
     final paid = amountPaid;
