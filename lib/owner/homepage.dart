@@ -2,90 +2,21 @@
 
 import 'package:flutter/material.dart';
 
-// --- DATA MODEL ---
-class POSItem {
-  final String name;
-  final int price;
-  int stock;
-  final String unit;
-  final String category;
-  final int lowStockAlert;
+// Import from separated files
+import '../model/pos_item_model.dart';
+import '../model/sales_transaction_model.dart';
+import '../model/bill_model.dart';
+import '../data/inventory_data.dart';
+import '../data/sales_data.dart';
+import '../data/bills_data.dart';
 
-  POSItem({
-    required this.name,
-    required this.price,
-    required this.stock,
-    required this.unit,
-    this.category = 'Food',
-    this.lowStockAlert = 10,
-  });
-}
-
-// --- SHARED INVENTORY DATA ---
-class InventoryData {
-  static final List<POSItem> items = [
-    // Siomai - Beef
-    POSItem(name: "Siomai Beef 4pcs", price: 35, stock: 50, unit: "orders", category: "Food", lowStockAlert: 10),
-    POSItem(name: "Siomai Beef 6pcs", price: 50, stock: 50, unit: "orders", category: "Food", lowStockAlert: 10),
-    // Siomai - Chicken
-    POSItem(name: "Siomai Chicken 4pcs", price: 35, stock: 50, unit: "orders", category: "Food", lowStockAlert: 10),
-    POSItem(name: "Siomai Chicken 6pcs", price: 50, stock: 50, unit: "orders", category: "Food", lowStockAlert: 10),
-    // Siomai - Japanese
-    POSItem(name: "Siomai Japanese 4pcs", price: 35, stock: 50, unit: "orders", category: "Food", lowStockAlert: 10),
-    POSItem(name: "Siomai Japanese 6pcs", price: 50, stock: 50, unit: "orders", category: "Food", lowStockAlert: 10),
-    
-    // Empanada
-    POSItem(name: "Empanada Beef", price: 45, stock: 30, unit: "pieces", category: "Food", lowStockAlert: 10),
-    POSItem(name: "Empanada Chicken", price: 45, stock: 30, unit: "pieces", category: "Food", lowStockAlert: 10),
-    
-    // Corndog
-    POSItem(name: "Corndog Hotdog w/ Cheese", price: 35, stock: 30, unit: "pieces", category: "Food", lowStockAlert: 10),
-    POSItem(name: "Corndog Hotdog Only", price: 30, stock: 30, unit: "pieces", category: "Food", lowStockAlert: 10),
-    POSItem(name: "Corndog Cheese Only", price: 20, stock: 30, unit: "pieces", category: "Food", lowStockAlert: 10),
-    
-    // Chicken Meals
-    POSItem(name: "Chicken with Rice", price: 70, stock: 30, unit: "servings", category: "Food", lowStockAlert: 10),
-    POSItem(name: "Chicken Only", price: 55, stock: 30, unit: "servings", category: "Food", lowStockAlert: 10),
-    POSItem(name: "Rice Only", price: 15, stock: 50, unit: "servings", category: "Food", lowStockAlert: 15),
-    
-    // Shakes - Mango
-    POSItem(name: "Mango Shake 12oz", price: 60, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Mango Shake 16oz", price: 80, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Mango Shake 22oz", price: 120, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    // Shakes - Avocado
-    POSItem(name: "Avocado Shake 12oz", price: 60, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Avocado Shake 16oz", price: 80, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Avocado Shake 22oz", price: 120, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    // Shakes - Chocolate
-    POSItem(name: "Chocolate Shake 12oz", price: 60, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Chocolate Shake 16oz", price: 80, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Chocolate Shake 22oz", price: 120, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    // Shakes - Cookies and Cream
-    POSItem(name: "Cookies & Cream 12oz", price: 60, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Cookies & Cream 16oz", price: 80, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Cookies & Cream 22oz", price: 120, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    // Shakes - Ube
-    POSItem(name: "Ube Shake 12oz", price: 60, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Ube Shake 16oz", price: 80, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Ube Shake 22oz", price: 120, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    // Shakes - Strawberry
-    POSItem(name: "Strawberry Shake 12oz", price: 60, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Strawberry Shake 16oz", price: 80, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Strawberry Shake 22oz", price: 120, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    
-    // Lemonade
-    POSItem(name: "Lemonade 12oz", price: 40, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Lemonade 16oz", price: 60, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Lemonade 22oz", price: 80, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    POSItem(name: "Lemonade w/ Yakult 22oz", price: 90, stock: 30, unit: "cups", category: "Beverage", lowStockAlert: 5),
-    
-    // Water & Softdrinks
-    POSItem(name: "Bottled Water 500ml", price: 20, stock: 50, unit: "bottles", category: "Beverage", lowStockAlert: 10),
-    POSItem(name: "Coke Swakto", price: 20, stock: 48, unit: "bottles", category: "Beverage", lowStockAlert: 10),
-    POSItem(name: "Royal Swakto", price: 20, stock: 48, unit: "bottles", category: "Beverage", lowStockAlert: 10),
-    POSItem(name: "Sprite Swakto", price: 20, stock: 48, unit: "bottles", category: "Beverage", lowStockAlert: 10),
-  ];
-}
+// Re-export for backward compatibility with other files
+export '../model/pos_item_model.dart';
+export '../model/sales_transaction_model.dart';
+export '../model/bill_model.dart';
+export '../data/inventory_data.dart';
+export '../data/sales_data.dart';
+export '../data/bills_data.dart';
 
 class POSHomePage extends StatefulWidget {
   const POSHomePage({super.key});
@@ -439,6 +370,21 @@ class _POSGridViewState extends State<POSGridView> {
       cartItem.item.stock -= cartItem.quantity;
     }
 
+    // Record the transaction for reports
+    SalesData.addTransaction(SalesTransaction(
+      receiptNumber: receiptNumber,
+      dateTime: now,
+      items: savedCart.map((c) => {
+        'name': c.item.name,
+        'price': c.item.price,
+        'quantity': c.quantity,
+      }).toList(),
+      total: savedTotal,
+      amountPaid: amountPaid,
+      change: change,
+      paymentMethod: _selectedPayment,
+    ));
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -619,12 +565,12 @@ class _POSGridViewState extends State<POSGridView> {
         Expanded(
           flex: 2,
           child: GridView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(16),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 1.4,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.75,
             ),
             itemCount: filteredItems.length,
             itemBuilder: (context, index) => _itemCard(filteredItems[index]),
@@ -798,54 +744,109 @@ class _POSGridViewState extends State<POSGridView> {
     );
   }
 
-  Widget _itemCard(POSItem item) => GestureDetector(
-    onTap: () => _addToCart(item),
-    child: Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300),
+  Widget _itemCard(POSItem item) {
+    final isFood = item.category == 'Food';
+    final iconData = isFood ? Icons.restaurant_rounded : Icons.local_cafe_rounded;
+    final iconColor = isFood ? const Color(0xFFEF4444) : const Color(0xFF3B82F6);
+    
+    return GestureDetector(
+      onTap: () => _addToCart(item),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product image or icon placeholder
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: item.image != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          item.image!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (context, error, stackTrace) => Center(
+                            child: Icon(iconData, size: 40, color: iconColor.withOpacity(0.6)),
+                          ),
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+                              ),
+                            );
+                          },
+                        ),
+                      )
+                    : Center(
+                        child: Icon(iconData, size: 40, color: iconColor.withOpacity(0.6)),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Product name
+            Expanded(
+              flex: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: Color(0xFF1A1A2E),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const Spacer(),
+                  // Price
+                  Text(
+                    '₱${item.price}',
+                    style: const TextStyle(
+                      color: Color(0xFF009661),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  // Stock info
+                  Text(
+                    'Stock: ${item.stock} ${item.unit}',
+                    style: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Product name
-          Text(
-            item.name,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-              color: Color(0xFF333333),
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 6),
-          // Price
-          Text(
-            '₱${item.price}',
-            style: const TextStyle(
-              color: Color(0xFF009661),
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 4),
-          // Stock info
-          Text(
-            'Stock: ${item.stock} ${item.unit}',
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 11,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
+    );
+  }
 
   Widget _cartItemRow(CartItem cartItem, int index) {
     return Container(
@@ -1753,40 +1754,29 @@ class BillsView extends StatefulWidget {
   State<BillsView> createState() => _BillsViewState();
 }
 
-class Bill {
-  final String name;
-  final String category;
-  final double amount;
-  final DateTime? dueDate;
-  bool isPaid;
-
-  Bill({
-    required this.name,
-    required this.category,
-    required this.amount,
-    this.dueDate,
-    this.isPaid = false,
-  });
-}
-
 class _BillsViewState extends State<BillsView> {
-  final List<Bill> _bills = [];
+  List<Bill> get overdueBills => BillsData.overdueBills;
+  List<Bill> get upcomingBills => BillsData.upcomingBills;
+  List<Bill> get paidBills => BillsData.bills.where((b) => b.isPaid).toList();
 
-  List<Bill> get overdueBills => _bills.where((b) => !b.isPaid && b.dueDate != null && b.dueDate!.isBefore(DateTime.now())).toList();
-  List<Bill> get upcomingBills => _bills.where((b) => !b.isPaid && (b.dueDate == null || !b.dueDate!.isBefore(DateTime.now()))).toList();
-  List<Bill> get paidBills => _bills.where((b) => b.isPaid).toList();
+  double get overdueTotal => BillsData.totalOverdue;
+  double get upcomingTotal => BillsData.totalUpcoming;
 
-  double get overdueTotal => overdueBills.fold(0, (sum, b) => sum + b.amount);
-  double get upcomingTotal => upcomingBills.fold(0, (sum, b) => sum + b.amount);
+  String _formatDate(DateTime date) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')}, ${date.year}';
+  }
 
   void _showAddBillDialog() {
     final nameController = TextEditingController();
     final amountController = TextEditingController();
     String selectedCategory = 'Utilities';
+    DateTime selectedDate = DateTime.now().add(const Duration(days: 7));
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
         title: const Text('Add New Bill'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1818,7 +1808,35 @@ class _BillsViewState extends State<BillsView> {
               items: ['Utilities', 'Rent', 'Supplies', 'Other']
                   .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                   .toList(),
-              onChanged: (v) => selectedCategory = v!,
+              onChanged: (v) => setDialogState(() => selectedCategory = v!),
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: dialogContext,
+                  initialDate: selectedDate,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (picked != null) {
+                  setDialogState(() => selectedDate = picked);
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Due: ${_formatDate(selectedDate)}'),
+                    const Icon(Icons.calendar_today, size: 18),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -1831,10 +1849,12 @@ class _BillsViewState extends State<BillsView> {
             onPressed: () {
               if (nameController.text.isNotEmpty && amountController.text.isNotEmpty) {
                 setState(() {
-                  _bills.add(Bill(
-                    name: nameController.text,
+                  BillsData.addBill(Bill(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    title: nameController.text,
                     category: selectedCategory,
                     amount: double.tryParse(amountController.text) ?? 0,
+                    dueDate: selectedDate,
                   ));
                 });
                 Navigator.pop(context);
@@ -1844,6 +1864,7 @@ class _BillsViewState extends State<BillsView> {
             child: const Text('Add', style: TextStyle(color: Colors.white)),
           ),
         ],
+        ),
       ),
     );
   }
@@ -1963,23 +1984,157 @@ class _BillsViewState extends State<BillsView> {
             ],
           ),
           const SizedBox(height: 24),
-          // Paid Bills section
-          const Text(
-            'Paid Bills',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF333333),
+          // Overdue Bills section
+          if (overdueBills.isNotEmpty) ...[
+            const Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.red, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'Overdue Bills',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 12),
-          ...paidBills.map((bill) => _billCard(bill)),
+            const SizedBox(height: 12),
+            ...overdueBills.map((bill) => _billCard(bill, isOverdue: true)),
+            const SizedBox(height: 16),
+          ],
+          // Upcoming Bills section
+          if (upcomingBills.isNotEmpty) ...[
+            const Row(
+              children: [
+                Icon(Icons.schedule, color: Colors.blue, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'Upcoming Bills',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...upcomingBills.map((bill) => _billCard(bill, isOverdue: false)),
+            const SizedBox(height: 16),
+          ],
+          // Paid Bills section
+          if (paidBills.isNotEmpty) ...[
+            const Text(
+              'Paid Bills',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF333333),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...paidBills.map((bill) => _paidBillCard(bill)),
+          ],
         ],
       ),
     );
   }
 
-  Widget _billCard(Bill bill) {
+  Widget _billCard(Bill bill, {required bool isOverdue}) {
+    final bgColor = isOverdue ? const Color(0xFFFFF5F5) : Colors.white;
+    final borderColor = isOverdue ? Colors.red.shade100 : Colors.grey.shade200;
+    final accentColor = isOverdue ? Colors.red : Colors.blue;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    bill.title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF333333),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    bill.category,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '₱${bill.amount.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: accentColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.calendar_today_outlined, size: 14, color: accentColor),
+              const SizedBox(width: 8),
+              Text(
+                isOverdue
+                    ? 'Overdue by ${bill.daysOverdue} day(s) - Due: ${_formatDate(bill.dueDate)}'
+                    : 'Due: ${_formatDate(bill.dueDate)}',
+                style: TextStyle(fontSize: 12, color: accentColor),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  BillsData.markAsPaid(bill.id);
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${bill.title} marked as paid'),
+                    backgroundColor: const Color(0xFF009661),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.check, size: 18, color: Colors.white),
+              label: const Text('Mark as Paid', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF009661),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _paidBillCard(Bill bill) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -1995,7 +2150,7 @@ class _BillsViewState extends State<BillsView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  bill.name,
+                  bill.title,
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -2011,19 +2166,19 @@ class _BillsViewState extends State<BillsView> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
+                const Row(
                   children: [
                     Icon(
                       Icons.check,
                       size: 14,
-                      color: bill.isPaid ? const Color(0xFF009661) : Colors.grey,
+                      color: Color(0xFF009661),
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4),
                     Text(
                       'Paid',
                       style: TextStyle(
                         fontSize: 12,
-                        color: bill.isPaid ? const Color(0xFF009661) : Colors.grey,
+                        color: Color(0xFF009661),
                       ),
                     ),
                   ],
@@ -2941,8 +3096,14 @@ class DashboardView extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               children: [
@@ -3138,8 +3299,14 @@ class DashboardView extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           children: [
@@ -3147,7 +3314,7 @@ class DashboardView extends StatelessWidget {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, size: 24, color: color),
             ),

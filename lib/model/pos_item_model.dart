@@ -1,7 +1,4 @@
-// NOTE: This file is unused. POSItem is defined in owner/homepage.dart
-// Keeping for reference only - use InventoryData from owner/homepage.dart
-
-/*
+/// POSItem model - represents a product in the POS system
 class POSItem {
   final String name;
   final int price;
@@ -9,6 +6,7 @@ class POSItem {
   final String unit;
   final String category;
   final int lowStockAlert;
+  final String? image;
 
   POSItem({
     required this.name,
@@ -17,6 +15,6 @@ class POSItem {
     required this.unit,
     this.category = 'Food',
     this.lowStockAlert = 10,
+    this.image,
   });
 }
-*/

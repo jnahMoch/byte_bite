@@ -65,111 +65,135 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF009661),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withValues(alpha: 0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF00A86B), Color(0xFF007A4D)],
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 30,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF009661).withOpacity(0.2),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/byte and bite logo.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('Create Account', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1A1A2E))),
+                  const SizedBox(height: 6),
+                  Text('Join us to get started', style: TextStyle(fontSize: 14, color: Colors.grey[500])),
+                  const SizedBox(height: 24),
+
+                  // Username
+                  _buildTextField(
+                    label: 'Username',
+                    hint: 'Enter username',
+                    controller: _usernameController,
+                    icon: Icons.person_outline,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Password
+                  _buildTextField(
+                    label: 'Password',
+                    hint: 'Enter password',
+                    controller: _passwordController,
+                    isPassword: true,
+                    icon: Icons.lock_outline,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Confirm Password
+                  _buildTextField(
+                    label: 'Confirm Password',
+                    hint: 'Re-enter password',
+                    controller: _confirmPasswordController,
+                    isPassword: true,
+                    icon: Icons.lock_outline,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Role Selection
+                  _buildRoleSelector(),
+                  const SizedBox(height: 25),
+
+                  // Sign Up Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton(
+                      onPressed: _handleSignUp,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF009661),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.how_to_reg_rounded, color: Colors.white, size: 20),
+                          SizedBox(width: 10),
+                          Text('Sign Up', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Colors.white)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Back to Login
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Already have an account? ', style: TextStyle(color: Colors.grey[500])),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: const Text(
+                          'Login',
+                          style: TextStyle(
+                            color: Color(0xFF009661),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/images/byte and bite logo.png',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text('Create Account', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 20),
-
-                // Username
-                _buildTextField(
-                  label: 'Username',
-                  hint: 'Enter username',
-                  controller: _usernameController,
-                  icon: Icons.person_outline,
-                ),
-                const SizedBox(height: 16),
-
-                // Password
-                _buildTextField(
-                  label: 'Password',
-                  hint: 'Enter password',
-                  controller: _passwordController,
-                  isPassword: true,
-                  icon: Icons.lock_outline,
-                ),
-                const SizedBox(height: 16),
-
-                // Confirm Password
-                _buildTextField(
-                  label: 'Confirm Password',
-                  hint: 'Re-enter password',
-                  controller: _confirmPasswordController,
-                  isPassword: true,
-                  icon: Icons.lock_outline,
-                ),
-                const SizedBox(height: 20),
-
-                // Role Selection
-                _buildRoleSelector(),
-                const SizedBox(height: 25),
-
-                // Sign Up Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton.icon(
-                    onPressed: _handleSignUp,
-                    icon: const Icon(Icons.how_to_reg, color: Colors.white, size: 18),
-                    label: const Text('Sign Up', style: TextStyle(fontSize: 18, color: Colors.white)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF009661),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Back to Login
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Already have an account? ', style: TextStyle(color: Colors.grey)),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Text(
-                        'Login',
-                        style: TextStyle(
-                          color: Color(0xFF009661),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -187,17 +211,30 @@ class _SignUpPageState extends State<SignUpPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-        const SizedBox(height: 8),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF374151))),
+        const SizedBox(height: 10),
         TextField(
           controller: controller,
           obscureText: isPassword,
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: icon != null ? Icon(icon, color: Colors.grey) : null,
+            hintStyle: TextStyle(color: Colors.grey[400]),
+            prefixIcon: icon != null ? Icon(icon, color: const Color(0xFF009661), size: 20) : null,
             filled: true,
-            fillColor: const Color(0xFFF3F4F6),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+            fillColor: const Color(0xFFF8FAFC),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF009661), width: 2),
+            ),
           ),
         ),
       ],
@@ -208,15 +245,15 @@ class _SignUpPageState extends State<SignUpPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Select Role', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+        const Text('Select Role', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF374151))),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
               child: _buildRoleCard(
                 role: 'Owner',
-                icon: Icons.admin_panel_settings,
-                description: 'Full access to all features',
+                icon: Icons.admin_panel_settings_rounded,
+                description: 'Full access',
                 isSelected: _selectedRole == 'Owner',
               ),
             ),
@@ -224,8 +261,8 @@ class _SignUpPageState extends State<SignUpPage> {
             Expanded(
               child: _buildRoleCard(
                 role: 'Helper',
-                icon: Icons.support_agent,
-                description: 'Limited access for staff',
+                icon: Icons.support_agent_rounded,
+                description: 'Staff access',
                 isSelected: _selectedRole == 'Helper',
               ),
             ),
@@ -251,19 +288,26 @@ class _SignUpPageState extends State<SignUpPage> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF009661).withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? const Color(0xFF009661).withOpacity(0.1) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? const Color(0xFF009661) : Colors.transparent,
-            width: 2,
+            color: isSelected ? const Color(0xFF009661) : Colors.grey.shade200,
+            width: isSelected ? 2 : 1,
           ),
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: const Color(0xFF009661).withOpacity(0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ] : null,
         ),
         child: Column(
           children: [
             Icon(
               icon,
-              size: 36,
-              color: isSelected ? const Color(0xFF009661) : Colors.grey,
+              size: 32,
+              color: isSelected ? const Color(0xFF009661) : Colors.grey[500],
             ),
             const SizedBox(height: 8),
             Text(
@@ -271,16 +315,16 @@ class _SignUpPageState extends State<SignUpPage> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
-                color: isSelected ? const Color(0xFF009661) : Colors.black87,
+                color: isSelected ? const Color(0xFF009661) : const Color(0xFF374151),
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               description,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 10,
-                color: isSelected ? const Color(0xFF009661) : Colors.grey,
+                fontSize: 11,
+                color: isSelected ? const Color(0xFF009661) : Colors.grey[500],
               ),
             ),
           ],

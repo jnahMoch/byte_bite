@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import '../owner/homepage.dart' show InventoryData;
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import '../owner/homepage.dart' show InventoryData, SalesData, SalesTransaction;
 
 class MenuPage extends StatelessWidget {
   const MenuPage({super.key});
@@ -56,6 +59,7 @@ class _MenuContentState extends State<MenuContent> {
     'price': '₱${item.price}',
     'stock': '${item.stock} ${item.unit}',
     'category': item.category,
+    'image': item.image ?? '',
   }).toList();
 
   List<Map<String, String>> get _filteredItems {
@@ -158,6 +162,13 @@ class _MenuContentState extends State<MenuContent> {
       return;
     }
 
+    // Store cart items before clearing for receipt display
+    final cartItems = List<Map<String, dynamic>>.from(_cart.map((c) => {
+      'name': (c['item'] as Map<String, String>)['name'] ?? '',
+      'price': int.tryParse(((c['item'] as Map<String, String>)['price'] ?? '0').replaceAll('₱', '')) ?? 0,
+      'quantity': c['quantity'] as int,
+    }));
+
     // Deduct stock from shared InventoryData (synced with Owner)
     for (var c in _cart) {
       final itemName = (c['item'] as Map<String, String>)['name'] ?? '';
@@ -171,6 +182,20 @@ class _MenuContentState extends State<MenuContent> {
     final paid = amountPaid;
     final total = _cartTotal; // Save total before clearing
     final change = paid - total;
+    final now = DateTime.now();
+    final receiptNumber = now.millisecondsSinceEpoch.toString();
+    final paymentMethod = _selectedPayment.toUpperCase();
+
+    // Record the transaction for reports
+    SalesData.addTransaction(SalesTransaction(
+      receiptNumber: receiptNumber,
+      dateTime: now,
+      items: cartItems,
+      total: total,
+      amountPaid: paid,
+      change: change,
+      paymentMethod: paymentMethod,
+    ));
 
     setState(() {
       _cart.clear();
@@ -180,19 +205,274 @@ class _MenuContentState extends State<MenuContent> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Receipt'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Total: ₱$total'),
-            Text('Paid: ₱${paid.toStringAsFixed(0)}'),
-            Text('Change: ₱${change.toStringAsFixed(2)}'),
-          ],
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          constraints: const BoxConstraints(maxWidth: 340),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header with title and close button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Receipt', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(Icons.close, size: 20, color: Colors.grey),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Store branding
+              const Text('BYTE & BITE', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text('Smart POS Solution', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              const Text('Visayan Village, Tagum City', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              const SizedBox(height: 16),
+              // Receipt details
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Date: ${_formatDate(now)}', style: const TextStyle(fontSize: 12)),
+                    Text('Time: ${_formatTime(now)}', style: const TextStyle(fontSize: 12)),
+                    Text('Receipt #: $receiptNumber', style: const TextStyle(fontSize: 12)),
+                    Text('Payment: $paymentMethod', style: const TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Dotted divider
+              _buildDottedDivider(),
+              const SizedBox(height: 12),
+              // Items list
+              ...cartItems.map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(item['name'], style: const TextStyle(fontSize: 13)),
+                        Text('₱${item['price']}.00', style: const TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('x${item['quantity']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text('₱${item['price'] * item['quantity']}.00', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
+                  ],
+                ),
+              )),
+              const SizedBox(height: 8),
+              _buildDottedDivider(),
+              const SizedBox(height: 12),
+              // Total
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('TOTAL:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('₱$total.00', style: const TextStyle(fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Amount Paid:', style: TextStyle(fontSize: 13)),
+                  Text('₱${paid.toStringAsFixed(2)}', style: const TextStyle(fontSize: 13)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Change:', style: TextStyle(fontSize: 13)),
+                  Text('₱${change.toStringAsFixed(2)}', style: const TextStyle(fontSize: 13)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildDottedDivider(),
+              const SizedBox(height: 16),
+              // Thank you message
+              const Text('Thank you for your purchase!', style: TextStyle(fontSize: 12, color: Color(0xFF009661))),
+              const Text('Come again soon!', style: TextStyle(fontSize: 12, color: Color(0xFF009661))),
+              const SizedBox(height: 20),
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await _printReceipt(
+                          cartItems: cartItems,
+                          total: total,
+                          paid: paid,
+                          change: change,
+                          receiptNumber: receiptNumber,
+                          paymentMethod: paymentMethod,
+                          date: now,
+                        );
+                      },
+                      icon: const Icon(Icons.print, size: 18),
+                      label: const Text('Print'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: const BorderSide(color: Colors.grey),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF009661),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Close', style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        actions: [ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
       ),
+    );
+  }
+
+  Widget _buildDottedDivider() {
+    return Row(
+      children: List.generate(
+        40,
+        (index) => Expanded(
+          child: Container(
+            color: index % 2 == 0 ? Colors.grey.shade300 : Colors.transparent,
+            height: 1,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')}, ${date.year}';
+  }
+
+  String _formatTime(DateTime date) {
+    final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
+    final period = date.hour >= 12 ? 'PM' : 'AM';
+    return '${hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} $period';
+  }
+
+  Future<void> _printReceipt({
+    required List<Map<String, dynamic>> cartItems,
+    required int total,
+    required double paid,
+    required double change,
+    required String receiptNumber,
+    required String paymentMethod,
+    required DateTime date,
+  }) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.roll80,
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Text('BYTE & BITE', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              pw.Text('Smart POS Solution', style: const pw.TextStyle(fontSize: 10)),
+              pw.Text('Visayan Village, Tagum City', style: const pw.TextStyle(fontSize: 10)),
+              pw.SizedBox(height: 12),
+              pw.Container(
+                alignment: pw.Alignment.centerLeft,
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('Date: ${_formatDate(date)}', style: const pw.TextStyle(fontSize: 10)),
+                    pw.Text('Time: ${_formatTime(date)}', style: const pw.TextStyle(fontSize: 10)),
+                    pw.Text('Receipt #: $receiptNumber', style: const pw.TextStyle(fontSize: 10)),
+                    pw.Text('Payment: $paymentMethod', style: const pw.TextStyle(fontSize: 10)),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 8),
+              pw.Divider(thickness: 0.5),
+              pw.SizedBox(height: 8),
+              // Items
+              ...cartItems.map((item) => pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(item['name'].toString(), style: const pw.TextStyle(fontSize: 10)),
+                      pw.Text('P${item['price']}.00', style: const pw.TextStyle(fontSize: 10)),
+                    ],
+                  ),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('x${item['quantity']}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+                      pw.Text('P${item['price'] * item['quantity']}.00', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+                    ],
+                  ),
+                  pw.SizedBox(height: 4),
+                ],
+              )),
+              pw.SizedBox(height: 4),
+              pw.Divider(thickness: 0.5),
+              pw.SizedBox(height: 8),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('TOTAL:', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                  pw.Text('P$total.00', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                ],
+              ),
+              pw.SizedBox(height: 4),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Amount Paid:', style: const pw.TextStyle(fontSize: 10)),
+                  pw.Text('P${paid.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 10)),
+                ],
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Change:', style: const pw.TextStyle(fontSize: 10)),
+                  pw.Text('P${change.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 10)),
+                ],
+              ),
+              pw.SizedBox(height: 8),
+              pw.Divider(thickness: 0.5),
+              pw.SizedBox(height: 12),
+              pw.Text('Thank you for your purchase!', style: const pw.TextStyle(fontSize: 10)),
+              pw.Text('Come again soon!', style: const pw.TextStyle(fontSize: 10)),
+              pw.SizedBox(height: 16),
+            ],
+          );
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
     );
   }
 
@@ -268,29 +548,91 @@ class _MenuContentState extends State<MenuContent> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 1.05,
+                childAspectRatio: 0.75,
               ),
               itemBuilder: (context, idx) {
                 final item = _filteredItems[idx];
+                final isFood = item['category'] == 'Food';
+                final iconData = isFood ? Icons.restaurant_rounded : Icons.local_cafe_rounded;
+                final iconColor = isFood ? const Color(0xFFEF4444) : const Color(0xFF3B82F6);
+                final imageUrl = item['image'] ?? '';
+                
                 return GestureDetector(
                   onTap: () => _addToCart(item),
                   child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(item['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF050A1F))),
-                      const SizedBox(height: 12),
-                      Text(item['price'] ?? '', style: const TextStyle(color: Color(0xFF00A66A), fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      Text('Stock: ${item['stock']}', style: TextStyle(color: Colors.grey[600], fontSize: 11)),
-                    ],
-                  ),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Product image or icon placeholder
+                        Expanded(
+                          flex: 3,
+                          child: Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: iconColor.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: imageUrl.isNotEmpty
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.network(
+                                      imageUrl,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      errorBuilder: (context, error, stackTrace) => Center(
+                                        child: Icon(iconData, size: 40, color: iconColor.withOpacity(0.6)),
+                                      ),
+                                      loadingBuilder: (context, child, loadingProgress) {
+                                        if (loadingProgress == null) return child;
+                                        return Center(
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  )
+                                : Center(
+                                    child: Icon(iconData, size: 40, color: iconColor.withOpacity(0.6)),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        // Product details
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item['name'] ?? '',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1A1A2E)),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const Spacer(),
+                              Text(item['price'] ?? '', style: const TextStyle(color: Color(0xFF009661), fontWeight: FontWeight.bold, fontSize: 16)),
+                              const SizedBox(height: 2),
+                              Text('Stock: ${item['stock']}', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
