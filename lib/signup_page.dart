@@ -14,8 +14,17 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
-  
-  String _selectedRole = 'Owner'; // Default role
+
+  @override
+  void initState() {
+    super.initState();
+    // If owner already registered, redirect to login
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (UserStorage.isOwnerRegistered) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    });
+  }
 
   void _handleSignUp() {
     String username = _usernameController.text.trim();
@@ -44,13 +53,20 @@ class _SignUpPageState extends State<SignUpPage> {
       return;
     }
 
-    // Save user to storage
-    UserStorage.addUser(username, password, _selectedRole);
-    _showSnackBar('Account created successfully! You can now login.', Colors.green);
-    
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pop(context);
-    });
+    // Register owner (one-time only)
+    bool success = UserStorage.registerOwner(username, password);
+    if (success) {
+      _showSnackBar('Owner account created successfully! You can now login.', Colors.green);
+      
+      Future.delayed(const Duration(seconds: 2), () {
+        Navigator.pushReplacementNamed(context, '/login');
+      });
+    } else {
+      _showSnackBar('Owner already registered. Please login.', Colors.redAccent);
+      Future.delayed(const Duration(seconds: 1), () {
+        Navigator.pushReplacementNamed(context, '/login');
+      });
+    }
   }
 
   void _showSnackBar(String message, Color color) {
@@ -114,9 +130,25 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text('Create Account', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1A1A2E))),
+                  const Text('Owner Setup', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1A1A2E))),
                   const SizedBox(height: 6),
-                  Text('Join us to get started', style: TextStyle(fontSize: 14, color: Colors.grey[500])),
+                  Text('Set up your owner account to get started', style: TextStyle(fontSize: 14, color: Colors.grey[500])),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF009661).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.admin_panel_settings, size: 16, color: Color(0xFF009661)),
+                        SizedBox(width: 6),
+                        Text('One-time setup', style: TextStyle(fontSize: 12, color: Color(0xFF009661), fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   // Username
@@ -146,10 +178,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     isPassword: true,
                     icon: Icons.lock_outline,
                   ),
-                  const SizedBox(height: 20),
-
-                  // Role Selection
-                  _buildRoleSelector(),
                   const SizedBox(height: 25),
 
                   // Sign Up Button
@@ -168,29 +196,18 @@ class _SignUpPageState extends State<SignUpPage> {
                         children: [
                           Icon(Icons.how_to_reg_rounded, color: Colors.white, size: 20),
                           SizedBox(width: 10),
-                          Text('Sign Up', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Colors.white)),
+                          Text('Create Owner Account', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Colors.white)),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-
-                  // Back to Login
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Already have an account? ', style: TextStyle(color: Colors.grey[500])),
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(
-                            color: Color(0xFF009661),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 16),
+                  
+                  // Info text
+                  Text(
+                    'You can add helper accounts later in Settings',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -238,98 +255,6 @@ class _SignUpPageState extends State<SignUpPage> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildRoleSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Select Role', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF374151))),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildRoleCard(
-                role: 'Owner',
-                icon: Icons.admin_panel_settings_rounded,
-                description: 'Full access',
-                isSelected: _selectedRole == 'Owner',
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildRoleCard(
-                role: 'Helper',
-                icon: Icons.support_agent_rounded,
-                description: 'Staff access',
-                isSelected: _selectedRole == 'Helper',
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRoleCard({
-    required String role,
-    required IconData icon,
-    required String description,
-    required bool isSelected,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedRole = role;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF009661).withOpacity(0.1) : const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF009661) : Colors.grey.shade200,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: const Color(0xFF009661).withOpacity(0.15),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ] : null,
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 32,
-              color: isSelected ? const Color(0xFF009661) : Colors.grey[500],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              role,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: isSelected ? const Color(0xFF009661) : const Color(0xFF374151),
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                color: isSelected ? const Color(0xFF009661) : Colors.grey[500],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

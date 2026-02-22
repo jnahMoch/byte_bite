@@ -21,6 +21,9 @@ class _LoginPageState extends State<LoginPage> {
 
     // Check against registered users
     if (UserStorage.validateUser(username, password)) {
+      // Set current user
+      UserStorage.setCurrentUser(username);
+      
       // Get user role and navigate to appropriate dashboard
       String? role = UserStorage.getUserRole(username);
       if (role == 'Helper') {
@@ -139,24 +142,12 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
-
-                  // Sign Up Link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('New user? ', style: TextStyle(color: Colors.grey[500])),
-                      GestureDetector(
-                        onTap: () => Navigator.pushNamed(context, '/signup'),
-                        child: const Text(
-                          'Sign Up',
-                          style: TextStyle(
-                            color: Color(0xFF009661),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 16),
+                  
+                  // App info
+                  Text(
+                    'Byte & Bite POS v1.0',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                 ],
               ),

@@ -9,6 +9,7 @@ import '../model/bill_model.dart';
 import '../data/inventory_data.dart';
 import '../data/sales_data.dart';
 import '../data/bills_data.dart';
+import '../user_storage.dart';
 
 // Re-export for backward compatibility with other files
 export '../model/pos_item_model.dart';
@@ -35,11 +36,11 @@ class _POSHomePageState extends State<POSHomePage> {
   void initState() {
     super.initState();
     _pages = [
-      const DashboardView(),       // Index 0: Home
+      const DashboardView(),       // Index 0: Home (with low stock widget)
       const AnalyticsView(),       // Index 1: Analytics/Reports
       const POSGridView(),         // Index 2: POS (Center)
       const InventoryMenuView(),   // Index 3: Inventory + Menu
-      const NotificationsView(),   // Index 4: Notifications (Bills + Alerts)
+      const BillsRemindersView(),  // Index 4: Bills & Reminders (Owner only)
     ];
   }
 
@@ -77,7 +78,7 @@ class _POSHomePageState extends State<POSHomePage> {
             _buildNavItem(1, Icons.analytics_outlined, 'Analytics'),
             _buildNavItem(2, Icons.point_of_sale, 'POS', isCenter: true),
             _buildNavItem(3, Icons.inventory_2_outlined, 'Inventory'),
-            _buildNavItem(4, Icons.notifications_outlined, 'Alerts', hasBadge: true),
+            _buildNavItem(4, Icons.receipt_long_outlined, 'Bills'),
           ],
         ),
       ),
@@ -222,19 +223,32 @@ class _POSHomePageState extends State<POSHomePage> {
           ),
           Row(
             children: [
+              // Notifications icon
+              Stack(
+                children: [
+                  IconButton(
+                    onPressed: () => _showNotificationsSheet(context),
+                    icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                    tooltip: 'Notifications',
+                  ),
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               IconButton(
                 onPressed: () => _showSettingsBottomSheet(context),
                 icon: const Icon(Icons.settings_outlined, color: Colors.white),
                 tooltip: 'Settings',
-              ),
-              const SizedBox(width: 4),
-              ElevatedButton(
-                onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF006D47),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: const Text('Logout', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -256,6 +270,23 @@ class _POSHomePageState extends State<POSHomePage> {
         maxChildSize: 0.95,
         expand: false,
         builder: (context, scrollController) => SettingsSheet(scrollController: scrollController),
+      ),
+    );
+  }
+
+  void _showNotificationsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) => NotificationsSheet(scrollController: scrollController),
       ),
     );
   }
@@ -285,6 +316,7 @@ class _POSGridViewState extends State<POSGridView> {
   final List<CartItem> _cart = [];
   final TextEditingController _amountPaidController = TextEditingController();
   double _change = 0;
+  bool _isCartExpanded = true; // For collapsible cart
 
   @override
   void initState() {
@@ -385,6 +417,85 @@ class _POSGridViewState extends State<POSGridView> {
       paymentMethod: _selectedPayment,
     ));
 
+    // Show Sale Successful dialog first
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          width: 320,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Success Icon
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF009661).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_circle, color: Color(0xFF009661), size: 50),
+              ),
+              const SizedBox(height: 20),
+              const Text('Sale Successful!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF009661))),
+              const SizedBox(height: 8),
+              Text('Total: ₱$savedTotal.00', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+              if (change > 0) ...[
+                const SizedBox(height: 4),
+                Text('Change: ₱${change.toStringAsFixed(2)}', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+              ],
+              const SizedBox(height: 24),
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                        _showReceiptDialog(savedCart, savedTotal, amountPaid, change, now, receiptNumber);
+                      },
+                      icon: const Icon(Icons.receipt_long, size: 18),
+                      label: const Text('Print Receipt'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF009661),
+                        side: const BorderSide(color: Color(0xFF009661)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                        setState(() {
+                          _cart.clear();
+                          _amountPaidController.clear();
+                          _change = 0;
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF009661),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Done', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showReceiptDialog(List<CartItem> savedCart, int savedTotal, double amountPaid, double change, DateTime now, String receiptNumber) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -591,120 +702,162 @@ class _POSGridViewState extends State<POSGridView> {
             ),
             child: Column(
               children: [
-                // Cart items
-                Container(
-                  constraints: const BoxConstraints(maxHeight: 120),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    itemCount: _cart.length,
-                    itemBuilder: (context, index) => _cartItemRow(_cart[index], index),
+                // Collapsible Header
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isCartExpanded = !_isCartExpanded;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    color: const Color(0xFF009661).withOpacity(0.05),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.shopping_cart, color: Color(0xFF009661), size: 20),
+                            const SizedBox(width: 8),
+                            Text('Cart (${_cart.length} items)', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF009661),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text('₱$cartTotal', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                            ),
+                          ],
+                        ),
+                        Icon(_isCartExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up, color: Colors.grey),
+                      ],
+                    ),
                   ),
                 ),
-                const Divider(height: 1),
-                // Payment method
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                // Collapsible Content
+                AnimatedCrossFade(
+                  firstChild: const SizedBox.shrink(),
+                  secondChild: Column(
                     children: [
-                      const Text('Payment Method', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _paymentOption('Cash', Icons.payments_outlined),
-                          const SizedBox(width: 8),
-                          _paymentOption('GCash', Icons.phone_android),
-                          const SizedBox(width: 8),
-                          _paymentOption('QR', Icons.qr_code),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      // Total row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Total:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                          Text('₱$cartTotal.00', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF009661))),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // Amount paid with spinner look
+                      // Cart items
                       Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.grey.shade300),
+                        constraints: const BoxConstraints(maxHeight: 120),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          itemCount: _cart.length,
+                          itemBuilder: (context, index) => _cartItemRow(_cart[index], index),
                         ),
-                        child: Row(
+                      ),
+                      const Divider(height: 1),
+                      // Payment method
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _amountPaidController,
-                                keyboardType: TextInputType.number,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                                decoration: const InputDecoration(
-                                  hintText: '0',
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                ),
+                            const Text('Payment Method', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                _paymentOption('Cash', Icons.payments_outlined),
+                                const SizedBox(width: 8),
+                                _paymentOption('QR', Icons.qr_code),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Total row
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Total:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                                Text('₱$cartTotal.00', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF009661))),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            // Amount paid with spinner look
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _amountPaidController,
+                                      keyboardType: TextInputType.number,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                                      decoration: const InputDecoration(
+                                        hintText: '0',
+                                        border: InputBorder.none,
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                      ),
+                                    ),
+                                  ),
+                                  Column(
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () {
+                                          int current = int.tryParse(_amountPaidController.text) ?? 0;
+                                          _amountPaidController.text = (current + 1).toString();
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                          child: const Icon(Icons.arrow_drop_up, size: 20),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          int current = int.tryParse(_amountPaidController.text) ?? 0;
+                                          if (current > 0) {
+                                            _amountPaidController.text = (current - 1).toString();
+                                          }
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                          child: const Icon(Icons.arrow_drop_down, size: 20),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
-                            Column(
+                            const SizedBox(height: 10),
+                            // Change row
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    int current = int.tryParse(_amountPaidController.text) ?? 0;
-                                    _amountPaidController.text = (current + 1).toString();
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                    child: const Icon(Icons.arrow_drop_up, size: 20),
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    int current = int.tryParse(_amountPaidController.text) ?? 0;
-                                    if (current > 0) {
-                                      _amountPaidController.text = (current - 1).toString();
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                    child: const Icon(Icons.arrow_drop_down, size: 20),
-                                  ),
-                                ),
+                                const Text('Change:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                                Text('₱${_change.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF009661))),
                               ],
+                            ),
+                            const SizedBox(height: 10),
+                            // Complete button
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _completeTransaction,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF009661),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                child: const Text('Complete Transaction', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      // Change row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Change:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                          Text('₱${_change.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF009661))),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // Complete button
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _completeTransaction,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF009661),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          child: const Text('Complete Transaction', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                        ),
-                      ),
                     ],
                   ),
+                  crossFadeState: _isCartExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                  duration: const Duration(milliseconds: 200),
                 ),
               ],
             ),
@@ -3615,95 +3768,93 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Stack(
       children: [
-        // Stats Header
-        Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF009661), Color(0xFF00B377)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Column(
+          children: [
+            // Stats Header
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF009661), Color(0xFF00B377)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
                 children: [
-                  const Text('Inventory Overview', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                  GestureDetector(
-                    onTap: () => _showAddItemDialog(),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.add, size: 16, color: Colors.white),
-                          SizedBox(width: 4),
-                          Text('Add Item', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                    ),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Inventory Overview', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      _statBox('Total Items', '$totalItems', Icons.inventory_2_outlined),
+                      _statBox('Total Stock', '$totalStock', Icons.widgets_outlined),
+                      _statBox('Low Stock', '$lowStockCount', Icons.warning_amber_outlined),
+                      _statBox('Value', '₱${inventoryValue.toStringAsFixed(0)}', Icons.attach_money),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Row(
+            ),
+            // Search & Filters
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
                 children: [
-                  _statBox('Total Items', '$totalItems', Icons.inventory_2_outlined),
-                  _statBox('Total Stock', '$totalStock', Icons.widgets_outlined),
-                  _statBox('Low Stock', '$lowStockCount', Icons.warning_amber_outlined),
-                  _statBox('Value', '₱${inventoryValue.toStringAsFixed(0)}', Icons.attach_money),
+                  TextField(
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    decoration: InputDecoration(
+                      hintText: 'Search products...',
+                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _filterChip('All', _selectedFilter == 'All', () => setState(() => _selectedFilter = 'All')),
+                      const SizedBox(width: 8),
+                      _filterChip('Low Stock', _selectedFilter == 'Low Stock', () => setState(() => _selectedFilter = 'Low Stock'), color: Colors.red),
+                      const SizedBox(width: 8),
+                      _filterChip('In Stock', _selectedFilter == 'In Stock', () => setState(() => _selectedFilter = 'In Stock'), color: Colors.green),
+                      const Spacer(),
+                      _categoryDropdown(),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
-        // Search & Filters
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              TextField(
-                onChanged: (v) => setState(() => _searchQuery = v),
-                decoration: InputDecoration(
-                  hintText: 'Search products...',
-                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
+            ),
+            const SizedBox(height: 12),
+            // Items List
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: filteredItems.length,
+                itemBuilder: (context, index) => _inventoryCard(filteredItems[index]),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  _filterChip('All', _selectedFilter == 'All', () => setState(() => _selectedFilter = 'All')),
-                  const SizedBox(width: 8),
-                  _filterChip('Low Stock', _selectedFilter == 'Low Stock', () => setState(() => _selectedFilter = 'Low Stock'), color: Colors.red),
-                  const SizedBox(width: 8),
-                  _filterChip('In Stock', _selectedFilter == 'In Stock', () => setState(() => _selectedFilter = 'In Stock'), color: Colors.green),
-                  const Spacer(),
-                  _categoryDropdown(),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
-        // Items List
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: filteredItems.length,
-            itemBuilder: (context, index) => _inventoryCard(filteredItems[index]),
+        // FAB for adding items
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: FloatingActionButton.extended(
+            onPressed: () => _showAddItemDialog(),
+            backgroundColor: const Color(0xFF009661),
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text('Add Item', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
           ),
         ),
       ],
@@ -3971,138 +4122,80 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
   }
 }
 
-// --- NOTIFICATIONS VIEW (Bills + Low Stock Alerts) ---
-class NotificationsView extends StatefulWidget {
-  const NotificationsView({super.key});
+// --- BILLS & REMINDERS VIEW (Owner only) ---
+class BillsRemindersView extends StatefulWidget {
+  const BillsRemindersView({super.key});
   @override
-  State<NotificationsView> createState() => _NotificationsViewState();
+  State<BillsRemindersView> createState() => _BillsRemindersViewState();
 }
 
-class _NotificationsViewState extends State<NotificationsView> {
-  String _selectedTab = 'All';
-
+class _BillsRemindersViewState extends State<BillsRemindersView> {
   // Bills data - starts empty
   final List<Map<String, dynamic>> _bills = [];
 
-  List<Map<String, dynamic>> get lowStockAlerts {
-    return InventoryData.items
-        .where((i) => i.stock <= i.lowStockAlert)
-        .map((i) => {
-              'name': i.name,
-              'message': 'Only ${i.stock} ${i.unit} left',
-              'type': 'lowstock',
-              'item': i,
-            })
-        .toList();
-  }
-
-  List<Map<String, dynamic>> get allNotifications {
-    List<Map<String, dynamic>> all = [];
-    all.addAll(lowStockAlerts);
-    all.addAll(_bills.where((b) => !b['isPaid']).map((b) => {...b, 'type': 'bill_due'}));
-    return all;
-  }
+  int get unpaidBills => _bills.where((b) => !b['isPaid']).length;
+  double get totalUnpaid => _bills.where((b) => !b['isPaid']).fold(0, (sum, b) => sum + (b['amount'] as double));
 
   @override
   Widget build(BuildContext context) {
-    int lowStockCount = lowStockAlerts.length;
-    int unpaidBills = _bills.where((b) => !b['isPaid']).length;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Notifications', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(12)),
-                child: Text('${lowStockCount + unpaidBills}', style: const TextStyle(fontSize: 14, color: Colors.red, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Tabs
-          Row(
-            children: [
-              _tabChip('All', _selectedTab == 'All'),
-              const SizedBox(width: 8),
-              _tabChip('Low Stock', _selectedTab == 'Low Stock', badge: lowStockCount),
-              const SizedBox(width: 8),
-              _tabChip('Bills', _selectedTab == 'Bills'),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // Summary Cards
-          Row(
-            children: [
-              Expanded(
-                child: _summaryCard('Low Stock Items', '$lowStockCount', Icons.warning_amber, Colors.orange),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _summaryCard('Unpaid Bills', '$unpaidBills', Icons.receipt_long, Colors.red),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          // Notifications List
-          if (_selectedTab == 'All' || _selectedTab == 'Low Stock') ...[
-            if (lowStockAlerts.isNotEmpty) ...[
-              const Text('Low Stock Alerts', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
-              const SizedBox(height: 12),
-              ...lowStockAlerts.map((alert) => _lowStockCard(alert)),
+              // Header
+              const Text('Bills & Reminders', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
               const SizedBox(height: 16),
-            ],
-          ],
-          if (_selectedTab == 'All' || _selectedTab == 'Bills') ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Bill Reminders', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
-                TextButton.icon(
-                  onPressed: () => _showAddBillDialog(),
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Add Bill'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ..._bills.map((bill) => _billCard(bill)),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _tabChip(String label, bool active, {int? badge}) {
-    return GestureDetector(
-      onTap: () => setState(() => _selectedTab = label),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: active ? const Color(0xFF1F2937) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: active ? const Color(0xFF1F2937) : Colors.grey.shade300),
-        ),
-        child: Row(
-          children: [
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: active ? Colors.white : Colors.grey[600])),
-            if (badge != null && badge > 0) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
-                child: Text('$badge', style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+              // Summary Cards
+              Row(
+                children: [
+                  Expanded(
+                    child: _summaryCard('Unpaid Bills', '$unpaidBills', Icons.receipt_long, Colors.orange),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _summaryCard('Total Due', '₱${totalUnpaid.toStringAsFixed(0)}', Icons.attach_money, Colors.red),
+                  ),
+                ],
               ),
+              const SizedBox(height: 24),
+              // Bills List
+              if (_bills.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(40),
+                  child: Column(
+                    children: [
+                      Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey[300]),
+                      const SizedBox(height: 16),
+                      Text('No bills yet', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+                      const SizedBox(height: 8),
+                      Text('Tap + to add a bill reminder', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                    ],
+                  ),
+                )
+              else ...[
+                const Text('All Bills', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
+                const SizedBox(height: 12),
+                ..._bills.map((bill) => _billCard(bill)),
+              ],
+              const SizedBox(height: 80), // Space for FAB
             ],
-          ],
+          ),
         ),
-      ),
+        // FAB for adding bills
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: FloatingActionButton.extended(
+            onPressed: () => _showAddBillDialog(),
+            backgroundColor: const Color(0xFF009661),
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text('Add Bill', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+          ),
+        ),
+      ],
     );
   }
 
@@ -4127,46 +4220,6 @@ class _NotificationsViewState extends State<NotificationsView> {
     );
   }
 
-  Widget _lowStockCard(Map<String, dynamic> alert) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.warning_amber, color: Colors.orange, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(alert['name'], style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                Text(alert['message'], style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              final state = context.findAncestorStateOfType<_POSHomePageState>();
-              if (state != null) {
-                state.setState(() => state._currentIndex = 3);
-              }
-            },
-            child: const Text('Restock', style: TextStyle(color: Color(0xFF009661), fontSize: 12)),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _billCard(Map<String, dynamic> bill) {
     bool isPaid = bill['isPaid'] ?? false;
     return Container(
@@ -4176,16 +4229,19 @@ class _NotificationsViewState extends State<NotificationsView> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: isPaid ? Colors.green.shade200 : Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isPaid ? Colors.green.shade50 : Colors.grey.shade50,
+              color: isPaid ? Colors.green.shade50 : Colors.orange.shade50,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(Icons.receipt_long, color: isPaid ? Colors.green : Colors.grey, size: 22),
+            child: Icon(Icons.receipt_long, color: isPaid ? Colors.green : Colors.orange, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -4205,7 +4261,29 @@ class _NotificationsViewState extends State<NotificationsView> {
               ],
             ),
           ),
-          Text('₱${bill['amount'].toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('₱${bill['amount'].toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              const SizedBox(height: 4),
+              if (!isPaid)
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      bill['isPaid'] = true;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF009661),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text('Mark Paid', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
@@ -4219,6 +4297,7 @@ class _NotificationsViewState extends State<NotificationsView> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Add Bill Reminder'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -4255,15 +4334,31 @@ class _NotificationsViewState extends State<NotificationsView> {
   }
 }
 
-// --- SETTINGS SHEET ---
-class SettingsSheet extends StatelessWidget {
+// --- NOTIFICATIONS SHEET (System Alerts) ---
+class NotificationsSheet extends StatelessWidget {
   final ScrollController scrollController;
-  const SettingsSheet({super.key, required this.scrollController});
+  const NotificationsSheet({super.key, required this.scrollController});
+
+  List<Map<String, dynamic>> get lowStockAlerts {
+    return InventoryData.items
+        .where((i) => i.stock <= i.lowStockAlert)
+        .map((i) => {
+              'name': i.name,
+              'message': 'Only ${i.stock} ${i.unit} left',
+              'type': 'lowstock',
+              'item': i,
+            })
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       child: ListView(
         controller: scrollController,
         children: [
@@ -4277,12 +4372,124 @@ class SettingsSheet extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           // Title
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Notifications', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(12)),
+                child: Text('${lowStockAlerts.length}', style: const TextStyle(fontSize: 14, color: Colors.red, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Low Stock Alerts
+          if (lowStockAlerts.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                children: [
+                  Icon(Icons.check_circle_outline, size: 64, color: Colors.green[300]),
+                  const SizedBox(height: 16),
+                  Text('All clear!', style: TextStyle(color: Colors.grey[600], fontSize: 18, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Text('No alerts at the moment', style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+                ],
+              ),
+            )
+          else ...[
+            const Text('Low Stock Alerts', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
+            const SizedBox(height: 12),
+            ...lowStockAlerts.map((alert) => _alertCard(alert)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _alertCard(Map<String, dynamic> alert) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.shade200),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.warning_amber, color: Colors.orange, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(alert['name'], style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                Text(alert['message'], style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right, color: Colors.grey),
+        ],
+      ),
+    );
+  }
+}
+
+// --- SETTINGS SHEET ---
+class SettingsSheet extends StatefulWidget {
+  final ScrollController scrollController;
+  const SettingsSheet({super.key, required this.scrollController});
+
+  @override
+  State<SettingsSheet> createState() => _SettingsSheetState();
+}
+
+class _SettingsSheetState extends State<SettingsSheet> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: ListView(
+        controller: widget.scrollController,
+        children: [
+          // Handle
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Title
           const Text('Settings', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
+          
+          // User Management Section (Owner only)
+          _sectionTitle('User Management'),
+          _settingsTile(context, Icons.person_add_outlined, 'Add Helper', 'Create a new helper account', onTap: () {
+            Navigator.pop(context);
+            _showAddHelperDialog(context);
+          }),
+          _settingsTile(context, Icons.people_outline, 'Manage Helpers', 'View and manage helper accounts', onTap: () {
+            Navigator.pop(context);
+            _showManageHelpersDialog(context);
+          }),
+          const SizedBox(height: 20),
+          
           // Account Section
           _sectionTitle('Account'),
           _settingsTile(context, Icons.person_outline, 'Profile', 'Manage your account'),
-          _settingsTile(context, Icons.lock_outline, 'Change Password', 'Update your password'),
+          _settingsTile(context, Icons.lock_outline, 'Change Password', 'Update your password', onTap: () {
+            Navigator.pop(context);
+            _showChangePasswordDialog(context);
+          }),
           const SizedBox(height: 20),
           // Data Section
           _sectionTitle('Data & Backup'),
@@ -4302,6 +4509,14 @@ class SettingsSheet extends StatelessWidget {
           _settingsTile(context, Icons.help_outline, 'Help & Support', 'Get help with the app'),
           _settingsTile(context, Icons.privacy_tip_outlined, 'Privacy Policy', 'View our privacy policy'),
           _settingsTile(context, Icons.info_outline, 'About', 'Byte & Bite POS v1.0'),
+          const SizedBox(height: 20),
+          
+          // Logout Section
+          _sectionTitle('Session'),
+          _settingsTile(context, Icons.logout, 'Logout', 'Sign out of your account', isDestructive: true, onTap: () {
+            Navigator.pop(context);
+            _showLogoutConfirmation(context);
+          }),
           const SizedBox(height: 30),
         ],
       ),
@@ -4330,6 +4545,479 @@ class SettingsSheet extends StatelessWidget {
       subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),
       onTap: onTap ?? () {},
+    );
+  }
+
+  void _showAddHelperDialog(BuildContext context) {
+    final usernameController = TextEditingController();
+    final passwordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          constraints: const BoxConstraints(maxWidth: 340),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Add Helper', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(Icons.close, size: 24, color: Colors.grey),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: usernameController,
+                decoration: InputDecoration(
+                  labelText: 'Username',
+                  prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF009661)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF009661)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: confirmPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Confirm Password',
+                  prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF009661)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        String username = usernameController.text.trim();
+                        String password = passwordController.text.trim();
+                        String confirmPassword = confirmPasswordController.text.trim();
+
+                        if (username.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please fill in all fields'), backgroundColor: Colors.red),
+                          );
+                          return;
+                        }
+
+                        if (password.length < 6) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Password must be at least 6 characters'), backgroundColor: Colors.red),
+                          );
+                          return;
+                        }
+
+                        if (password != confirmPassword) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Passwords do not match'), backgroundColor: Colors.red),
+                          );
+                          return;
+                        }
+
+                        if (UserStorage.userExists(username)) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Username already exists'), backgroundColor: Colors.red),
+                          );
+                          return;
+                        }
+
+                        UserStorage.addHelper(username, password);
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Helper account created successfully'), backgroundColor: Color(0xFF009661)),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF009661),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Add Helper', style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showManageHelpersDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final helpers = UserStorage.getHelpers();
+          
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              constraints: const BoxConstraints(maxWidth: 380, maxHeight: 500),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Manage Helpers', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: const Icon(Icons.close, size: 24, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  if (helpers.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          Icon(Icons.people_outline, size: 64, color: Colors.grey[300]),
+                          const SizedBox(height: 16),
+                          Text('No helpers yet', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+                          const SizedBox(height: 8),
+                          Text('Add helpers from Settings', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                        ],
+                      ),
+                    )
+                  else
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: helpers.length,
+                        itemBuilder: (context, index) {
+                          final helper = helpers[index];
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF009661).withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.person, color: Color(0xFF009661)),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(helper['username']!, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                      const Text('Helper', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.lock_reset, color: Color(0xFF009661)),
+                                  tooltip: 'Reset Password',
+                                  onPressed: () => _showResetPasswordDialog(context, helper['username']!, setDialogState),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                  tooltip: 'Delete',
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: const Text('Delete Helper?'),
+                                        content: Text('Are you sure you want to delete ${helper['username']}?'),
+                                        actions: [
+                                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                                          TextButton(
+                                            onPressed: () {
+                                              UserStorage.deleteHelper(helper['username']!);
+                                              Navigator.pop(ctx);
+                                              setDialogState(() {});
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('Helper deleted'), backgroundColor: Color(0xFF009661)),
+                                              );
+                                            },
+                                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showResetPasswordDialog(BuildContext context, String username, void Function(void Function()) setDialogState) {
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          constraints: const BoxConstraints(maxWidth: 320),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Reset Password for $username', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              TextField(
+                controller: newPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'New Password',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: confirmPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Confirm Password',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        String newPassword = newPasswordController.text.trim();
+                        String confirmPassword = confirmPasswordController.text.trim();
+
+                        if (newPassword.isEmpty || confirmPassword.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please fill in all fields'), backgroundColor: Colors.red),
+                          );
+                          return;
+                        }
+
+                        if (newPassword.length < 6) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Password must be at least 6 characters'), backgroundColor: Colors.red),
+                          );
+                          return;
+                        }
+
+                        if (newPassword != confirmPassword) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Passwords do not match'), backgroundColor: Colors.red),
+                          );
+                          return;
+                        }
+
+                        UserStorage.resetHelperPassword(username, newPassword);
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Password reset successfully'), backgroundColor: Color(0xFF009661)),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF009661)),
+                      child: const Text('Reset', style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context) {
+    final oldPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          constraints: const BoxConstraints(maxWidth: 320),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Change Password', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              TextField(
+                controller: oldPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Current Password',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: newPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'New Password',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: confirmPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Confirm New Password',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        String oldPassword = oldPasswordController.text.trim();
+                        String newPassword = newPasswordController.text.trim();
+                        String confirmPassword = confirmPasswordController.text.trim();
+
+                        if (oldPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please fill in all fields'), backgroundColor: Colors.red),
+                          );
+                          return;
+                        }
+
+                        if (newPassword.length < 6) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Password must be at least 6 characters'), backgroundColor: Colors.red),
+                          );
+                          return;
+                        }
+
+                        if (newPassword != confirmPassword) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Passwords do not match'), backgroundColor: Colors.red),
+                          );
+                          return;
+                        }
+
+                        String? currentUser = UserStorage.currentUser;
+                        if (currentUser != null && UserStorage.changePassword(currentUser, oldPassword, newPassword)) {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Password changed successfully'), backgroundColor: Color(0xFF009661)),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Current password is incorrect'), backgroundColor: Colors.red),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF009661)),
+                      child: const Text('Change', style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              UserStorage.logout();
+              Navigator.pop(ctx);
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Logout', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 }

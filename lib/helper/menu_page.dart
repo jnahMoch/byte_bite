@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
@@ -19,23 +21,9 @@ class MenuPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text("Byte & Bite POS", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            Text("Helper (helper)", style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal)),
+            Text("Helper", style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal)),
           ],
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16, top: 20, bottom: 20),
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF006B4A),
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: const Text("Logout"),
-            ),
-          )
-        ],
       ),
       body: const MenuContent(),
     );

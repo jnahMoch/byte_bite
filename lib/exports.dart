@@ -1,5 +1,6 @@
 /// Barrel file - export all models and data for easy importing
 /// Usage: import 'package:byte_bite/exports.dart';
+library;
 
 // Models
 export 'model/pos_item_model.dart';

@@ -3,6 +3,7 @@ import 'package:byte_bite/helper/homepage.dart';
 import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'signup_page.dart';
+import 'user_storage.dart';
 
 
 void main() {
@@ -21,8 +22,8 @@ class ByteAndBiteApp extends StatelessWidget {
         primarySwatch: Colors.teal,
         useMaterial3: true,
       ),
-      // Set the initial route to Login
-      home: const LoginPage(),
+      // Check if owner is registered to determine initial route
+      home: UserStorage.isFirstTimeSetup ? const SignUpPage() : const LoginPage(),
       // Define routes for easy navigation
       routes: {
         '/dashboard': (context) => const POSHomePage(),
