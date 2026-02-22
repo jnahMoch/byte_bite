@@ -1,10 +1,11 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:byte_bite/model/pos_item_model.dart';
 import 'package:flutter/material.dart';
 import 'menu_page.dart';
+import '../owner/homepage.dart' show InventoryData, SalesData;
 import '../user_storage.dart';
 
-// InventoryItem Model
 class InventoryItem {
   final String name;
   final double price;
@@ -22,50 +23,6 @@ class InventoryItem {
     required this.lowStockAlert,
     required this.category,
     this.image,
-  });
-}
-
-// InventoryData Storage
-class InventoryData {
-  static List<InventoryItem> items = [
-    InventoryItem(
-      name: 'Fried Chicken',
-      price: 150.0,
-      stock: 10,
-      unit: 'pcs',
-      lowStockAlert: 5,
-      category: 'Main Course',
-      image: 'assets/images/fried_chicken.png',
-    ),
-    InventoryItem(
-      name: 'Rice',
-      price: 50.0,
-      stock: 8,
-      unit: 'cup',
-      lowStockAlert: 3,
-      category: 'Sides',
-      image: 'assets/images/rice.png',
-    ),
-  ];
-}
-
-// SalesData Storage
-class SalesData {
-  static List<Transaction> transactions = [];
-}
-
-// Transaction Model
-class Transaction {
-  final String id;
-  final DateTime dateTime;
-  final double amount;
-  final String paymentMethod;
-
-  Transaction({
-    required this.id,
-    required this.dateTime,
-    required this.amount,
-    required this.paymentMethod,
   });
 }
 
@@ -275,6 +232,8 @@ class _HelperHomePageState extends State<HelperHomePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      enableDrag: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.7,
@@ -521,7 +480,7 @@ class HelperDashboardView extends StatelessWidget {
             ...InventoryData.items
                 .where((item) => item.stock <= item.lowStockAlert)
                 .take(3)
-                .map((item) => _lowStockItem(item)),
+                .map((item) => _lowStockItem(item as InventoryItem)),
             if (_lowStockCount > 3)
               TextButton(
                 onPressed: () => onNavigate?.call(3), // Navigate to Notifications
@@ -760,7 +719,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
   }
   
   List<InventoryItem> get _filteredItems {
-    var items = InventoryData.items.toList();
+    var items = InventoryData.items.cast<InventoryItem>().toList();
     if (_selectedCategory != 'All') {
       items = items.where((i) => i.category == _selectedCategory).toList();
     }
@@ -1003,7 +962,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                       lowStockAlert: item.lowStockAlert,
                       category: item.category,
                       image: item.image,
-                    );
+                    ) as POSItem;
                   }
                 });
                 Navigator.pop(context);

@@ -1,6 +1,8 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 // Import from separated files
 import '../model/pos_item_model.dart';
@@ -32,11 +34,17 @@ class _POSHomePageState extends State<POSHomePage> {
   // 1. All Main Views Connected Here
   late final List<Widget> _pages;
 
+  void _navigateToPage(int pageIndex) {
+    setState(() {
+      _currentIndex = pageIndex;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _pages = [
-      const DashboardView(),       // Index 0: Home (with low stock widget)
+      DashboardView(onNavigate: _navigateToPage),       // Index 0: Home (with low stock widget)
       const AnalyticsView(),       // Index 1: Analytics/Reports
       const POSGridView(),         // Index 2: POS (Center)
       const InventoryMenuView(),   // Index 3: Inventory + Menu
@@ -261,6 +269,9 @@ class _POSHomePageState extends State<POSHomePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      enableDrag: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -278,6 +289,9 @@ class _POSHomePageState extends State<POSHomePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      enableDrag: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -2366,100 +2380,239 @@ class _MenuViewState extends State<MenuView> {
     final priceController = TextEditingController();
     final stockController = TextEditingController();
     final unitController = TextEditingController();
-    final alertController = TextEditingController();
+    final alertController = TextEditingController(text: '10');
     String selectedCategory = 'Food';
+    String? selectedImagePath;
+    final ImagePicker picker = ImagePicker();
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Menu Item'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Item Name',
-                  border: OutlineInputBorder(),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: priceController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Price',
-                  prefixText: '₱',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 20),
+                // Title
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF009661), Color(0xFF00B377)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.add_box_rounded, color: Colors.white, size: 24),
+                    ),
+                    const SizedBox(width: 16),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Add Menu Item', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                        Text('Fill in the product details', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                      ],
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: stockController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Initial Stock',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 24),
+                // Image Picker
+                const Text('Product Image', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () async {
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.white,
+                      enableDrag: true,
+                      useSafeArea: true,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      builder: (ctx) => Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+                              const SizedBox(height: 20),
+                              const Text('Choose Image Source', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 20),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () async {
+                                        Navigator.pop(ctx);
+                                        final XFile? image = await picker.pickImage(source: ImageSource.camera, maxWidth: 512, maxHeight: 512, imageQuality: 80);
+                                        if (image != null) setModalState(() => selectedImagePath = image.path);
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(24),
+                                        decoration: BoxDecoration(color: const Color(0xFF009661).withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                                        child: const Column(
+                                          children: [
+                                            Icon(Icons.camera_alt_rounded, size: 40, color: Color(0xFF009661)),
+                                            SizedBox(height: 8),
+                                            Text('Camera', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF009661))),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () async {
+                                        Navigator.pop(ctx);
+                                        final XFile? image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 512, maxHeight: 512, imageQuality: 80);
+                                        if (image != null) setModalState(() => selectedImagePath = image.path);
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(24),
+                                        decoration: BoxDecoration(color: const Color(0xFF3B82F6).withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                                        child: const Column(
+                                          children: [
+                                            Icon(Icons.photo_library_rounded, size: 40, color: Color(0xFF3B82F6)),
+                                            SizedBox(height: 8),
+                                            Text('Gallery', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF3B82F6))),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: selectedImagePath != null ? const Color(0xFF009661) : Colors.grey.shade300, width: selectedImagePath != null ? 2 : 1),
+                    ),
+                    child: selectedImagePath != null
+                        ? Stack(
+                            children: [
+                              ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.file(File(selectedImagePath!), width: double.infinity, height: double.infinity, fit: BoxFit.cover)),
+                              Positioned(
+                                top: 8, right: 8,
+                                child: GestureDetector(
+                                  onTap: () => setModalState(() => selectedImagePath = null),
+                                  child: Container(padding: const EdgeInsets.all(6), decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle), child: const Icon(Icons.close, color: Colors.white, size: 16)),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFF009661).withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.add_photo_alternate_outlined, size: 28, color: Color(0xFF009661))),
+                              const SizedBox(height: 8),
+                              const Text('Tap to add image', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
+                            ],
+                          ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: unitController,
-                decoration: const InputDecoration(
-                  labelText: 'Unit (e.g., pieces, servings)',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                // Name
+                TextField(controller: nameController, decoration: InputDecoration(labelText: 'Item Name', prefixIcon: const Icon(Icons.fastfood_outlined, color: Color(0xFF009661)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+                const SizedBox(height: 12),
+                // Price & Stock
+                Row(
+                  children: [
+                    Expanded(child: TextField(controller: priceController, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Price', prefixText: '₱', prefixIcon: const Icon(Icons.attach_money, color: Color(0xFF009661)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))))),
+                    const SizedBox(width: 12),
+                    Expanded(child: TextField(controller: stockController, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Stock', prefixIcon: const Icon(Icons.inventory_2_outlined, color: Color(0xFF009661)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))))),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: alertController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Low Stock Alert',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 12),
+                // Unit & Alert
+                Row(
+                  children: [
+                    Expanded(child: TextField(controller: unitController, decoration: InputDecoration(labelText: 'Unit', hintText: 'pcs', prefixIcon: const Icon(Icons.straighten, color: Color(0xFF009661)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))))),
+                    const SizedBox(width: 12),
+                    Expanded(child: TextField(controller: alertController, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Low Alert', prefixIcon: const Icon(Icons.warning_amber_rounded, color: Color(0xFF009661)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))))),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 12),
+                // Category
+                DropdownButtonFormField<String>(
+                  value: selectedCategory,
+                  decoration: InputDecoration(labelText: 'Category', prefixIcon: const Icon(Icons.category, color: Color(0xFF009661)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                  items: ['Food', 'Beverage'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  onChanged: (v) => setModalState(() => selectedCategory = v!),
                 ),
-                items: ['Food', 'Beverage']
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (v) => selectedCategory = v!,
-              ),
-            ],
+                const SizedBox(height: 24),
+                // Buttons
+                Row(
+                  children: [
+                    Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('Cancel'))),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (nameController.text.isNotEmpty && priceController.text.isNotEmpty) {
+                            setState(() {
+                              InventoryData.items.add(POSItem(
+                                name: nameController.text,
+                                price: int.tryParse(priceController.text) ?? 0,
+                                stock: int.tryParse(stockController.text) ?? 0,
+                                unit: unitController.text.isNotEmpty ? unitController.text : 'pcs',
+                                category: selectedCategory,
+                                lowStockAlert: int.tryParse(alertController.text) ?? 10,
+                                image: selectedImagePath,
+                              ));
+                            });
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${nameController.text} added!'), backgroundColor: const Color(0xFF009661)));
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF009661), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                        child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.add_circle_outline, color: Colors.white), SizedBox(width: 8), Text('Add Item', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))]),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (nameController.text.isNotEmpty && priceController.text.isNotEmpty) {
-                setState(() {
-                  InventoryData.items.add(POSItem(
-                    name: nameController.text,
-                    price: int.tryParse(priceController.text) ?? 0,
-                    stock: int.tryParse(stockController.text) ?? 0,
-                    unit: unitController.text.isNotEmpty ? unitController.text : 'pieces',
-                    category: selectedCategory,
-                    lowStockAlert: int.tryParse(alertController.text) ?? 10,
-                  ));
-                });
-                Navigator.pop(context);
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF009661)),
-            child: const Text('Add', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }
@@ -3114,7 +3267,8 @@ class DataManagementView extends StatelessWidget {
 
 // --- SUB-VIEW 6: DASHBOARD (HOME) ---
 class DashboardView extends StatelessWidget {
-  const DashboardView({super.key});
+  final Function(int)? onNavigate;
+  const DashboardView({super.key, this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -3287,7 +3441,7 @@ class DashboardView extends StatelessWidget {
                   Icons.point_of_sale,
                   'New Sale',
                   const Color(0xFF009661),
-                  1, // Navigate to POS
+                  2, // Navigate to POS (index 2)
                 ),
               ),
               const SizedBox(width: 12),
@@ -3297,7 +3451,7 @@ class DashboardView extends StatelessWidget {
                   Icons.add_box_outlined,
                   'Add Stock',
                   const Color(0xFF3B82F6),
-                  2, // Navigate to Inventory
+                  3, // Navigate to Inventory (index 3)
                 ),
               ),
               const SizedBox(width: 12),
@@ -3307,7 +3461,7 @@ class DashboardView extends StatelessWidget {
                   Icons.bar_chart,
                   'Reports',
                   const Color(0xFF8B5CF6),
-                  3, // Navigate to Reports
+                  1, // Navigate to Reports (index 1)
                 ),
               ),
             ],
@@ -3442,11 +3596,7 @@ class DashboardView extends StatelessWidget {
   Widget _actionCard(BuildContext context, IconData icon, String label, Color color, int pageIndex) {
     return GestureDetector(
       onTap: () {
-        // Navigate to the page by finding the parent state
-        final state = context.findAncestorStateOfType<_POSHomePageState>();
-        if (state != null) {
-          (state as dynamic)._updateCurrentIndex(pageIndex);
-        }
+        onNavigate?.call(pageIndex);
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -4067,56 +4217,494 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
     final unitC = TextEditingController();
     final alertC = TextEditingController(text: '10');
     String category = 'Food';
+    String? selectedImagePath;
+    final ImagePicker picker = ImagePicker();
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add New Item'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Title with Icon
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF009661), Color(0xFF00B377)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.add_box_rounded, color: Colors.white, size: 24),
+                    ),
+                    const SizedBox(width: 16),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Add New Item',
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
+                        ),
+                        Text(
+                          'Fill in the product details',
+                          style: TextStyle(fontSize: 13, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Image Picker Section
+                const Text(
+                  'Product Image',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () async {
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.white,
+                      enableDrag: true,
+                      useSafeArea: true,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      builder: (ctx) => Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              const Text(
+                                'Choose Image Source',
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 20),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () async {
+                                        Navigator.pop(ctx);
+                                        final XFile? image = await picker.pickImage(
+                                          source: ImageSource.camera,
+                                          maxWidth: 512,
+                                          maxHeight: 512,
+                                          imageQuality: 80,
+                                        );
+                                        if (image != null) {
+                                          setModalState(() => selectedImagePath = image.path);
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(24),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF009661).withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                        child: const Column(
+                                          children: [
+                                            Icon(Icons.camera_alt_rounded, size: 40, color: Color(0xFF009661)),
+                                            SizedBox(height: 8),
+                                            Text('Camera', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF009661))),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () async {
+                                        Navigator.pop(ctx);
+                                        final XFile? image = await picker.pickImage(
+                                          source: ImageSource.gallery,
+                                          maxWidth: 512,
+                                          maxHeight: 512,
+                                          imageQuality: 80,
+                                        );
+                                        if (image != null) {
+                                          setModalState(() => selectedImagePath = image.path);
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(24),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF3B82F6).withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                        child: const Column(
+                                          children: [
+                                            Icon(Icons.photo_library_rounded, size: 40, color: Color(0xFF3B82F6)),
+                                            SizedBox(height: 8),
+                                            Text('Gallery', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF3B82F6))),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: selectedImagePath != null ? const Color(0xFF009661) : Colors.grey.shade300,
+                        width: selectedImagePath != null ? 2 : 1,
+                        strokeAlign: BorderSide.strokeAlignInside,
+                      ),
+                    ),
+                    child: selectedImagePath != null
+                        ? Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: Image.file(
+                                  File(selectedImagePath!),
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: GestureDetector(
+                                  onTap: () => setModalState(() => selectedImagePath = null),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.close, color: Colors.white, size: 16),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 8,
+                                left: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF009661),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.check_circle, color: Colors.white, size: 14),
+                                      SizedBox(width: 4),
+                                      Text('Image added', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF009661).withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.add_photo_alternate_outlined, size: 32, color: Color(0xFF009661)),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Tap to add product image',
+                                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Camera or Gallery',
+                                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Product Name
+                _buildInputField(
+                  controller: nameC,
+                  label: 'Product Name',
+                  hint: 'e.g., Fried Chicken',
+                  icon: Icons.fastfood_outlined,
+                ),
+                const SizedBox(height: 16),
+                // Price & Stock Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInputField(
+                        controller: priceC,
+                        label: 'Price (₱)',
+                        hint: '0.00',
+                        icon: Icons.attach_money,
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildInputField(
+                        controller: stockC,
+                        label: 'Stock',
+                        hint: '0',
+                        icon: Icons.inventory_2_outlined,
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Unit & Low Stock Alert Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInputField(
+                        controller: unitC,
+                        label: 'Unit',
+                        hint: 'pcs, cups, etc.',
+                        icon: Icons.straighten,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildInputField(
+                        controller: alertC,
+                        label: 'Low Alert',
+                        hint: '10',
+                        icon: Icons.warning_amber_rounded,
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Category Selection
+                const Text(
+                  'Category',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _buildCategoryChip('Food', category, Icons.restaurant, (val) => setModalState(() => category = val)),
+                    const SizedBox(width: 12),
+                    _buildCategoryChip('Beverage', category, Icons.local_cafe, (val) => setModalState(() => category = val)),
+                  ],
+                ),
+                const SizedBox(height: 28),
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: Colors.grey),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (nameC.text.isNotEmpty && priceC.text.isNotEmpty) {
+                            setState(() {
+                              InventoryData.items.add(POSItem(
+                                name: nameC.text,
+                                price: int.tryParse(priceC.text) ?? 0,
+                                stock: int.tryParse(stockC.text) ?? 0,
+                                unit: unitC.text.isEmpty ? 'pcs' : unitC.text,
+                                category: category,
+                                lowStockAlert: int.tryParse(alertC.text) ?? 10,
+                                image: selectedImagePath,
+                              ));
+                            });
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    const Icon(Icons.check_circle, color: Colors.white),
+                                    const SizedBox(width: 8),
+                                    Text('${nameC.text} added successfully!'),
+                                  ],
+                                ),
+                                backgroundColor: const Color(0xFF009661),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Row(
+                                  children: [
+                                    Icon(Icons.error_outline, color: Colors.white),
+                                    SizedBox(width: 8),
+                                    Text('Please fill in Name and Price'),
+                                  ],
+                                ),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF009661),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_circle_outline, color: Colors.white, size: 20),
+                            SizedBox(width: 8),
+                            Text('Add Item', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: Colors.grey[400]),
+              prefixIcon: Icon(icon, color: const Color(0xFF009661), size: 20),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryChip(String label, String selected, IconData icon, Function(String) onSelect) {
+    final isSelected = label == selected;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onSelect(label),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            gradient: isSelected 
+                ? const LinearGradient(colors: [Color(0xFF009661), Color(0xFF00B377)])
+                : null,
+            color: isSelected ? null : Colors.grey[100],
+            borderRadius: BorderRadius.circular(12),
+            border: isSelected ? null : Border.all(color: Colors.grey.shade300),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              TextField(controller: nameC, decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder())),
-              const SizedBox(height: 12),
-              TextField(controller: priceC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Price', border: OutlineInputBorder())),
-              const SizedBox(height: 12),
-              TextField(controller: stockC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Stock', border: OutlineInputBorder())),
-              const SizedBox(height: 12),
-              TextField(controller: unitC, decoration: const InputDecoration(labelText: 'Unit (e.g., pieces)', border: OutlineInputBorder())),
-              const SizedBox(height: 12),
-              TextField(controller: alertC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Low Stock Alert', border: OutlineInputBorder())),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: category,
-                decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
-                items: ['Food', 'Beverage'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                onChanged: (v) => category = v!,
+              Icon(icon, size: 20, color: isSelected ? Colors.white : Colors.grey[600]),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? Colors.white : Colors.grey[600],
+                ),
               ),
             ],
           ),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              if (nameC.text.isNotEmpty && priceC.text.isNotEmpty) {
-                setState(() {
-                  InventoryData.items.add(POSItem(
-                    name: nameC.text,
-                    price: int.tryParse(priceC.text) ?? 0,
-                    stock: int.tryParse(stockC.text) ?? 0,
-                    unit: unitC.text.isEmpty ? 'pieces' : unitC.text,
-                    category: category,
-                    lowStockAlert: int.tryParse(alertC.text) ?? 10,
-                  ));
-                });
-                Navigator.pop(context);
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF009661)),
-            child: const Text('Add', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }
@@ -4292,43 +4880,247 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
   void _showAddBillDialog() {
     final nameC = TextEditingController();
     final amountC = TextEditingController();
-    String category = 'Utilities';
+    String selectedCategory = 'Utilities';
+    final categories = ['Utilities', 'Rent', 'Supplies', 'Other'];
+    final categoryIcons = {
+      'Utilities': Icons.bolt,
+      'Rent': Icons.home,
+      'Supplies': Icons.inventory_2,
+      'Other': Icons.more_horiz,
+    };
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Add Bill Reminder'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameC, decoration: const InputDecoration(labelText: 'Bill Name', border: OutlineInputBorder())),
-            const SizedBox(height: 12),
-            TextField(controller: amountC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Amount', prefixText: '₱', border: OutlineInputBorder())),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: category,
-              decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
-              items: ['Utilities', 'Rent', 'Supplies', 'Other'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-              onChanged: (v) => category = v!,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              if (nameC.text.isNotEmpty && amountC.text.isNotEmpty) {
-                setState(() {
-                  _bills.add({'name': nameC.text, 'category': category, 'amount': double.tryParse(amountC.text) ?? 0, 'isPaid': false, 'type': 'bill'});
-                });
-                Navigator.pop(context);
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF009661)),
-            child: const Text('Add', style: TextStyle(color: Colors.white)),
+      isScrollControlled: true,
+      enableDrag: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-        ],
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Gradient Header
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFB71C1C), Color(0xFFE53935)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.receipt_long, color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Add Bill Reminder',
+                              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Track your expenses and due dates',
+                              style: TextStyle(color: Colors.white70, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Form Fields
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Bill Name Field
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: TextField(
+                          controller: nameC,
+                          decoration: InputDecoration(
+                            labelText: 'Bill Name',
+                            hintText: 'e.g., Electric Bill',
+                            prefixIcon: Icon(Icons.description_outlined, color: Colors.grey.shade600),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Amount Field
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: TextField(
+                          controller: amountC,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Amount',
+                            hintText: '0.00',
+                            prefixIcon: Icon(Icons.payments_outlined, color: Colors.grey.shade600),
+                            prefixText: '₱ ',
+                            prefixStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Category Selection
+                      const Text(
+                        'Category',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF333333)),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: categories.map((cat) {
+                          final isSelected = selectedCategory == cat;
+                          return GestureDetector(
+                            onTap: () => setModalState(() => selectedCategory = cat),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isSelected ? const Color(0xFFB71C1C) : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isSelected ? const Color(0xFFB71C1C) : Colors.grey.shade300,
+                                ),
+                                boxShadow: isSelected
+                                    ? [BoxShadow(color: Colors.red.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))]
+                                    : null,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    categoryIcons[cat],
+                                    size: 18,
+                                    color: isSelected ? Colors.white : Colors.grey.shade600,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    cat,
+                                    style: TextStyle(
+                                      color: isSelected ? Colors.white : Colors.grey.shade700,
+                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Action Buttons
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(color: Colors.grey.shade300),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (nameC.text.isNotEmpty && amountC.text.isNotEmpty) {
+                              setState(() {
+                                _bills.add({
+                                  'name': nameC.text,
+                                  'category': selectedCategory,
+                                  'amount': double.tryParse(amountC.text) ?? 0,
+                                  'isPaid': false,
+                                  'type': 'bill',
+                                });
+                              });
+                              Navigator.pop(context);
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFB71C1C),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 2,
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add, color: Colors.white, size: 20),
+                              SizedBox(width: 8),
+                              Text('Add Bill', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

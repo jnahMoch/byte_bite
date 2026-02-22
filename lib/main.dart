@@ -21,6 +21,16 @@ class ByteAndBiteApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.teal,
         useMaterial3: true,
+        // Smooth page transitions
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+          },
+        ),
       ),
       // Check if owner is registered to determine initial route
       home: UserStorage.isFirstTimeSetup ? const SignUpPage() : const LoginPage(),
