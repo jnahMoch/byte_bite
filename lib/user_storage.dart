@@ -1,44 +1,40 @@
-// User storage with persistent-like functionality
-// Supports one-time owner signup and user management
+// ignore_for_file: avoid_catches_without_on_clauses
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+/// UserStorage — Hybrid local + Firebase Firestore storage.
+/// All original methods are UNCHANGED so existing code keeps working.
+/// Firebase methods are ADDITIVE — they sync data on top of local storage.
 
 class UserStorage {
-  // Users map: username -> {password, role}
+  // ─────────────────────────────────────────────
+  // LOCAL STORAGE (original — untouched)
+  // ─────────────────────────────────────────────
   static final Map<String, Map<String, String>> _users = {};
-
-  // Track if owner has been registered (one-time signup)
   static bool _ownerRegistered = false;
-
-  // Current logged in user
   static String? _currentUser;
   static String? _currentUserRole;
 
-  // Check if owner has already registered
   static bool get isOwnerRegistered => _ownerRegistered;
-
-  // Check if this is first time setup (no owner yet)
   static bool get isFirstTimeSetup => !_ownerRegistered;
 
-  // Register the owner (one-time only)
   static bool registerOwner(String username, String password) {
-    if (_ownerRegistered) {
-      return false; // Owner already exists
-    }
+    if (_ownerRegistered) return false;
     _users[username] = {'password': password, 'role': 'Owner'};
     _ownerRegistered = true;
     return true;
   }
 
-  // Add a helper (only owner can do this)
   static void addHelper(String username, String password) {
     _users[username] = {'password': password, 'role': 'Helper'};
   }
 
-  // Legacy method for backward compatibility
-  static void addUser(String username, String password, String role) {
+  static bool addUser(String username, String password, String role) {
     if (role == 'Owner') {
-      registerOwner(username, password);
+      return registerOwner(username, password);
     } else {
       addHelper(username, password);
+      return true;
     }
   }
 
@@ -49,33 +45,24 @@ class UserStorage {
     return false;
   }
 
-  static String? getUserRole(String username) {
-    return _users[username]?['role'];
-  }
+  static String? getUserRole(String username) => _users[username]?['role'];
+  static bool userExists(String username) => _users.containsKey(username);
 
-  static bool userExists(String username) {
-    return _users.containsKey(username);
-  }
-
-  // Set current logged in user
   static void setCurrentUser(String username) {
     _currentUser = username;
     _currentUserRole = _users[username]?['role'];
   }
 
-  // Get current user info
   static String? get currentUser => _currentUser;
   static String? get currentUserRole => _currentUserRole;
   static bool get isOwner => _currentUserRole == 'Owner';
   static bool get isHelper => _currentUserRole == 'Helper';
 
-  // Logout
   static void logout() {
     _currentUser = null;
     _currentUserRole = null;
   }
 
-  // Get all helpers (for user management)
   static List<Map<String, String>> getHelpers() {
     return _users.entries
         .where((entry) => entry.value['role'] == 'Helper')
@@ -86,40 +73,108 @@ class UserStorage {
         .toList();
   }
 
-  // Reset helper password (owner only)
   static bool resetHelperPassword(String username, String newPassword) {
-    if (_users.containsKey(username) && _users[username]?['role'] == 'Helper') {
+    if (_users.containsKey(username) &&
+        _users[username]!['role'] == 'Helper') {
       _users[username]!['password'] = newPassword;
       return true;
     }
     return false;
   }
 
-  // Delete helper account (owner only)
   static bool deleteHelper(String username) {
-    if (_users.containsKey(username) && _users[username]?['role'] == 'Helper') {
+    if (_users.containsKey(username) &&
+        _users[username]!['role'] == 'Helper') {
       _users.remove(username);
       return true;
     }
     return false;
   }
 
-  // Change own password
-  static bool changePassword(String username, String oldPassword, String newPassword) {
-    if (_users.containsKey(username) && _users[username]!['password'] == oldPassword) {
+  static bool changePassword(
+      String username, String oldPassword, String newPassword) {
+    if (_users.containsKey(username) &&
+        _users[username]!['password'] == oldPassword) {
       _users[username]!['password'] = newPassword;
       return true;
     }
     return false;
   }
 
-  // Get owner username (for display purposes)
   static String? getOwnerUsername() {
     for (var entry in _users.entries) {
-      if (entry.value['role'] == 'Owner') {
-        return entry.key;
-      }
+      if (entry.value['role'] == 'Owner') return entry.key;
     }
     return null;
+  }
+
+  // ─────────────────────────────────────────────
+  // NEW: FIREBASE HELPER METHODS
+  // ─────────────────────────────────────────────
+
+  /// Converts a username to a Firebase-compatible email.
+  /// e.g. "john doe" → "john_doe@bytebite.app"
+  /// Firebase Auth requires email format — username is stored separately in Firestore.
+  static String toFirebaseEmail(String username) {
+    return '${username.toLowerCase().trim().replaceAll(' ', '_')}@bytebite.app';
+  }
+
+  /// NEW: Set current user using data fetched from Firebase.
+  /// Bypasses the local _users map lookup so Firebase-only users work.
+  static void setCurrentUserWithRole(String username, String role) {
+    _currentUser = username;
+    _currentUserRole = role;
+    // Mirror into local map so existing getUserRole() calls still work
+    if (!_users.containsKey(username)) {
+      _users[username] = {'password': '', 'role': role};
+    }
+    if (role == 'Owner') _ownerRegistered = true;
+  }
+
+  /// Checks Firestore at app startup to see if an Owner document exists.
+  /// Falls back to local _ownerRegistered if Firestore is unreachable (offline).
+  static Future<bool> checkOwnerExistsInFirestore() async {
+    try {
+      final query = await FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'Owner')
+          .limit(1)
+          .get();
+
+      if (query.docs.isNotEmpty) {
+        final data = query.docs.first.data();
+        final username = data['username'] as String? ?? '';
+        // Sync owner into local map so fallback login still works
+        if (username.isNotEmpty && !_users.containsKey(username)) {
+          _users[username] = {'password': '', 'role': 'Owner'};
+        }
+        _ownerRegistered = true;
+        return true;
+      }
+      return false;
+    } catch (_) {
+      // Offline or Firestore error — fall back to local state
+      return _ownerRegistered;
+    }
+  }
+
+  /// Syncs ALL users from Firestore into local storage.
+  /// Called once after a successful Firebase login so fallback works for that session.
+  static Future<void> syncUsersFromFirestore() async {
+    try {
+      final snapshot =
+          await FirebaseFirestore.instance.collection('users').get();
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final username = data['username'] as String? ?? '';
+        final role = data['role'] as String? ?? 'Helper';
+        if (username.isNotEmpty && !_users.containsKey(username)) {
+          _users[username] = {'password': '', 'role': role};
+        }
+        if (role == 'Owner') _ownerRegistered = true;
+      }
+    } catch (_) {
+      // Silent fail — local storage continues working
+    }
   }
 }

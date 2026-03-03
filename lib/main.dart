@@ -1,12 +1,15 @@
 import 'package:byte_bite/owner/homepage.dart';
 import 'package:byte_bite/helper/homepage.dart';
+import 'package:firebase_core/firebase_core.dart';         // NEW
 import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'signup_page.dart';
 import 'user_storage.dart';
 
-
-void main() {
+// ─── CHANGED: main() is now async to await Firebase.initializeApp() ───────────
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();               // NEW
+  await Firebase.initializeApp();                          // NEW
   runApp(const ByteAndBiteApp());
 }
 
@@ -21,7 +24,6 @@ class ByteAndBiteApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.teal,
         useMaterial3: true,
-        // Smooth page transitions
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
             TargetPlatform.android: CupertinoPageTransitionsBuilder(),
@@ -32,14 +34,56 @@ class ByteAndBiteApp extends StatelessWidget {
           },
         ),
       ),
-      // Check if owner is registered to determine initial route
-      home: UserStorage.isFirstTimeSetup ? const SignUpPage() : const LoginPage(),
-      // Define routes for easy navigation
+      // ─── CHANGED: replaced direct UserStorage.isFirstTimeSetup check
+      //     with AppStartupPage which checks Firestore asynchronously ──────────
+      home: const AppStartupPage(),
       routes: {
         '/dashboard': (context) => const POSHomePage(),
         '/helper-dashboard': (context) => const HelperHomePage(),
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignUpPage(),
+      },
+    );
+  }
+}
+
+// ─── NEW: Checks Firestore (with local fallback) before deciding
+//     whether to show LoginPage or SignUpPage ────────────────────────────────
+class AppStartupPage extends StatelessWidget {
+  const AppStartupPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: UserStorage.checkOwnerExistsInFirestore(),
+      builder: (context, snapshot) {
+        // Show branded splash while checking
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Color(0xFF00A86B),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: Colors.white),
+                  SizedBox(height: 16),
+                  Text(
+                    'Byte & Bite POS',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        // Use Firestore result; fall back to local flag if offline
+        final ownerExists =
+            snapshot.data ?? UserStorage.isOwnerRegistered;
+        return ownerExists ? const LoginPage() : const SignUpPage();
       },
     );
   }

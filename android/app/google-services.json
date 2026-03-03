@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "386089956000",
+    "project_id": "byte-and-bite-1f169",
+    "storage_bucket": "byte-and-bite-1f169.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:386089956000:android:f6a9cfa54599383e0a0fc5",
+        "android_client_info": {
+          "package_name": "com.example.byte_bite"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAYp3W28qFEqvcG5EemTyL2rlf0Crar4II"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
