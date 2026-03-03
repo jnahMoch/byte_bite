@@ -1,7 +1,8 @@
 import 'package:byte_bite/owner/homepage.dart';
 import 'package:byte_bite/helper/homepage.dart';
-import 'package:firebase_core/firebase_core.dart';         // NEW
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'firebase_options.dart';                              // NEW
 import 'login_page.dart';
 import 'signup_page.dart';
 import 'user_storage.dart';
@@ -9,7 +10,9 @@ import 'user_storage.dart';
 // ─── CHANGED: main() is now async to await Firebase.initializeApp() ───────────
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();               // NEW
-  await Firebase.initializeApp();                          // NEW
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,       // UPDATED
+  );
   runApp(const ByteAndBiteApp());
 }
 
