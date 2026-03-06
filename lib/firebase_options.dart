@@ -1,11 +1,8 @@
-// File generated based on your google-services.json configuration
-// Place this file in your lib/ folder
-
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
-/// Default [FirebaseOptions] for use with your Firebase apps.
+/// Default [FirebaseOptions] 
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -41,7 +38,7 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // ── Android config (from your google-services.json) ──────────────────────
+  // ── Android config (google-services.json) ──────────────────────
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAYp3W28qFEqvcG5EemTyL2rlf0Crar4II',
     appId: '1:386089956000:android:f6a9cfa54599383e0a0fc5',
@@ -50,7 +47,7 @@ class DefaultFirebaseOptions {
     storageBucket: 'byte-and-bite-1f169.firebasestorage.app',
   );
 
-  // ── Web config (placeholder — only needed if you run on Chrome) ──────────
+  // ── Web config (placeholder — only needed if chrome is used as an emulator) ──────────
   // To enable web support, run: flutterfire configure (select Web platform)
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyAYp3W28qFEqvcG5EemTyL2rlf0Crar4II',

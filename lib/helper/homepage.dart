@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:byte_bite/model/pos_item_model.dart';
 import 'package:flutter/material.dart';
 import '../owner/homepage.dart' show InventoryData, SalesData;
