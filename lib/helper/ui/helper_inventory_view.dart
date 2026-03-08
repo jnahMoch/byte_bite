@@ -1,7 +1,7 @@
 import 'package:byte_bite/helper/logic/helper_business_logic.dart';
 import 'package:byte_bite/model/pos_item_model.dart';
 import 'package:flutter/material.dart';
-import '../../owner/homepage.dart' show InventoryData;
+import '../../data/inventory_data.dart';
 
 /// Inventory view for Helper to check stock and update quantities
 class HelperInventoryView extends StatefulWidget {

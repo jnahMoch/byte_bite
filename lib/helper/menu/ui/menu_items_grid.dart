@@ -13,21 +13,19 @@ class MenuItemsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: GridView.builder(
-          itemCount: filteredItems.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 0.75,
-          ),
-          itemBuilder: (context, idx) => _MenuItemCard(
-            item: filteredItems[idx],
-            onTap: () => onAddToCart(filteredItems[idx]),
-          ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: GridView.builder(
+        itemCount: filteredItems.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 0.75,
+        ),
+        itemBuilder: (context, idx) => _MenuItemCard(
+          item: filteredItems[idx],
+          onTap: () => onAddToCart(filteredItems[idx]),
         ),
       ),
     );

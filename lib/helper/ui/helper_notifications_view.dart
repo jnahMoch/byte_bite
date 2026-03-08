@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../owner/homepage.dart' show InventoryData;
+import '../../data/inventory_data.dart';
 
 /// Notifications view for Helper showing low stock alerts
 class HelperNotificationsView extends StatelessWidget {

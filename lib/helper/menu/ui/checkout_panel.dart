@@ -45,11 +45,17 @@ class CheckoutPanel extends StatelessWidget {
   }
 
   Widget _buildCartItemsList() {
+    if (cart.isEmpty) return const SizedBox.shrink();
+    
     return Container(
-      constraints: const BoxConstraints(maxHeight: 120),
+      constraints: const BoxConstraints(maxHeight: 180),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: ListView.builder(
         shrinkWrap: true,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         itemCount: cart.length,
         itemBuilder: (context, index) {
           final c = cart[index];
@@ -58,7 +64,9 @@ class CheckoutPanel extends StatelessWidget {
           final price = int.tryParse(item['price']?.replaceAll('₱', '') ?? '0') ?? 0;
           final total = price * qty;
 
-          return Row(
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
             children: [
               Expanded(
                 child: Column(
@@ -118,6 +126,7 @@ class CheckoutPanel extends StatelessWidget {
                 ],
               ),
             ],
+            ),
           );
         },
       ),

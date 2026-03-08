@@ -1,0 +1,330 @@
+﻿import 'package:flutter/material.dart';
+
+import '../model/pos_item_model.dart';
+import '../model/sales_transaction_model.dart';
+import '../model/bill_model.dart';
+import '../data/inventory_data.dart';
+import '../data/sales_data.dart';
+import '../data/bills_data.dart';
+import '../user_storage.dart';
+import 'home/ui/analytics_view.dart';
+import 'home/ui/bills_reminders_view.dart';
+import 'home/ui/bills_view.dart';
+import 'home/ui/dashboard_view.dart';
+import 'home/ui/data_management_view.dart';
+import 'home/ui/inventory_menu_view.dart';
+import 'home/ui/inventory_view.dart';
+import 'home/ui/menu_view.dart';
+import 'home/ui/pos_grid_view.dart';
+import 'home/ui/reports_view.dart';
+
+// Re-export models and data for backward compatibility
+export '../model/pos_item_model.dart';
+export '../model/sales_transaction_model.dart';
+export '../model/bill_model.dart';
+export '../data/inventory_data.dart';
+export '../data/sales_data.dart';
+export '../data/bills_data.dart';
+export 'home/ui/analytics_view.dart';
+export 'home/ui/bills_reminders_view.dart';
+export 'home/ui/bills_view.dart';
+export 'home/ui/dashboard_view.dart';
+export 'home/ui/data_management_view.dart';
+export 'home/ui/inventory_menu_view.dart';
+export 'home/ui/inventory_view.dart';
+export 'home/ui/menu_view.dart';
+export 'home/ui/pos_grid_view.dart';
+export 'home/ui/reports_view.dart';
+
+class POSHomePage extends StatefulWidget {
+  const POSHomePage({super.key});
+
+  @override
+  State<POSHomePage> createState() => _POSHomePageState();
+}
+
+class _POSHomePageState extends State<POSHomePage> {
+  int _currentIndex = 0;
+
+  late final List<Widget> _pages;
+
+  void _navigateToPage(int pageIndex) {
+    setState(() {
+      _currentIndex = pageIndex;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      DashboardView(onNavigate: _navigateToPage),
+      const AnalyticsView(),
+      const POSGridView(),
+      const InventoryMenuView(),
+      const BillsRemindersView(),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          _buildHeader(context),
+          Expanded(
+            child: _pages[_currentIndex],
+          ),
+        ],
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withValues(alpha: 0.15),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildNavItem(0, Icons.home_outlined, 'Home'),
+            _buildNavItem(1, Icons.analytics_outlined, 'Analytics'),
+            _buildNavItem(2, Icons.point_of_sale, 'POS', isCenter: true),
+            _buildNavItem(3, Icons.inventory_2_outlined, 'Inventory'),
+            _buildNavItem(4, Icons.receipt_long_outlined, 'Bills'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, String label,
+      {bool hasBadge = false, bool isCenter = false}) {
+    bool isSelected = _currentIndex == index;
+
+    if (isCenter) {
+      return GestureDetector(
+        onTap: () {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: const Color(0xFF009661),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF009661).withValues(alpha: 0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.point_of_sale, color: Colors.white, size: 28),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: isSelected ? const Color(0xFF009661) : Colors.grey,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _currentIndex = index;
+        });
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? const Color(0xFF009661).withValues(alpha: 0.1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: isSelected ? const Color(0xFF009661) : Colors.grey,
+                  size: 24,
+                ),
+              ),
+              if (hasBadge)
+                Positioned(
+                  right: 8,
+                  top: 4,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected ? const Color(0xFF009661) : Colors.grey,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 20),
+      decoration: const BoxDecoration(
+        color: Color(0xFF009661),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 45,
+                height: 45,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/byte and bite logo.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text('Byte & Bite POS',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold)),
+                  Text('Owner',
+                      style: TextStyle(color: Colors.white70, fontSize: 12)),
+                ],
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Stack(
+                children: [
+                  IconButton(
+                    onPressed: () => _showNotificationsSheet(context),
+                    icon: const Icon(Icons.notifications_outlined,
+                        color: Colors.white),
+                    tooltip: 'Notifications',
+                  ),
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              IconButton(
+                onPressed: () => _showSettingsBottomSheet(context),
+                icon:
+                    const Icon(Icons.settings_outlined, color: Colors.white),
+                tooltip: 'Settings',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSettingsBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      enableDrag: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) =>
+            SettingsSheet(scrollController: scrollController),
+      ),
+    );
+  }
+
+  void _showNotificationsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      enableDrag: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) =>
+            NotificationsSheet(scrollController: scrollController),
+      ),
+    );
+  }
+}
+
+

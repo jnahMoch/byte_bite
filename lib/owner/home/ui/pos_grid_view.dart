@@ -30,7 +30,7 @@ class _POSGridViewState extends State<POSGridView> {
   final List<CartItem> _cart = [];
   final TextEditingController _amountPaidController = TextEditingController();
   double _change = 0;
-  bool _isCartExpanded = true; 
+  bool _isCartExpanded = false; 
 
   @override
   void initState() {
@@ -720,86 +720,99 @@ class _POSGridViewState extends State<POSGridView> {
         ),
         
         Expanded(
-          flex: 2,
-          child: GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 0.75,
-            ),
-            itemCount: filteredItems.length,
-            itemBuilder: (context, index) => _itemCard(filteredItems[index]),
-          ),
-        ),
-        
-        if (_cart.isNotEmpty)
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withValues(alpha: 0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, -3),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isCartExpanded = !_isCartExpanded;
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    color: const Color(0xFF009661).withValues(alpha: 0.05),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.shopping_cart, color: Color(0xFF009661), size: 20),
-                            const SizedBox(width: 8),
-                            Text('Cart (${_cart.length} items)', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                            const SizedBox(width: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF009661),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text('₱$cartTotal', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                            ),
-                          ],
-                        ),
-                        Icon(_isCartExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up, color: Colors.grey),
-                      ],
-                    ),
+          child: Column(
+            children: [
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.75,
                   ),
+                  itemCount: filteredItems.length,
+                  itemBuilder: (context, index) => _itemCard(filteredItems[index]),
                 ),
-                
-                AnimatedCrossFade(
-                  firstChild: const SizedBox.shrink(),
-                  secondChild: Column(
+              ),
+              
+              if (_cart.isNotEmpty)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 300),
+                  child: SingleChildScrollView(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withValues(alpha: 0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, -3),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _isCartExpanded = !_isCartExpanded;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              color: const Color(0xFF009661).withValues(alpha: 0.05),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.shopping_cart, color: Color(0xFF009661), size: 20),
+                                      const SizedBox(width: 8),
+                                      Text('Cart (${_cart.length} items)', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                      const SizedBox(width: 12),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF009661),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text('₱$cartTotal', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                                      ),
+                                    ],
+                                  ),
+                                  Icon(_isCartExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up, color: Colors.grey),
+                                ],
+                              ),
+                            ),
+                          ),
+                          
+                          AnimatedCrossFade(
+                            firstChild: const SizedBox.shrink(),
+                            secondChild: Column(
+                              mainAxisSize: MainAxisSize.min,
                     children: [
                       
-                      Container(
-                        constraints: const BoxConstraints(maxHeight: 100),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          itemCount: _cart.length,
-                          itemBuilder: (context, index) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: _cartItemRow(_cart[index], index),
+                      if (_cart.isNotEmpty)
+                        Container(
+                          constraints: const BoxConstraints(maxHeight: 180),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            itemCount: _cart.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _cartItemRow(_cart[index], index),
+                              );
+                            },
                           ),
                         ),
-                      ),
                       Container(
                         height: 1,
                         decoration: BoxDecoration(
@@ -809,12 +822,12 @@ class _POSGridViewState extends State<POSGridView> {
                         ),
                       ),
                       
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                               // Payment Method Label & Options
                               Container(
                                 padding: const EdgeInsets.all(12),
@@ -1100,15 +1113,19 @@ class _POSGridViewState extends State<POSGridView> {
                             ],
                           ),
                         ),
-                      ),
                     ],
                   ),
                   crossFadeState: _isCartExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
                   duration: const Duration(milliseconds: 200),
                 ),
-              ],
-            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
+        ),
       ],
     );
   }

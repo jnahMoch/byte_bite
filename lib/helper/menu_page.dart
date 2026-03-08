@@ -1,7 +1,9 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import '../owner/homepage.dart' show InventoryData, SalesData, SalesTransaction;
+import '../data/inventory_data.dart';
+import '../data/sales_data.dart';
+import '../model/sales_transaction_model.dart';
 
 // UI Components
 import 'menu/ui/category_filter.dart';
@@ -217,25 +219,39 @@ class _MenuContentState extends State<MenuContent> {
           onCategoryChanged: (cat) => setState(() => _selectedCategory = cat),
         ),
 
-        // Menu items grid
-        MenuItemsGrid(
-          filteredItems: _filteredItems,
-          onAddToCart: _addToCart,
-        ),
+        // Menu items grid with checkout panel
+        Expanded(
+          child: Column(
+            children: [
+              // Menu items grid
+              Expanded(
+                child: MenuItemsGrid(
+                  filteredItems: _filteredItems,
+                  onAddToCart: _addToCart,
+                ),
+              ),
 
-        // Checkout panel (shown when cart has items)
-        if (_cart.isNotEmpty)
-          CheckoutPanel(
-            cart: _cart,
-            cartTotal: _cartTotal,
-            change: _change,
-            selectedPayment: _selectedPayment,
-            amountPaidController: _amountPaidController,
-            onUpdateQuantity: _updateQuantity,
-            onRemoveFromCart: _removeFromCart,
-            onPaymentMethodChanged: _changePaymentMethod,
-            onCompleteTransaction: _completeTransaction,
+              // Checkout panel (shown when cart has items)
+              if (_cart.isNotEmpty)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  child: SingleChildScrollView(
+                    child: CheckoutPanel(
+                      cart: _cart,
+                      cartTotal: _cartTotal,
+                      change: _change,
+                      selectedPayment: _selectedPayment,
+                      amountPaidController: _amountPaidController,
+                      onUpdateQuantity: _updateQuantity,
+                      onRemoveFromCart: _removeFromCart,
+                      onPaymentMethodChanged: _changePaymentMethod,
+                      onCompleteTransaction: _completeTransaction,
+                    ),
+                  ),
+                ),
+            ],
           ),
+        ),
       ],
     );
   }

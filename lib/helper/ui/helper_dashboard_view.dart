@@ -1,7 +1,8 @@
 import 'package:byte_bite/helper/logic/helper_business_logic.dart';
 import 'package:byte_bite/model/pos_item_model.dart';
 import 'package:flutter/material.dart';
-import '../../owner/homepage.dart' show InventoryData, SalesData;
+import '../../data/inventory_data.dart';
+import '../../data/sales_data.dart';
 import '../../user_storage.dart';
 
 /// Dashboard view for Helper showing overview and quick actions
