@@ -30,7 +30,7 @@ class _POSGridViewState extends State<POSGridView> {
   final List<CartItem> _cart = [];
   final TextEditingController _amountPaidController = TextEditingController();
   double _change = 0;
-  bool _isCartExpanded = false; 
+  bool _isCartExpanded = true; 
 
   @override
   void initState() {
@@ -790,7 +790,6 @@ class _POSGridViewState extends State<POSGridView> {
                           AnimatedCrossFade(
                             firstChild: const SizedBox.shrink(),
                             secondChild: Column(
-                              mainAxisSize: MainAxisSize.min,
                     children: [
                       
                       if (_cart.isNotEmpty)
