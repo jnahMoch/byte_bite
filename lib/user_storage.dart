@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class UserStorage {
   
@@ -50,7 +51,12 @@ class UserStorage {
   static bool get isOwner => _currentUserRole == 'Owner';
   static bool get isHelper => _currentUserRole == 'Helper';
 
-  static void logout() {
+  static Future<void> logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+    } catch (_) {
+      // Firebase logout error handling
+    }
     _currentUser = null;
     _currentUserRole = null;
   }
