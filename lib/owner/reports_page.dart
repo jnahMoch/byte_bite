@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'homepage.dart' show SalesData, SalesTransaction;
 
@@ -71,7 +69,6 @@ class _ReportsPageState extends State<ReportsPage> {
           ),
         ),
 
-        // 1. Report Type Toggle (Sales / Inventory)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Row(
@@ -87,7 +84,6 @@ class _ReportsPageState extends State<ReportsPage> {
           ),
         ),
 
-        // 2. Time Filters (Today, This Week, etc.)
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -101,7 +97,6 @@ class _ReportsPageState extends State<ReportsPage> {
           ),
         ),
 
-        // 3. Stats Grid & Content
         Expanded(
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -122,15 +117,12 @@ class _ReportsPageState extends State<ReportsPage> {
               ),
               const SizedBox(height: 20),
 
-              // 4. Best Selling Items Section
               _buildBestSellingSection(),
               const SizedBox(height: 16),
 
-              // 5. Payment Methods Section
               _buildPaymentMethodsSection(),
               const SizedBox(height: 16),
 
-              // 6. Recent Transactions Section
               _buildRecentTransactionsSection(),
               const SizedBox(height: 20),
             ],
@@ -367,7 +359,6 @@ class _ReportsPageState extends State<ReportsPage> {
     return '${months[date.month - 1]} ${date.day}, ${hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} $period';
   }
 
-  // Helper for Top Toggles
   Widget _toggleButton(IconData icon, String label, bool isSelected, VoidCallback onTap) {
     return Expanded(
       child: GestureDetector(
@@ -399,7 +390,6 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  // Helper for Filter Chips
   Widget _filterChip(String label) {
     bool isSelected = selectedTimeFilter == label;
     return GestureDetector(
@@ -424,7 +414,6 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  // Helper for Stat Cards
   Widget _statCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),

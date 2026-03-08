@@ -70,7 +70,6 @@ class DatabaseHelper {
                       CHECK(reminder_status IN ('Pending','Sent','Dismissed')))''');
   }
 
-  // ── USERS ──────────────────────────────────────────────────────────────────
   Future<int> insertUser(Map<String, dynamic> data) async =>
       (await database).insert('Users', data);
 
@@ -80,7 +79,6 @@ class DatabaseHelper {
     return res.isNotEmpty ? res.first : null;
   }
 
-  // ── PRODUCTS ───────────────────────────────────────────────────────────────
   Future<int> insertProduct(Map<String, dynamic> data) async =>
       (await database).insert('Products', data);
 
@@ -98,12 +96,11 @@ class DatabaseHelper {
   Future<int> deleteProduct(int id) async => (await database)
       .delete('Products', where: 'product_id = ?', whereArgs: [id]);
 
-  // ── SALES (full transaction) ───────────────────────────────────────────────
   Future<int> recordSale({
     required int userId,
     required double totalAmount,
     required List<Map<String, dynamic>> items,
-    // items: [{ product_id, quantity, subtotal }, ...]
+    
     required String paymentMethod,
     required String paymentStatus,
   }) async {
@@ -155,7 +152,6 @@ class DatabaseHelper {
         JOIN Payments pay ON s.sale_id  = pay.sale_id
         ORDER BY s.date_time DESC''');
 
-  // ── INVENTORY LOGS ─────────────────────────────────────────────────────────
   Future<int> logInventoryChange(
       int productId, String changeType, int qty) async {
     final db = await database;
@@ -173,7 +169,6 @@ class DatabaseHelper {
     });
   }
 
-  // ── EXPENSES ───────────────────────────────────────────────────────────────
   Future<int> insertExpense(Map<String, dynamic> data) async =>
       (await database).insert('Expenses', data);
 
@@ -185,6 +180,5 @@ class DatabaseHelper {
       (await database).update('Expenses', {'reminder_status': status},
           where: 'expense_id = ?', whereArgs: [id]);
 
-  // ── CLOSE ──────────────────────────────────────────────────────────────────
   Future<void> close() async => (await database).close();
 }

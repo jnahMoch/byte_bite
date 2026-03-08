@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'homepage.dart' show InventoryData, POSItem;
 
@@ -51,7 +49,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
+                  
                   const Text(
                     'Add New Item',
                     style: TextStyle(
@@ -62,14 +60,12 @@ class _InventoryPageState extends State<InventoryPage> {
                   ),
                   const SizedBox(height: 28),
                   
-                  // Name field
                   _buildSimpleInputField(
                     controller: nameController,
                     label: 'Name',
                   ),
                   const SizedBox(height: 16),
                   
-                  // Price field
                   _buildSimpleInputField(
                     controller: priceController,
                     label: 'Price',
@@ -77,7 +73,6 @@ class _InventoryPageState extends State<InventoryPage> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Stock field
                   _buildSimpleInputField(
                     controller: stockController,
                     label: 'Stock',
@@ -85,14 +80,12 @@ class _InventoryPageState extends State<InventoryPage> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Unit field
                   _buildSimpleInputField(
                     controller: unitController,
                     label: 'Unit (e.g., pieces)',
                   ),
                   const SizedBox(height: 16),
                   
-                  // Low Stock Alert field
                   _buildSimpleInputField(
                     controller: lowStockController,
                     label: 'Low Stock Alert',
@@ -100,7 +93,6 @@ class _InventoryPageState extends State<InventoryPage> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Category dropdown
                   InputDecorator(
                     decoration: InputDecoration(
                       labelText: 'Category',
@@ -144,7 +136,6 @@ class _InventoryPageState extends State<InventoryPage> {
                   ),
                   const SizedBox(height: 28),
                   
-                  // Action buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -273,7 +264,7 @@ class _InventoryPageState extends State<InventoryPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -285,12 +276,12 @@ class _InventoryPageState extends State<InventoryPage> {
                 ],
               ),
               const SizedBox(height: 16),
-              // Product info
+              
               const Text('Product', style: TextStyle(fontSize: 12, color: Colors.grey)),
               Text(item.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               Text('Current: ${item.stock} ${item.unit}', style: const TextStyle(fontSize: 12, color: Color(0xFF009661))),
               const SizedBox(height: 16),
-              // Quantity input
+              
               Text('Quantity to Add (${item.unit})', style: const TextStyle(fontSize: 12, color: Colors.grey)),
               const SizedBox(height: 8),
               TextField(
@@ -315,7 +306,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Action buttons
+              
               Row(
                 children: [
                   Expanded(
@@ -371,7 +362,7 @@ class _InventoryPageState extends State<InventoryPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Section
+          
           Container(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
             decoration: const BoxDecoration(
@@ -425,7 +416,7 @@ class _InventoryPageState extends State<InventoryPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Search Bar
+                
                 TextField(
                   controller: _searchController,
                   onChanged: (value) => setState(() => _searchQuery = value),
@@ -446,7 +437,6 @@ class _InventoryPageState extends State<InventoryPage> {
             ),
           ),
 
-          // Inventory List
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -465,7 +455,6 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
-  // Helper method to create the product cards
   Widget _buildInventoryCard({
     required BuildContext context,
     required dynamic item,
@@ -490,7 +479,7 @@ class _InventoryPageState extends State<InventoryPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Row: Info and Add Stock Button
+          
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -556,7 +545,7 @@ class _InventoryPageState extends State<InventoryPage> {
                   ],
                 ),
               ),
-              // Add Stock Button
+              
               ElevatedButton.icon(
                 onPressed: () => _showAddStockDialog(context, item),
                 icon: const Icon(Icons.add_rounded, size: 18, color: Color(0xFF009661)),

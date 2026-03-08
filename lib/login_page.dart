@@ -1,7 +1,5 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously
-
-import 'package:cloud_firestore/cloud_firestore.dart';     // NEW
-import 'package:firebase_auth/firebase_auth.dart';         // NEW
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'user_storage.dart';
 
@@ -16,10 +14,8 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _userController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
 
-  // ─── NEW: loading state while Firebase responds ──────────────────────────
   bool _isLoading = false;
 
-  // ─── CHANGED: now async — tries Firebase first, falls back to UserStorage ─
   Future<void> _handleLogin() async {
     String username = _userController.text.trim();
     String password = _passController.text.trim();
@@ -31,17 +27,12 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _isLoading = true);
 
-    // ════════════════════════════════════════════════════════════════════════
-    // PATH A — Firebase Auth (online)
-    // ════════════════════════════════════════════════════════════════════════
     try {
       final email = UserStorage.toFirebaseEmail(username);
 
-      // Authenticate with Firebase Auth
       final credential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email, password: password);
 
-      // Fetch role from Firestore using the Firebase UID
       final doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(credential.user!.uid)
@@ -55,7 +46,6 @@ class _LoginPageState extends State<LoginPage> {
 
       final data = doc.data()!;
 
-      // Check if account is active (owner can deactivate helpers)
       if (data['isActive'] == false) {
         await FirebaseAuth.instance.signOut();
         _showSnackBar('Your account has been deactivated.', Colors.redAccent);
@@ -64,25 +54,17 @@ class _LoginPageState extends State<LoginPage> {
 
       final String role = data['role'] ?? 'Helper';
 
-      // Sync into local UserStorage so existing code (e.g. UserStorage.isOwner) works
       UserStorage.setCurrentUserWithRole(username, role);
 
-      // Also sync all users in background for fallback
       UserStorage.syncUsersFromFirestore();
 
       _navigateByRole(role);
-      return; // ← success via Firebase, skip fallback
-
+      return;
     } on FirebaseAuthException {
-      // ── Firebase failed (wrong password or network error) ─────────────────
-      // Fall through to PATH B below
     } catch (_) {
-      // ── Unexpected Firebase error — fall through to PATH B ────────────────
+
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // PATH B — Local UserStorage fallback (offline / Firebase unreachable)
-    // ════════════════════════════════════════════════════════════════════════
     if (UserStorage.validateUser(username, password)) {
       UserStorage.setCurrentUser(username);
       final String? role = UserStorage.getUserRole(username);
@@ -95,12 +77,11 @@ class _LoginPageState extends State<LoginPage> {
     if (mounted) setState(() => _isLoading = false);
   }
 
-  /// Navigate to the correct dashboard based on role
   void _navigateByRole(String role) {
     if (role == 'Helper') {
       Navigator.pushReplacementNamed(context, '/helper-dashboard');
     } else {
-      // Owner (or any unrecognized role defaults to owner dashboard)
+      
       Navigator.pushReplacementNamed(context, '/dashboard');
     }
   }
@@ -111,7 +92,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // ─── BUILD (UI completely unchanged) ────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -190,7 +170,6 @@ class _LoginPageState extends State<LoginPage> {
                       icon: Icons.lock_outline),
                   const SizedBox(height: 28),
 
-                  // ── CHANGED: shows spinner when _isLoading is true ─────────
                   SizedBox(
                     width: double.infinity,
                     height: 54,

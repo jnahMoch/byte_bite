@@ -1,4 +1,3 @@
-/// Bill model - represents a bill/payment reminder
 class Bill {
   final String id;
   final String title;

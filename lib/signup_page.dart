@@ -1,7 +1,5 @@
-// ignore_for_file: use_build_context_synchronously, deprecated_member_use
-
-import 'package:cloud_firestore/cloud_firestore.dart';     // NEW
-import 'package:firebase_auth/firebase_auth.dart';         // NEW
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'user_storage.dart';
 
@@ -18,14 +16,12 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
-  // ─── NEW: loading state to disable button during Firebase call ───────────
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // ─── CHANGED: now checks Firestore via checkOwnerExistsInFirestore()
-    //     instead of the unreliable in-memory isOwnerRegistered flag ─────────
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final ownerExists = await UserStorage.checkOwnerExistsInFirestore();
       if (ownerExists) {
@@ -34,13 +30,11 @@ class _SignUpPageState extends State<SignUpPage> {
     });
   }
 
-  // ─── CHANGED: now async, writes to Firebase Auth + Firestore + UserStorage ─
   Future<void> _handleSignUp() async {
     String username = _usernameController.text.trim();
     String password = _passwordController.text.trim();
     String confirmPassword = _confirmPasswordController.text.trim();
 
-    // ── Validation (unchanged) ───────────────────────────────────────────────
     if (username.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       _showSnackBar('Please fill in all fields', Colors.redAccent);
       return;
@@ -58,7 +52,7 @@ class _SignUpPageState extends State<SignUpPage> {
     setState(() => _isLoading = true);
 
     try {
-      // ── STEP 1: Check Firestore — block duplicate Owner registration ───────
+      
       final existingOwner =
           await UserStorage.checkOwnerExistsInFirestore();
       if (existingOwner) {
@@ -70,13 +64,10 @@ class _SignUpPageState extends State<SignUpPage> {
         return;
       }
 
-      // ── STEP 2: Create Firebase Auth account ──────────────────────────────
-      // Username is stored in Firestore; Firebase Auth requires email format
       final email = UserStorage.toFirebaseEmail(username);
       final credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
 
-      // ── STEP 3: Write Owner document to Firestore ─────────────────────────
       await FirebaseFirestore.instance
           .collection('users')
           .doc(credential.user!.uid)
@@ -87,7 +78,6 @@ class _SignUpPageState extends State<SignUpPage> {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // ── STEP 4: Mirror to local UserStorage (fallback) ───────────────────
       UserStorage.registerOwner(username, password);
 
       _showSnackBar(
@@ -95,7 +85,7 @@ class _SignUpPageState extends State<SignUpPage> {
       Future.delayed(const Duration(seconds: 2),
           () => Navigator.pushReplacementNamed(context, '/login'));
     } on FirebaseAuthException catch (e) {
-      // ── Firebase Auth error — fall back to local registration ─────────────
+      
       final localSuccess = UserStorage.registerOwner(username, password);
       if (localSuccess) {
         _showSnackBar(
@@ -121,7 +111,6 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  // ─── BUILD (UI completely unchanged) ────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -230,7 +219,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   const SizedBox(height: 25),
 
-                  // ── CHANGED: button shows spinner when _isLoading is true ──
                   SizedBox(
                     width: double.infinity,
                     height: 54,

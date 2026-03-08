@@ -1,6 +1,5 @@
 import '../model/sales_transaction_model.dart';
 
-/// Sales data tracking - stores all completed transactions
 class SalesData {
   static final List<SalesTransaction> transactions = [];
 

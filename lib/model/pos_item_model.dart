@@ -1,4 +1,3 @@
-/// POSItem model - represents a product in the POS system
 class POSItem {
   final String name;
   final int price;

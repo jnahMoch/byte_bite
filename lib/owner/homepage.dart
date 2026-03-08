@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-// Import from separated files
 import '../model/pos_item_model.dart';
 import '../model/sales_transaction_model.dart';
 import '../model/bill_model.dart';
@@ -11,7 +10,6 @@ import '../data/sales_data.dart';
 import '../data/bills_data.dart';
 import '../user_storage.dart';
 
-// Re-export for backward compatibility with other files
 export '../model/pos_item_model.dart';
 export '../model/sales_transaction_model.dart';
 export '../model/bill_model.dart';
@@ -27,9 +25,8 @@ class POSHomePage extends StatefulWidget {
 }
 
 class _POSHomePageState extends State<POSHomePage> {
-  int _currentIndex = 0; // Tracks the selected bottom nav tab
+  int _currentIndex = 0; 
 
-  // 1. All Main Views Connected Here
   late final List<Widget> _pages;
 
   void _navigateToPage(int pageIndex) {
@@ -42,11 +39,11 @@ class _POSHomePageState extends State<POSHomePage> {
   void initState() {
     super.initState();
     _pages = [
-      DashboardView(onNavigate: _navigateToPage),       // Index 0: Home (with low stock widget)
-      const AnalyticsView(),       // Index 1: Analytics/Reports
-      const POSGridView(),         // Index 2: POS (Center)
-      const InventoryMenuView(),   // Index 3: Inventory + Menu
-      const BillsRemindersView(),  // Index 4: Bills & Reminders (Owner only)
+      DashboardView(onNavigate: _navigateToPage),       
+      const AnalyticsView(),       
+      const POSGridView(),         
+      const InventoryMenuView(),   
+      const BillsRemindersView(),  
     ];
   }
 
@@ -56,10 +53,9 @@ class _POSHomePageState extends State<POSHomePage> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Header remains constant across all pages
+          
           _buildHeader(context),
           
-          // Body changes based on bottom bar selection
           Expanded(
             child: _pages[_currentIndex],
           ),
@@ -94,7 +90,6 @@ class _POSHomePageState extends State<POSHomePage> {
   Widget _buildNavItem(int index, IconData icon, String label, {bool hasBadge = false, bool isCenter = false}) {
     bool isSelected = _currentIndex == index;
     
-    // Center POS button styling
     if (isCenter) {
       return GestureDetector(
         onTap: () {
@@ -229,7 +224,7 @@ class _POSHomePageState extends State<POSHomePage> {
           ),
           Row(
             children: [
-              // Notifications icon
+              
               Stack(
                 children: [
                   IconButton(
@@ -304,7 +299,6 @@ class _POSHomePageState extends State<POSHomePage> {
   }
 }
 
-// --- SUB-VIEW 0: POS GRID ---
 class POSGridView extends StatefulWidget {
   const POSGridView({super.key});
 
@@ -312,7 +306,6 @@ class POSGridView extends StatefulWidget {
   State<POSGridView> createState() => _POSGridViewState();
 }
 
-// Cart item model
 class CartItem {
   final POSItem item;
   int quantity;
@@ -328,7 +321,7 @@ class _POSGridViewState extends State<POSGridView> {
   final List<CartItem> _cart = [];
   final TextEditingController _amountPaidController = TextEditingController();
   double _change = 0;
-  bool _isCartExpanded = true; // For collapsible cart
+  bool _isCartExpanded = true; 
 
   @override
   void initState() {
@@ -409,12 +402,10 @@ class _POSGridViewState extends State<POSGridView> {
     final savedCart = List<CartItem>.from(_cart);
     final savedTotal = cartTotal;
     
-    // Deduct from inventory
     for (var cartItem in _cart) {
       cartItem.item.stock -= cartItem.quantity;
     }
 
-    // Record the transaction for reports
     SalesData.addTransaction(SalesTransaction(
       receiptNumber: receiptNumber,
       dateTime: now,
@@ -429,7 +420,6 @@ class _POSGridViewState extends State<POSGridView> {
       paymentMethod: _selectedPayment,
     ));
 
-    // Show Sale Successful dialog first
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -441,7 +431,7 @@ class _POSGridViewState extends State<POSGridView> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Success Icon
+              
               Container(
                 width: 80,
                 height: 80,
@@ -460,7 +450,7 @@ class _POSGridViewState extends State<POSGridView> {
                 Text('Change: ₱${change.toStringAsFixed(2)}', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
               ],
               const SizedBox(height: 24),
-              // Action Buttons
+              
               Row(
                 children: [
                   Expanded(
@@ -519,7 +509,7 @@ class _POSGridViewState extends State<POSGridView> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header with close button
+              
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -539,13 +529,13 @@ class _POSGridViewState extends State<POSGridView> {
                 ],
               ),
               const SizedBox(height: 16),
-              // Store info
+              
               const Text('BYTE & BITE', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF009661))),
               const Text('Smart POS Solution', style: TextStyle(fontSize: 12, color: Colors.grey)),
               const Text('Visayan Village, Tagum City', style: TextStyle(fontSize: 12, color: Colors.grey)),
               const SizedBox(height: 16),
               const Divider(),
-              // Transaction details
+              
               Align(
                 alignment: Alignment.centerLeft,
                 child: Column(
@@ -560,7 +550,7 @@ class _POSGridViewState extends State<POSGridView> {
               ),
               const SizedBox(height: 12),
               const Divider(),
-              // Items
+              
               ...savedCart.map((item) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(
@@ -588,7 +578,7 @@ class _POSGridViewState extends State<POSGridView> {
               )),
               const Divider(),
               const SizedBox(height: 8),
-              // Totals
+              
               _receiptRow('TOTAL:', '₱$savedTotal.00', bold: true),
               _receiptRow('Amount Paid:', '₱${amountPaid.toStringAsFixed(2)}'),
               _receiptRow('Change:', '₱${change.toStringAsFixed(2)}'),
@@ -596,13 +586,13 @@ class _POSGridViewState extends State<POSGridView> {
               const Text('Thank you for your purchase!', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
               const Text('Come again soon!', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
               const SizedBox(height: 20),
-              // Buttons
+              
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () {
-                        // Print functionality placeholder
+                        
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Printing receipt...')),
                         );
@@ -671,7 +661,7 @@ class _POSGridViewState extends State<POSGridView> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Category tabs
+        
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
@@ -684,7 +674,7 @@ class _POSGridViewState extends State<POSGridView> {
             ],
           ),
         ),
-        // Product grid
+        
         Expanded(
           flex: 2,
           child: GridView.builder(
@@ -699,7 +689,7 @@ class _POSGridViewState extends State<POSGridView> {
             itemBuilder: (context, index) => _itemCard(filteredItems[index]),
           ),
         ),
-        // Cart & Checkout section - only show when cart has items
+        
         if (_cart.isNotEmpty)
           Container(
             decoration: BoxDecoration(
@@ -714,7 +704,7 @@ class _POSGridViewState extends State<POSGridView> {
             ),
             child: Column(
               children: [
-                // Collapsible Header
+                
                 GestureDetector(
                   onTap: () {
                     setState(() {
@@ -748,12 +738,12 @@ class _POSGridViewState extends State<POSGridView> {
                     ),
                   ),
                 ),
-                // Collapsible Content
+                
                 AnimatedCrossFade(
                   firstChild: const SizedBox.shrink(),
                   secondChild: Column(
                     children: [
-                      // Cart items
+                      
                       Container(
                         constraints: const BoxConstraints(maxHeight: 120),
                         child: ListView.builder(
@@ -764,7 +754,7 @@ class _POSGridViewState extends State<POSGridView> {
                         ),
                       ),
                       const Divider(height: 1),
-                      // Payment method
+                      
                       Padding(
                         padding: const EdgeInsets.all(12),
                         child: Column(
@@ -780,7 +770,7 @@ class _POSGridViewState extends State<POSGridView> {
                               ],
                             ),
                             const SizedBox(height: 12),
-                            // Total row
+                            
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -789,7 +779,7 @@ class _POSGridViewState extends State<POSGridView> {
                               ],
                             ),
                             const SizedBox(height: 10),
-                            // Amount paid with spinner look
+                            
                             Container(
                               decoration: BoxDecoration(
                                 color: Colors.grey[100],
@@ -841,7 +831,7 @@ class _POSGridViewState extends State<POSGridView> {
                               ),
                             ),
                             const SizedBox(height: 10),
-                            // Change row
+                            
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -850,7 +840,7 @@ class _POSGridViewState extends State<POSGridView> {
                               ],
                             ),
                             const SizedBox(height: 10),
-                            // Complete button
+                            
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
@@ -932,7 +922,7 @@ class _POSGridViewState extends State<POSGridView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product image or icon placeholder
+            
             Expanded(
               flex: 3,
               child: Container(
@@ -969,7 +959,7 @@ class _POSGridViewState extends State<POSGridView> {
               ),
             ),
             const SizedBox(height: 10),
-            // Product name
+            
             Expanded(
               flex: 2,
               child: Column(
@@ -986,7 +976,7 @@ class _POSGridViewState extends State<POSGridView> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const Spacer(),
-                  // Price
+                  
                   Text(
                     '₱${item.price}',
                     style: const TextStyle(
@@ -996,7 +986,7 @@ class _POSGridViewState extends State<POSGridView> {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  // Stock info
+                  
                   Text(
                     'Stock: ${item.stock} ${item.unit}',
                     style: TextStyle(
@@ -1021,7 +1011,7 @@ class _POSGridViewState extends State<POSGridView> {
       ),
       child: Row(
         children: [
-          // Item info
+          
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1031,7 +1021,7 @@ class _POSGridViewState extends State<POSGridView> {
               ],
             ),
           ),
-          // Quantity controls with green - and +
+          
           Row(
             children: [
               GestureDetector(
@@ -1070,12 +1060,12 @@ class _POSGridViewState extends State<POSGridView> {
             ],
           ),
           const SizedBox(width: 16),
-          // Total price
+          
           SizedBox(
             width: 60,
             child: Text('₱${cartItem.total}.00', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF009661))),
           ),
-          // Delete button
+          
           GestureDetector(
             onTap: () => _removeFromCart(index),
             child: Container(
@@ -1133,7 +1123,6 @@ class _POSGridViewState extends State<POSGridView> {
   }
 }
 
-// --- SUB-VIEW 1: INVENTORY ---
 class InventoryView extends StatefulWidget {
   const InventoryView({super.key});
   @override
@@ -1355,7 +1344,6 @@ class _InventoryViewState extends State<InventoryView> {
   }
 }
 
-// --- SUB-VIEW 2: REPORTS ---
 class ReportsView extends StatefulWidget {
   const ReportsView({super.key});
   @override
@@ -1373,7 +1361,7 @@ class _ReportsViewState extends State<ReportsView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title
+          
           const Text(
             'Reports',
             style: TextStyle(
@@ -1383,7 +1371,7 @@ class _ReportsViewState extends State<ReportsView> {
             ),
           ),
           const SizedBox(height: 16),
-          // Report type tabs
+          
           Row(
             children: [
               _reportTypeTab('Sales Report', Icons.bar_chart, const Color(0xFFF59E0B)),
@@ -1392,7 +1380,7 @@ class _ReportsViewState extends State<ReportsView> {
             ],
           ),
           const SizedBox(height: 16),
-          // Time period filters
+          
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -1408,9 +1396,9 @@ class _ReportsViewState extends State<ReportsView> {
             ),
           ),
           const SizedBox(height: 20),
-          // Content based on selected report type
+          
           if (_selectedReportType == 'Sales Report') ...[
-            // Sales Report content
+            
             Row(
               children: [
                 Expanded(
@@ -1455,7 +1443,7 @@ class _ReportsViewState extends State<ReportsView> {
               ],
             ),
             const SizedBox(height: 24),
-            // Best Selling Items section
+            
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -1490,7 +1478,7 @@ class _ReportsViewState extends State<ReportsView> {
               ),
             ),
             const SizedBox(height: 16),
-            // Payment Methods section
+            
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -1525,7 +1513,7 @@ class _ReportsViewState extends State<ReportsView> {
               ),
             ),
           ] else ...[
-            // Inventory Report content
+            
             _buildInventoryOverview(),
             const SizedBox(height: 20),
             _buildInventoryTable('Food'),
@@ -1664,7 +1652,7 @@ class _ReportsViewState extends State<ReportsView> {
             ],
           ),
           const SizedBox(height: 16),
-          // Table header
+          
           Container(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
             decoration: BoxDecoration(
@@ -1720,7 +1708,7 @@ class _ReportsViewState extends State<ReportsView> {
               ],
             ),
           ),
-          // Table rows
+          
           ...categoryItems.map((item) => Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             decoration: BoxDecoration(
@@ -1912,7 +1900,6 @@ class _ReportsViewState extends State<ReportsView> {
   }
 }
 
-// --- SUB-VIEW 3: BILLS ---
 class BillsView extends StatefulWidget {
   const BillsView({super.key});
   @override
@@ -2041,7 +2028,7 @@ class _BillsViewState extends State<BillsView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
+          
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -2066,7 +2053,7 @@ class _BillsViewState extends State<BillsView> {
             ],
           ),
           const SizedBox(height: 20),
-          // Status cards
+          
           Row(
             children: [
               Expanded(
@@ -2149,7 +2136,7 @@ class _BillsViewState extends State<BillsView> {
             ],
           ),
           const SizedBox(height: 24),
-          // Overdue Bills section
+          
           if (overdueBills.isNotEmpty) ...[
             const Row(
               children: [
@@ -2169,7 +2156,7 @@ class _BillsViewState extends State<BillsView> {
             ...overdueBills.map((bill) => _billCard(bill, isOverdue: true)),
             const SizedBox(height: 16),
           ],
-          // Upcoming Bills section
+          
           if (upcomingBills.isNotEmpty) ...[
             const Row(
               children: [
@@ -2189,7 +2176,7 @@ class _BillsViewState extends State<BillsView> {
             ...upcomingBills.map((bill) => _billCard(bill, isOverdue: false)),
             const SizedBox(height: 16),
           ],
-          // Paid Bills section
+          
           if (paidBills.isNotEmpty) ...[
             const Text(
               'Paid Bills',
@@ -2365,7 +2352,6 @@ class _BillsViewState extends State<BillsView> {
   }
 }
 
-// --- SUB-VIEW 4: MENU ---
 class MenuView extends StatefulWidget {
   const MenuView({super.key});
   @override
@@ -2405,7 +2391,7 @@ class _MenuViewState extends State<MenuView> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Handle
+                
                 Center(
                   child: Container(
                     width: 40,
@@ -2417,7 +2403,7 @@ class _MenuViewState extends State<MenuView> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Title
+                
                 Row(
                   children: [
                     Container(
@@ -2441,7 +2427,7 @@ class _MenuViewState extends State<MenuView> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                // Image Picker
+                
                 const Text('Product Image', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 GestureDetector(
@@ -2546,10 +2532,10 @@ class _MenuViewState extends State<MenuView> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Name
+                
                 TextField(controller: nameController, decoration: InputDecoration(labelText: 'Item Name', prefixIcon: const Icon(Icons.fastfood_outlined, color: Color(0xFF009661)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
                 const SizedBox(height: 12),
-                // Price & Stock
+                
                 Row(
                   children: [
                     Expanded(child: TextField(controller: priceController, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Price', prefixText: '₱', prefixIcon: const Icon(Icons.attach_money, color: Color(0xFF009661)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))))),
@@ -2558,7 +2544,7 @@ class _MenuViewState extends State<MenuView> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                // Unit & Alert
+                
                 Row(
                   children: [
                     Expanded(child: TextField(controller: unitController, decoration: InputDecoration(labelText: 'Unit', hintText: 'pcs', prefixIcon: const Icon(Icons.straighten, color: Color(0xFF009661)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))))),
@@ -2567,7 +2553,7 @@ class _MenuViewState extends State<MenuView> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                // Category
+                
                 DropdownButtonFormField<String>(
                   initialValue: selectedCategory,
                   decoration: InputDecoration(labelText: 'Category', prefixIcon: const Icon(Icons.category, color: Color(0xFF009661)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
@@ -2575,7 +2561,7 @@ class _MenuViewState extends State<MenuView> {
                   onChanged: (v) => setModalState(() => selectedCategory = v!),
                 ),
                 const SizedBox(height: 24),
-                // Buttons
+                
                 Row(
                   children: [
                     Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('Cancel'))),
@@ -2742,7 +2728,7 @@ class _MenuViewState extends State<MenuView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -2767,7 +2753,7 @@ class _MenuViewState extends State<MenuView> {
             ],
           ),
           const SizedBox(height: 20),
-          // Food Items section
+          
           Row(
             children: [
               const Icon(Icons.restaurant, color: Color(0xFFF59E0B), size: 20),
@@ -2785,7 +2771,7 @@ class _MenuViewState extends State<MenuView> {
           const SizedBox(height: 12),
           ...foodItems.map((item) => _menuItemCard(item)),
           const SizedBox(height: 20),
-          // Beverage Items section
+          
           Row(
             children: [
               const Icon(Icons.local_drink, color: Color(0xFF3B82F6), size: 20),
@@ -2862,7 +2848,7 @@ class _MenuViewState extends State<MenuView> {
               ],
             ),
           ),
-          // Edit button
+          
           GestureDetector(
             onTap: () => _showEditItemDialog(item),
             child: Container(
@@ -2880,7 +2866,7 @@ class _MenuViewState extends State<MenuView> {
               ),
             ),
           ),
-          // Delete button
+          
           GestureDetector(
             onTap: () => _deleteItem(item),
             child: Container(
@@ -2903,22 +2889,21 @@ class _MenuViewState extends State<MenuView> {
   }
 }
 
-// --- SUB-VIEW 5: DATA ---
 class DataManagementView extends StatelessWidget {
   const DataManagementView({super.key});
 
   @override
   Widget build(BuildContext context) {
     int productCount = InventoryData.items.length;
-    int transactionCount = 0; // Placeholder - would come from transaction history
-    int billCount = 3; // Placeholder - would come from bills data
+    int transactionCount = 0; 
+    int billCount = 3; 
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title
+          
           const Text(
             'Data Management',
             style: TextStyle(
@@ -2928,7 +2913,7 @@ class DataManagementView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          // Storage Overview Card
+          
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -3059,7 +3044,7 @@ class DataManagementView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          // Export Backup Section
+          
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -3119,7 +3104,7 @@ class DataManagementView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          // Import Backup Section
+          
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -3178,7 +3163,7 @@ class DataManagementView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          // Reset Data Section
+          
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -3263,14 +3248,13 @@ class DataManagementView extends StatelessWidget {
   }
 }
 
-// --- SUB-VIEW 6: DASHBOARD (HOME) ---
 class DashboardView extends StatelessWidget {
   final Function(int)? onNavigate;
   const DashboardView({super.key, this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
-    // Calculate stats
+    
     int totalProducts = InventoryData.items.length;
     int totalStock = InventoryData.items.fold(0, (sum, item) => sum + item.stock);
     int lowStockItems = InventoryData.items.where((item) => item.stock <= item.lowStockAlert).length;
@@ -3281,7 +3265,7 @@ class DashboardView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Welcome Section
+          
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -3330,7 +3314,7 @@ class DashboardView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          // Quick Stats Title
+          
           const Text(
             'Quick Overview',
             style: TextStyle(
@@ -3340,7 +3324,7 @@ class DashboardView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          // Stats Cards Row 1
+          
           Row(
             children: [
               Expanded(
@@ -3363,7 +3347,7 @@ class DashboardView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          // Stats Cards Row 2
+          
           Row(
             children: [
               Expanded(
@@ -3386,7 +3370,7 @@ class DashboardView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          // Today's Summary
+          
           const Text(
             "Today's Summary",
             style: TextStyle(
@@ -3421,7 +3405,7 @@ class DashboardView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          // Quick Actions
+          
           const Text(
             'Quick Actions',
             style: TextStyle(
@@ -3439,7 +3423,7 @@ class DashboardView extends StatelessWidget {
                   Icons.point_of_sale,
                   'New Sale',
                   const Color(0xFF009661),
-                  2, // Navigate to POS (index 2)
+                  2, 
                 ),
               ),
               const SizedBox(width: 12),
@@ -3449,7 +3433,7 @@ class DashboardView extends StatelessWidget {
                   Icons.add_box_outlined,
                   'Add Stock',
                   const Color(0xFF3B82F6),
-                  3, // Navigate to Inventory (index 3)
+                  3, 
                 ),
               ),
               const SizedBox(width: 12),
@@ -3459,13 +3443,13 @@ class DashboardView extends StatelessWidget {
                   Icons.bar_chart,
                   'Reports',
                   const Color(0xFF8B5CF6),
-                  1, // Navigate to Reports (index 1)
+                  1, 
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
-          // Low Stock Alert Section
+          
           if (lowStockItems > 0) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -3696,7 +3680,6 @@ class DashboardView extends StatelessWidget {
   }
 }
 
-// --- ANALYTICS VIEW (Reports with Export) ---
 class AnalyticsView extends StatefulWidget {
   const AnalyticsView({super.key});
   @override
@@ -3717,7 +3700,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with Export
+          
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -3741,7 +3724,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
             ],
           ),
           const SizedBox(height: 16),
-          // Period filters
+          
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -3754,7 +3737,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
             ),
           ),
           const SizedBox(height: 20),
-          // Sales Stats
+          
           Row(
             children: [
               Expanded(child: _statCard('Total Sales', '₱0.00', Icons.attach_money, const Color(0xFF22C55E))),
@@ -3771,7 +3754,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
             ],
           ),
           const SizedBox(height: 24),
-          // Inventory Summary Card
+          
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -3799,7 +3782,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
             ),
           ),
           const SizedBox(height: 20),
-          // Best Selling & Payment sections
+          
           _sectionCard('Best Selling Items', 'No sales data yet'),
           const SizedBox(height: 12),
           _sectionCard('Payment Methods', 'No payment data yet'),
@@ -3881,7 +3864,6 @@ class _AnalyticsViewState extends State<AnalyticsView> {
   }
 }
 
-// --- INVENTORY + MENU VIEW ---
 class InventoryMenuView extends StatefulWidget {
   const InventoryMenuView({super.key});
   @override
@@ -3920,7 +3902,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
       children: [
         Column(
           children: [
-            // Stats Header
+            
             Container(
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
@@ -3952,7 +3934,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                 ],
               ),
             ),
-            // Search & Filters
+            
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
@@ -3984,7 +3966,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
               ),
             ),
             const SizedBox(height: 12),
-            // Items List
+            
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -3994,7 +3976,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
             ),
           ],
         ),
-        // FAB for adding items
+        
         Positioned(
           right: 16,
           bottom: 16,
@@ -4240,7 +4222,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Handle
+                
                 Center(
                   child: Container(
                     width: 40,
@@ -4252,7 +4234,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Title with Icon
+                
                 Row(
                   children: [
                     Container(
@@ -4282,7 +4264,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                // Image Picker Section
+                
                 const Text(
                   'Product Image',
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
@@ -4474,7 +4456,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Product Name
+                
                 _buildInputField(
                   controller: nameC,
                   label: 'Product Name',
@@ -4482,7 +4464,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                   icon: Icons.fastfood_outlined,
                 ),
                 const SizedBox(height: 16),
-                // Price & Stock Row
+                
                 Row(
                   children: [
                     Expanded(
@@ -4507,7 +4489,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Unit & Low Stock Alert Row
+                
                 Row(
                   children: [
                     Expanded(
@@ -4531,7 +4513,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Category Selection
+                
                 const Text(
                   'Category',
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
@@ -4545,7 +4527,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                   ],
                 ),
                 const SizedBox(height: 28),
-                // Action Buttons
+                
                 Row(
                   children: [
                     Expanded(
@@ -4708,7 +4690,6 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
   }
 }
 
-// --- BILLS & REMINDERS VIEW (Owner only) ---
 class BillsRemindersView extends StatefulWidget {
   const BillsRemindersView({super.key});
   @override
@@ -4716,7 +4697,7 @@ class BillsRemindersView extends StatefulWidget {
 }
 
 class _BillsRemindersViewState extends State<BillsRemindersView> {
-  // Bills data - starts empty
+  
   final List<Map<String, dynamic>> _bills = [];
 
   int get unpaidBills => _bills.where((b) => !b['isPaid']).length;
@@ -4731,10 +4712,10 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              
               const Text('Bills & Reminders', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
               const SizedBox(height: 16),
-              // Summary Cards
+              
               Row(
                 children: [
                   Expanded(
@@ -4747,7 +4728,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                 ],
               ),
               const SizedBox(height: 24),
-              // Bills List
+              
               if (_bills.isEmpty)
                 Container(
                   padding: const EdgeInsets.all(40),
@@ -4766,11 +4747,11 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                 const SizedBox(height: 12),
                 ..._bills.map((bill) => _billCard(bill)),
               ],
-              const SizedBox(height: 80), // Space for FAB
+              const SizedBox(height: 80), 
             ],
           ),
         ),
-        // FAB for adding bills
+        
         Positioned(
           right: 16,
           bottom: 16,
@@ -4904,7 +4885,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Handle bar
+                
                 Container(
                   margin: const EdgeInsets.only(top: 12),
                   width: 40,
@@ -4914,7 +4895,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                // Gradient Header
+                
                 Container(
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(20),
@@ -4963,13 +4944,13 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                     ],
                   ),
                 ),
-                // Form Fields
+                
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Bill Name Field
+                      
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey.shade50,
@@ -4988,7 +4969,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // Amount Field
+                      
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey.shade50,
@@ -5010,7 +4991,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // Category Selection
+                      
                       const Text(
                         'Category',
                         style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF333333)),
@@ -5062,7 +5043,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                // Action Buttons
+                
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                   child: Row(
@@ -5124,7 +5105,6 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
   }
 }
 
-// --- NOTIFICATIONS SHEET (System Alerts) ---
 class NotificationsSheet extends StatelessWidget {
   final ScrollController scrollController;
   const NotificationsSheet({super.key, required this.scrollController});
@@ -5152,7 +5132,7 @@ class NotificationsSheet extends StatelessWidget {
       child: ListView(
         controller: scrollController,
         children: [
-          // Handle
+          
           Center(
             child: Container(
               width: 40,
@@ -5161,7 +5141,7 @@ class NotificationsSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          // Title
+          
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -5174,7 +5154,7 @@ class NotificationsSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          // Low Stock Alerts
+          
           if (lowStockAlerts.isEmpty)
             Container(
               padding: const EdgeInsets.all(32),
@@ -5231,7 +5211,6 @@ class NotificationsSheet extends StatelessWidget {
   }
 }
 
-// --- SETTINGS SHEET ---
 class SettingsSheet extends StatefulWidget {
   final ScrollController scrollController;
   const SettingsSheet({super.key, required this.scrollController});
@@ -5248,7 +5227,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
       child: ListView(
         controller: widget.scrollController,
         children: [
-          // Handle
+          
           Center(
             child: Container(
               width: 40,
@@ -5257,11 +5236,10 @@ class _SettingsSheetState extends State<SettingsSheet> {
             ),
           ),
           const SizedBox(height: 20),
-          // Title
+          
           const Text('Settings', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
           
-          // User Management Section (Owner only)
           _sectionTitle('User Management'),
           _settingsTile(context, Icons.person_add_outlined, 'Add Helper', 'Create a new helper account', onTap: () {
             Navigator.pop(context);
@@ -5273,7 +5251,6 @@ class _SettingsSheetState extends State<SettingsSheet> {
           }),
           const SizedBox(height: 20),
           
-          // Account Section
           _sectionTitle('Account'),
           _settingsTile(context, Icons.person_outline, 'Profile', 'Manage your account'),
           _settingsTile(context, Icons.lock_outline, 'Change Password', 'Update your password', onTap: () {
@@ -5281,7 +5258,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
             _showChangePasswordDialog(context);
           }),
           const SizedBox(height: 20),
-          // Data Section
+          
           _sectionTitle('Data & Backup'),
           _settingsTile(context, Icons.cloud_download_outlined, 'Export Data', 'Backup all your data', onTap: () {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Exporting data...'), backgroundColor: Color(0xFF009661)));
@@ -5289,19 +5266,18 @@ class _SettingsSheetState extends State<SettingsSheet> {
           _settingsTile(context, Icons.cloud_upload_outlined, 'Import Data', 'Restore from backup'),
           _settingsTile(context, Icons.delete_forever_outlined, 'Reset Data', 'Clear all data', isDestructive: true),
           const SizedBox(height: 20),
-          // App Section
+          
           _sectionTitle('App'),
           _settingsTile(context, Icons.notifications_outlined, 'Notifications', 'Manage alerts'),
           _settingsTile(context, Icons.palette_outlined, 'Appearance', 'Theme settings'),
           const SizedBox(height: 20),
-          // Support Section
+          
           _sectionTitle('Support'),
           _settingsTile(context, Icons.help_outline, 'Help & Support', 'Get help with the app'),
           _settingsTile(context, Icons.privacy_tip_outlined, 'Privacy Policy', 'View our privacy policy'),
           _settingsTile(context, Icons.info_outline, 'About', 'Byte & Bite POS v1.0'),
           const SizedBox(height: 20),
           
-          // Logout Section
           _sectionTitle('Session'),
           _settingsTile(context, Icons.logout, 'Logout', 'Sign out of your account', isDestructive: true, onTap: () {
             Navigator.pop(context);

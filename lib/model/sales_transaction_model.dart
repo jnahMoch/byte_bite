@@ -1,4 +1,3 @@
-/// SalesTransaction model - represents a completed sale
 class SalesTransaction {
   final String receiptNumber;
   final DateTime dateTime;

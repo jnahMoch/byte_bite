@@ -1,6 +1,5 @@
 import '../model/bill_model.dart';
 
-/// Bills data tracking - stores all bill reminders
 class BillsData {
   static final List<Bill> bills = [
     Bill(

@@ -21,11 +21,11 @@ class _HelperHomePageState extends State<HelperHomePage> {
   void initState() {
     super.initState();
     _pages = [
-      HelperDashboardView(onNavigate: _navigateToPage), // Index 0: Dashboard
-      HelperPOSView(), // Index 1: POS
-      HelperBillsView(), // Index 2: Bills
-      HelperInventoryView(), // Index 3: Inventory
-      HelperSettingsSheet(scrollController: ScrollController()), // Index 4: Settings
+      HelperDashboardView(onNavigate: _navigateToPage), 
+      HelperPOSView(), 
+      HelperBillsView(), 
+      HelperInventoryView(), 
+      HelperSettingsSheet(scrollController: ScrollController()), 
     ];
   }
 
@@ -42,11 +42,8 @@ class _HelperHomePageState extends State<HelperHomePage> {
     );
   }
 
-
-  // Removed unused _showSettingsBottomSheet method.
 }
 
-// Simple POS View for Helper
 class HelperPOSView extends StatelessWidget {
   const HelperPOSView({super.key});
 
@@ -67,7 +64,6 @@ class HelperPOSView extends StatelessWidget {
   }
 }
 
-// Simple Bills View for Helper
 class HelperBillsView extends StatelessWidget {
   const HelperBillsView({super.key});
 
@@ -88,7 +84,6 @@ class HelperBillsView extends StatelessWidget {
   }
 }
 
-// Dashboard View for Helper (Limited - no financial summaries)
 class HelperDashboardView extends StatelessWidget {
   final Function(int)? onNavigate;
   const HelperDashboardView({super.key, this.onNavigate});
@@ -104,7 +99,7 @@ class HelperDashboardView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Welcome Section
+          
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -153,7 +148,7 @@ class HelperDashboardView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          // Quick Stats (no financial data)
+          
           const Text(
             'Quick Overview',
             style: TextStyle(
@@ -207,7 +202,7 @@ class HelperDashboardView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          // Quick Actions
+          
           const Text(
             'Quick Actions',
             style: TextStyle(
@@ -225,7 +220,7 @@ class HelperDashboardView extends StatelessWidget {
                   Icons.point_of_sale,
                   'New Sale',
                   const Color(0xFF009661),
-                  1, // Navigate to POS
+                  1, 
                 ),
               ),
               const SizedBox(width: 12),
@@ -235,13 +230,13 @@ class HelperDashboardView extends StatelessWidget {
                   Icons.inventory_2_outlined,
                   'Inventory',
                   const Color(0xFF3B82F6),
-                  2, // Navigate to Inventory
+                  2, 
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
-          // Low Stock Alerts Section
+          
           if (_lowStockCount > 0) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -278,12 +273,12 @@ class HelperDashboardView extends StatelessWidget {
                 .map((item) => _lowStockItem(item)),
             if (_lowStockCount > 3)
               TextButton(
-                onPressed: () => onNavigate?.call(3), // Navigate to Notifications
+                onPressed: () => onNavigate?.call(3), 
                 child: const Text('View all low stock items →'),
               ),
           ],
           const SizedBox(height: 16),
-          // Helper Tips
+          
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -481,7 +476,6 @@ class HelperDashboardView extends StatelessWidget {
   }
 }
 
-// --- HELPER INVENTORY VIEW (View-only, can update stock quantities) ---
 class HelperInventoryView extends StatefulWidget {
   const HelperInventoryView({super.key});
 
@@ -538,7 +532,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
     
     return Column(
       children: [
-        // Header with gradient
+        
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -625,7 +619,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                 ],
               ),
               const SizedBox(height: 16),
-              // Search Bar
+              
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -667,7 +661,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
             ],
           ),
         ),
-        // Category Chips
+        
         Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: SizedBox(
@@ -728,7 +722,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
             ),
           ),
         ),
-        // Items Grid
+        
         Expanded(
           child: _filteredItems.isEmpty
               ? Center(
@@ -780,7 +774,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                             padding: const EdgeInsets.all(14),
                             child: Row(
                               children: [
-                                // Product Icon/Image
+                                
                                 Container(
                                   width: 56,
                                   height: 56,
@@ -802,7 +796,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                                   ),
                                 ),
                                 const SizedBox(width: 14),
-                                // Info
+                                
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -868,7 +862,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                                     ],
                                   ),
                                 ),
-                                // Update Stock Button
+                                
                                 Container(
                                   width: 44,
                                   height: 44,
@@ -914,7 +908,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle bar
+              
               Container(
                 margin: const EdgeInsets.only(top: 12),
                 width: 40,
@@ -924,7 +918,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              // Gradient Header
+              
               Container(
                 margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(20),
@@ -975,7 +969,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                   ],
                 ),
               ),
-              // Current Stock Info
+              
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Container(
@@ -1012,7 +1006,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                 ),
               ),
               const SizedBox(height: 16),
-              // Input Field
+              
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Container(
@@ -1044,7 +1038,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                 ),
               ),
               const SizedBox(height: 24),
-              // Action Buttons
+              
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                 child: Row(
@@ -1109,7 +1103,6 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
   }
 }
 
-// --- HELPER NOTIFICATIONS VIEW (Low Stock Alerts Only) ---
 class HelperNotificationsView extends StatelessWidget {
   const HelperNotificationsView({super.key});
 
@@ -1120,7 +1113,7 @@ class HelperNotificationsView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header
+        
         Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -1158,7 +1151,7 @@ class HelperNotificationsView extends StatelessWidget {
             ],
           ),
         ),
-        // Alerts List
+        
         Expanded(
           child: lowStockItems.isEmpty
               ? Center(
@@ -1238,7 +1231,6 @@ class HelperNotificationsView extends StatelessWidget {
   }
 }
 
-// --- HELPER SETTINGS SHEET (with Change Password & Logout) ---
 class HelperSettingsSheet extends StatefulWidget {
   final ScrollController scrollController;
   const HelperSettingsSheet({super.key, required this.scrollController});
@@ -1255,7 +1247,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
       child: ListView(
         controller: widget.scrollController,
         children: [
-          // Title with close button
+          
           Row(
             children: [
               const Text('Settings', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
@@ -1286,9 +1278,9 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
             ],
           ),
           const SizedBox(height: 24),
-          // Account Section
+          
           _sectionTitle('Account'),
-          // Profile info
+          
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -1336,7 +1328,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
             onTap: () => _showChangePasswordDialog(context),
           ),
           const SizedBox(height: 30),
-          // Logout Button
+          
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -1409,7 +1401,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Handle bar
+                
                 Container(
                   margin: const EdgeInsets.only(top: 12),
                   width: 40,
@@ -1419,7 +1411,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                // Gradient Header
+                
                 Container(
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(20),
@@ -1468,12 +1460,12 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                     ],
                   ),
                 ),
-                // Form Fields
+                
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     children: [
-                      // Current Password
+                      
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey.shade50,
@@ -1500,7 +1492,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // New Password
+                      
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey.shade50,
@@ -1527,7 +1519,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // Confirm Password
+                      
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey.shade50,
@@ -1557,7 +1549,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                // Action Buttons
+                
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                   child: Row(

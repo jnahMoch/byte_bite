@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'homepage.dart' show BillsData, Bill;
 
@@ -173,7 +171,7 @@ class _BillsPageState extends State<BillsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Section
+          
           Container(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
             decoration: const BoxDecoration(
@@ -228,7 +226,6 @@ class _BillsPageState extends State<BillsPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // Summary Cards
                 Row(
                   children: [
                     _summaryCard("Overdue", "${overdueBills.length}", "₱${BillsData.totalOverdue.toStringAsFixed(0)}", const Color(0xFFEF4444), const Color(0xFFDC2626), Icons.warning_rounded),
@@ -240,12 +237,11 @@ class _BillsPageState extends State<BillsPage> {
             ),
           ),
 
-          // Bill List
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // Overdue Section
+                
                 if (overdueBills.isNotEmpty) ...[
                   _sectionHeader("Overdue Bills", Icons.error_outline_rounded, Colors.red),
                   const SizedBox(height: 12),
@@ -253,14 +249,12 @@ class _BillsPageState extends State<BillsPage> {
                   const SizedBox(height: 8),
                 ],
 
-                // Upcoming Section
                 if (upcomingBills.isNotEmpty) ...[
                   _sectionHeader("Upcoming Bills", Icons.schedule_rounded, const Color(0xFF3B82F6)),
                   const SizedBox(height: 12),
                   ...upcomingBills.map((bill) => _billItem(bill: bill, isOverdue: false)),
                 ],
 
-                // Empty state
                 if (overdueBills.isEmpty && upcomingBills.isEmpty)
                   Container(
                     padding: const EdgeInsets.all(40),
@@ -308,7 +302,6 @@ class _BillsPageState extends State<BillsPage> {
     );
   }
 
-  // Helper for the Overdue/Upcoming top cards
   Widget _summaryCard(String title, String count, String total, Color startColor, Color endColor, IconData icon) {
     return Expanded(
       child: Container(
@@ -342,7 +335,6 @@ class _BillsPageState extends State<BillsPage> {
     );
   }
 
-  // Helper for individual Bill cards
   Widget _billItem({required Bill bill, required bool isOverdue}) {
     final accentColor = isOverdue ? const Color(0xFFEF4444) : const Color(0xFF3B82F6);
 
@@ -366,7 +358,7 @@ class _BillsPageState extends State<BillsPage> {
         children: [
           Row(
             children: [
-              // Icon container
+              
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -380,7 +372,7 @@ class _BillsPageState extends State<BillsPage> {
                 ),
               ),
               const SizedBox(width: 12),
-              // Title and Category
+              
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,7 +396,7 @@ class _BillsPageState extends State<BillsPage> {
                   ],
                 ),
               ),
-              // Amount
+              
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -430,7 +422,7 @@ class _BillsPageState extends State<BillsPage> {
             ],
           ),
           const SizedBox(height: 14),
-          // Due date row
+          
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
@@ -452,7 +444,7 @@ class _BillsPageState extends State<BillsPage> {
             ),
           ),
           const SizedBox(height: 14),
-          // Mark as Paid button
+          
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(

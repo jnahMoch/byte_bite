@@ -1,15 +1,7 @@
-// ignore_for_file: avoid_catches_without_on_clauses
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// UserStorage — Hybrid local + Firebase Firestore storage.
-/// All original methods are UNCHANGED so existing code keeps working.
-/// Firebase methods are ADDITIVE — they sync data on top of local storage.
-
 class UserStorage {
-  // ─────────────────────────────────────────────
-  // LOCAL STORAGE (original — untouched)
-  // ─────────────────────────────────────────────
+  
   static final Map<String, Map<String, String>> _users = {};
   static bool _ownerRegistered = false;
   static String? _currentUser;
@@ -108,31 +100,20 @@ class UserStorage {
     return null;
   }
 
-  // ─────────────────────────────────────────────
-  // NEW: FIREBASE HELPER METHODS
-  // ─────────────────────────────────────────────
-
-  /// Converts a username to a Firebase-compatible email.
-  /// e.g. "john doe" → "john_doe@bytebite.app"
-  /// Firebase Auth requires email format — username is stored separately in Firestore.
   static String toFirebaseEmail(String username) {
     return '${username.toLowerCase().trim().replaceAll(' ', '_')}@bytebite.app';
   }
 
-  /// NEW: Set current user using data fetched from Firebase.
-  /// Bypasses the local _users map lookup so Firebase-only users work.
   static void setCurrentUserWithRole(String username, String role) {
     _currentUser = username;
     _currentUserRole = role;
-    // Mirror into local map so existing getUserRole() calls still work
+    
     if (!_users.containsKey(username)) {
       _users[username] = {'password': '', 'role': role};
     }
     if (role == 'Owner') _ownerRegistered = true;
   }
 
-  /// Checks Firestore at app startup to see if an Owner document exists.
-  /// Falls back to local _ownerRegistered if Firestore is unreachable (offline).
   static Future<bool> checkOwnerExistsInFirestore() async {
     try {
       final query = await FirebaseFirestore.instance
@@ -144,7 +125,7 @@ class UserStorage {
       if (query.docs.isNotEmpty) {
         final data = query.docs.first.data();
         final username = data['username'] as String? ?? '';
-        // Sync owner into local map so fallback login still works
+        
         if (username.isNotEmpty && !_users.containsKey(username)) {
           _users[username] = {'password': '', 'role': 'Owner'};
         }
@@ -153,13 +134,11 @@ class UserStorage {
       }
       return false;
     } catch (_) {
-      // Offline or Firestore error — fall back to local state
+      
       return _ownerRegistered;
     }
   }
 
-  /// Syncs ALL users from Firestore into local storage.
-  /// Called once after a successful Firebase login so fallback works for that session.
   static Future<void> syncUsersFromFirestore() async {
     try {
       final snapshot =
@@ -174,7 +153,7 @@ class UserStorage {
         if (role == 'Owner') _ownerRegistered = true;
       }
     } catch (_) {
-      // Silent fail — local storage continues working
+      
     }
   }
 }

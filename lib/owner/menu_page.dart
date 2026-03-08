@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'homepage.dart' show InventoryData, POSItem;
 
@@ -241,7 +239,7 @@ class _MenuPageState extends State<MenuPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Section
+          
           Container(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
             decoration: const BoxDecoration(
@@ -306,19 +304,17 @@ class _MenuPageState extends State<MenuPage> {
             ),
           ),
 
-          // Menu List with Categories
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // Food Category
+                
                 _buildCategoryHeader("Food Items", "${foodItems.length}", Icons.restaurant_rounded, const Color(0xFFEF4444)),
                 const SizedBox(height: 12),
                 ...foodItems.map((item) => _menuManagementCard(item)),
 
                 const SizedBox(height: 20),
 
-                // Beverage Category
                 _buildCategoryHeader("Beverages", "${beverageItems.length}", Icons.local_cafe_rounded, const Color(0xFF3B82F6)),
                 const SizedBox(height: 12),
                 ...beverageItems.map((item) => _menuManagementCard(item)),
@@ -330,7 +326,6 @@ class _MenuPageState extends State<MenuPage> {
     );
   }
 
-  // Helper for Category Headers
   Widget _buildCategoryHeader(String title, String count, IconData icon, Color color) {
     return Row(
       children: [
@@ -363,7 +358,6 @@ class _MenuPageState extends State<MenuPage> {
     );
   }
 
-  // Helper for individual Menu Management Cards
   Widget _menuManagementCard(POSItem item) {
     final isLowStock = item.stock <= item.lowStockAlert;
     
@@ -383,7 +377,7 @@ class _MenuPageState extends State<MenuPage> {
       ),
       child: Row(
         children: [
-          // Item Details
+          
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -435,7 +429,6 @@ class _MenuPageState extends State<MenuPage> {
             ),
           ),
 
-          // Action Buttons (Edit and Delete)
           Row(
             children: [
               _actionButton(Icons.edit_rounded, const Color(0xFF6B7280), const Color(0xFFF3F4F6), () {}),
@@ -448,7 +441,6 @@ class _MenuPageState extends State<MenuPage> {
     );
   }
 
-  // Helper for the Edit/Delete icons
   Widget _actionButton(IconData icon, Color color, Color bgColor, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,

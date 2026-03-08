@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'homepage.dart' show InventoryData, SalesData, BillsData;
 
@@ -12,7 +10,7 @@ class DataManagementPage extends StatefulWidget {
 
 class _DataManagementPageState extends State<DataManagementPage> {
   void _exportData() {
-    // Simulate export
+    
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Data exported successfully!'),
@@ -22,7 +20,7 @@ class _DataManagementPageState extends State<DataManagementPage> {
   }
 
   void _importData() {
-    // Simulate import
+    
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Import feature coming soon'),
@@ -81,7 +79,7 @@ class _DataManagementPageState extends State<DataManagementPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Section
+          
           Container(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
             decoration: const BoxDecoration(
@@ -140,7 +138,7 @@ class _DataManagementPageState extends State<DataManagementPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. Export Backup Section
+                  
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -199,7 +197,6 @@ class _DataManagementPageState extends State<DataManagementPage> {
 
                   const SizedBox(height: 16),
 
-                  // 2. Import Backup Section
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -255,7 +252,6 @@ class _DataManagementPageState extends State<DataManagementPage> {
 
                   const SizedBox(height: 16),
 
-                  // 3. Danger Zone
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
@@ -307,7 +303,6 @@ class _DataManagementPageState extends State<DataManagementPage> {
 
                   const SizedBox(height: 16),
 
-                  // 4. Tip Section
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
