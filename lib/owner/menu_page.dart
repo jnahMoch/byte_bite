@@ -57,7 +57,7 @@ class _MenuPageState extends State<MenuPage> {
                   const Text('Category *', style: TextStyle(fontSize: 12, color: Colors.grey)),
                   const SizedBox(height: 4),
                   DropdownButtonFormField<String>(
-                    value: selectedCategory,
+                    initialValue: selectedCategory,
                     decoration: InputDecoration(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),

@@ -25,6 +25,7 @@ class _SignUpPageState extends State<SignUpPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final ownerExists = await UserStorage.checkOwnerExistsInFirestore();
       if (ownerExists) {
+        // ignore: use_build_context_synchronously
         Navigator.pushReplacementNamed(context, '/login');
       }
     });
@@ -60,6 +61,7 @@ class _SignUpPageState extends State<SignUpPage> {
             'Owner already registered. Please login.', Colors.redAccent);
         Future.delayed(
             const Duration(seconds: 1),
+            // ignore: use_build_context_synchronously
             () => Navigator.pushReplacementNamed(context, '/login'));
         return;
       }
@@ -83,6 +85,7 @@ class _SignUpPageState extends State<SignUpPage> {
       _showSnackBar(
           'Owner account created! You can now login.', Colors.green);
       Future.delayed(const Duration(seconds: 2),
+          // ignore: use_build_context_synchronously
           () => Navigator.pushReplacementNamed(context, '/login'));
     } on FirebaseAuthException catch (e) {
       
@@ -92,6 +95,7 @@ class _SignUpPageState extends State<SignUpPage> {
             'Account created (offline mode). You can now login.',
             Colors.orange);
         Future.delayed(const Duration(seconds: 2),
+            // ignore: use_build_context_synchronously
             () => Navigator.pushReplacementNamed(context, '/login'));
       } else {
         _showSnackBar(

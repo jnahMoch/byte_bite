@@ -60,7 +60,6 @@ class _LoginPageState extends State<LoginPage> {
 
       _navigateByRole(role);
       return;
-    } on FirebaseAuthException {
     } catch (_) {
 
     }
