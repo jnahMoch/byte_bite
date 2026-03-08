@@ -481,7 +481,7 @@ class _InventoryPageState extends State<InventoryPage> {
         border: isLowStock ? Border.all(color: Colors.orange.shade200, width: 1.5) : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -565,7 +565,7 @@ class _InventoryPageState extends State<InventoryPage> {
                   style: TextStyle(color: Color(0xFF009661), fontSize: 13, fontWeight: FontWeight.w600),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF009661).withOpacity(0.1),
+                  backgroundColor: const Color(0xFF009661).withValues(alpha: 0.1),
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   shape: RoundedRectangleBorder(

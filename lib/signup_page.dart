@@ -143,7 +143,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
+                    color: Colors.black.withValues(alpha: 0.15),
                     blurRadius: 30,
                     offset: const Offset(0, 10),
                   ),
@@ -160,7 +160,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF009661).withOpacity(0.2),
+                          color: const Color(0xFF009661).withValues(alpha: 0.2),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -188,7 +188,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF009661).withOpacity(0.1),
+                      color: const Color(0xFF009661).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(

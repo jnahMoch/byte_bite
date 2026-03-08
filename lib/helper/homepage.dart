@@ -292,12 +292,12 @@ class HelperDashboardView extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF009661).withOpacity(0.08),
-                  const Color(0xFF00B377).withOpacity(0.12),
+                  const Color(0xFF009661).withValues(alpha: 0.08),
+                  const Color(0xFF00B377).withValues(alpha: 0.12),
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF009661).withOpacity(0.2)),
+              border: Border.all(color: const Color(0xFF009661).withValues(alpha: 0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,7 +307,7 @@ class HelperDashboardView extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF009661).withOpacity(0.15),
+                        color: const Color(0xFF009661).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFF009661), size: 20),
@@ -359,12 +359,12 @@ class HelperDashboardView extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [color, color.withOpacity(0.8)],
+          colors: [color, color.withValues(alpha: 0.8)],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -408,7 +408,7 @@ class HelperDashboardView extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -546,8 +546,8 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                const Color(0xFF009661).withOpacity(0.05),
-                const Color(0xFF00B377).withOpacity(0.1),
+                const Color(0xFF009661).withValues(alpha: 0.05),
+                const Color(0xFF00B377).withValues(alpha: 0.1),
               ],
             ),
           ),
@@ -605,7 +605,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF009661).withOpacity(0.3),
+                              color: const Color(0xFF009661).withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -632,7 +632,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),
@@ -695,7 +695,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                         boxShadow: isSelected
                             ? [
                                 BoxShadow(
-                                  color: const Color(0xFF009661).withOpacity(0.3),
+                                  color: const Color(0xFF009661).withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -764,8 +764,8 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                         boxShadow: [
                           BoxShadow(
                             color: isLowStock 
-                                ? Colors.red.withOpacity(0.08) 
-                                : Colors.black.withOpacity(0.03),
+                                ? Colors.red.withValues(alpha: 0.08) 
+                                : Colors.black.withValues(alpha: 0.03),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -789,8 +789,8 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        catColor.withOpacity(0.15),
-                                        catColor.withOpacity(0.25),
+                                        catColor.withValues(alpha: 0.15),
+                                        catColor.withValues(alpha: 0.25),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(14),
@@ -821,7 +821,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFF009661).withOpacity(0.1),
+                                              color: const Color(0xFF009661).withValues(alpha: 0.1),
                                               borderRadius: BorderRadius.circular(8),
                                             ),
                                             child: Text(
@@ -873,7 +873,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                                   width: 44,
                                   height: 44,
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF009661).withOpacity(0.1),
+                                    color: const Color(0xFF009661).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: IconButton(
@@ -937,7 +937,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF3B82F6).withOpacity(0.3),
+                      color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -948,7 +948,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.inventory_2, color: Colors.white, size: 28),
@@ -1032,7 +1032,7 @@ class _HelperInventoryViewState extends State<HelperInventoryView> {
                         margin: const EdgeInsets.all(8),
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF009661).withOpacity(0.1),
+                          color: const Color(0xFF009661).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(Icons.add, color: Color(0xFF009661)),
@@ -1263,7 +1263,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF009661).withOpacity(0.1),
+                  color: const Color(0xFF009661).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -1302,7 +1302,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF009661).withOpacity(0.15),
+                    color: const Color(0xFF009661).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(25),
                   ),
                   child: const Icon(Icons.person, color: Color(0xFF009661), size: 28),
@@ -1432,7 +1432,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF5E35B1).withOpacity(0.3),
+                        color: const Color(0xFF5E35B1).withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -1443,7 +1443,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(Icons.lock_reset, color: Colors.white, size: 28),

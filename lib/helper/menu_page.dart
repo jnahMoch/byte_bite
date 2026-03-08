@@ -554,7 +554,7 @@ class _MenuContentState extends State<MenuContent> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
+                          color: Colors.black.withValues(alpha: 0.04),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -569,7 +569,7 @@ class _MenuContentState extends State<MenuContent> {
                           child: Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              color: iconColor.withOpacity(0.08),
+                              color: iconColor.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: imageUrl.isNotEmpty
@@ -581,7 +581,7 @@ class _MenuContentState extends State<MenuContent> {
                                       width: double.infinity,
                                       height: double.infinity,
                                       errorBuilder: (context, error, stackTrace) => Center(
-                                        child: Icon(iconData, size: 40, color: iconColor.withOpacity(0.6)),
+                                        child: Icon(iconData, size: 40, color: iconColor.withValues(alpha: 0.6)),
                                       ),
                                       loadingBuilder: (context, child, loadingProgress) {
                                         if (loadingProgress == null) return child;
@@ -595,7 +595,7 @@ class _MenuContentState extends State<MenuContent> {
                                     ),
                                   )
                                 : Center(
-                                    child: Icon(iconData, size: 40, color: iconColor.withOpacity(0.6)),
+                                    child: Icon(iconData, size: 40, color: iconColor.withValues(alpha: 0.6)),
                                   ),
                           ),
                         ),

@@ -153,7 +153,7 @@ class _ReportsPageState extends State<ReportsPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -167,7 +167,7 @@ class _ReportsPageState extends State<ReportsPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF009661).withOpacity(0.1),
+                  color: const Color(0xFF009661).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.star_rounded, color: Color(0xFF009661), size: 20),
@@ -198,7 +198,7 @@ class _ReportsPageState extends State<ReportsPage> {
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF009661).withOpacity(0.1),
+                        color: const Color(0xFF009661).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -243,7 +243,7 @@ class _ReportsPageState extends State<ReportsPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -257,7 +257,7 @@ class _ReportsPageState extends State<ReportsPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2563EB).withOpacity(0.1),
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.payment_rounded, color: Color(0xFF2563EB), size: 20),
@@ -301,7 +301,7 @@ class _ReportsPageState extends State<ReportsPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -315,7 +315,7 @@ class _ReportsPageState extends State<ReportsPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF7C3AED).withOpacity(0.1),
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF7C3AED), size: 20),
@@ -380,7 +380,7 @@ class _ReportsPageState extends State<ReportsPage> {
             border: Border.all(color: isSelected ? const Color(0xFF009661) : Colors.grey.shade300),
             boxShadow: isSelected ? [
               BoxShadow(
-                color: const Color(0xFF009661).withOpacity(0.3),
+                color: const Color(0xFF009661).withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -413,7 +413,7 @@ class _ReportsPageState extends State<ReportsPage> {
           border: Border.all(color: isSelected ? const Color(0xFF009661) : const Color(0xFFE5E7EB)),
           boxShadow: isSelected ? [
             BoxShadow(
-              color: const Color(0xFF009661).withOpacity(0.25),
+              color: const Color(0xFF009661).withValues(alpha: 0.25),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -432,12 +432,12 @@ class _ReportsPageState extends State<ReportsPage> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [color, color.withOpacity(0.85)],
+          colors: [color, color.withValues(alpha: 0.85)],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.35),
+            color: color.withValues(alpha: 0.35),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -451,17 +451,17 @@ class _ReportsPageState extends State<ReportsPage> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: Colors.white.withOpacity(0.8), size: 24),
+              child: Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 24),
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text(title, style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12, fontWeight: FontWeight.w500)),
+              Text(title, style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12, fontWeight: FontWeight.w500)),
               const SizedBox(height: 6),
               Text(value, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
             ],

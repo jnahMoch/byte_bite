@@ -133,7 +133,7 @@ class _LoginPageState extends State<LoginPage> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
+                    color: Colors.black.withValues(alpha: 0.15),
                     blurRadius: 30,
                     offset: const Offset(0, 10),
                   ),
@@ -150,7 +150,7 @@ class _LoginPageState extends State<LoginPage> {
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF009661).withOpacity(0.2),
+                          color: const Color(0xFF009661).withValues(alpha: 0.2),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -202,7 +202,7 @@ class _LoginPageState extends State<LoginPage> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                         shadowColor:
-                            const Color(0xFF009661).withOpacity(0.4),
+                            const Color(0xFF009661).withValues(alpha: 0.4),
                       ),
                       child: _isLoading
                           ? const CircularProgressIndicator(

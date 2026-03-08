@@ -446,7 +446,7 @@ class _POSGridViewState extends State<POSGridView> {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF009661).withOpacity(0.1),
+                  color: const Color(0xFF009661).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.check_circle, color: Color(0xFF009661), size: 50),
@@ -723,7 +723,7 @@ class _POSGridViewState extends State<POSGridView> {
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    color: const Color(0xFF009661).withOpacity(0.05),
+                    color: const Color(0xFF009661).withValues(alpha: 0.05),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -923,7 +923,7 @@ class _POSGridViewState extends State<POSGridView> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -938,7 +938,7 @@ class _POSGridViewState extends State<POSGridView> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.08),
+                  color: iconColor.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: item.image != null
@@ -950,7 +950,7 @@ class _POSGridViewState extends State<POSGridView> {
                           width: double.infinity,
                           height: double.infinity,
                           errorBuilder: (context, error, stackTrace) => Center(
-                            child: Icon(iconData, size: 40, color: iconColor.withOpacity(0.6)),
+                            child: Icon(iconData, size: 40, color: iconColor.withValues(alpha: 0.6)),
                           ),
                           loadingBuilder: (context, child, loadingProgress) {
                             if (loadingProgress == null) return child;
@@ -964,7 +964,7 @@ class _POSGridViewState extends State<POSGridView> {
                         ),
                       )
                     : Center(
-                        child: Icon(iconData, size: 40, color: iconColor.withOpacity(0.6)),
+                        child: Icon(iconData, size: 40, color: iconColor.withValues(alpha: 0.6)),
                       ),
               ),
             ),
@@ -2474,7 +2474,7 @@ class _MenuViewState extends State<MenuView> {
                                       },
                                       child: Container(
                                         padding: const EdgeInsets.all(24),
-                                        decoration: BoxDecoration(color: const Color(0xFF009661).withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                                        decoration: BoxDecoration(color: const Color(0xFF009661).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
                                         child: const Column(
                                           children: [
                                             Icon(Icons.camera_alt_rounded, size: 40, color: Color(0xFF009661)),
@@ -2495,7 +2495,7 @@ class _MenuViewState extends State<MenuView> {
                                       },
                                       child: Container(
                                         padding: const EdgeInsets.all(24),
-                                        decoration: BoxDecoration(color: const Color(0xFF3B82F6).withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                                        decoration: BoxDecoration(color: const Color(0xFF3B82F6).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
                                         child: const Column(
                                           children: [
                                             Icon(Icons.photo_library_rounded, size: 40, color: Color(0xFF3B82F6)),
@@ -2538,7 +2538,7 @@ class _MenuViewState extends State<MenuView> {
                         : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFF009661).withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.add_photo_alternate_outlined, size: 28, color: Color(0xFF009661))),
+                              Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFF009661).withValues(alpha: 0.1), shape: BoxShape.circle), child: const Icon(Icons.add_photo_alternate_outlined, size: 28, color: Color(0xFF009661))),
                               const SizedBox(height: 8),
                               const Text('Tap to add image', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
                             ],
@@ -3404,7 +3404,7 @@ class DashboardView extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -3603,7 +3603,7 @@ class DashboardView extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -4336,7 +4336,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                                       child: Container(
                                         padding: const EdgeInsets.all(24),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF009661).withOpacity(0.1),
+                                          color: const Color(0xFF009661).withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(16),
                                         ),
                                         child: const Column(
@@ -4367,7 +4367,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                                       child: Container(
                                         padding: const EdgeInsets.all(24),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF3B82F6).withOpacity(0.1),
+                                          color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(16),
                                         ),
                                         child: const Column(
@@ -4454,7 +4454,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF009661).withOpacity(0.1),
+                                  color: const Color(0xFF009661).withValues(alpha: 0.1),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(Icons.add_photo_alternate_outlined, size: 32, color: Color(0xFF009661)),
@@ -4816,7 +4816,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: isPaid ? Colors.green.shade200 : Colors.grey.shade200),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Row(
@@ -4927,7 +4927,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.red.withOpacity(0.3),
+                        color: Colors.red.withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -4938,7 +4938,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(Icons.receipt_long, color: Colors.white, size: 28),
@@ -5033,7 +5033,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                                   color: isSelected ? const Color(0xFFB71C1C) : Colors.grey.shade300,
                                 ),
                                 boxShadow: isSelected
-                                    ? [BoxShadow(color: Colors.red.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))]
+                                    ? [BoxShadow(color: Colors.red.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))]
                                     : null,
                               ),
                               child: Row(
@@ -5526,7 +5526,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF009661).withOpacity(0.1),
+                                    color: const Color(0xFF009661).withValues(alpha: 0.1),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(Icons.person, color: Color(0xFF009661)),
