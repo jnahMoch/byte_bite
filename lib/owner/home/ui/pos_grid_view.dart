@@ -737,8 +737,7 @@ class _POSGridViewState extends State<POSGridView> {
               ),
               
               if (_cart.isNotEmpty)
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 300),
+                Expanded(
                   child: SingleChildScrollView(
                     child: Container(
                       decoration: BoxDecoration(
