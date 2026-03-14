@@ -38,7 +38,16 @@ class _InventoryPageState extends State<InventoryPage> {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => Dialog(
+        builder: (dialogContext, setDialogState) => WillPopScope(
+          onWillPop: () async {
+            nameController.dispose();
+            priceController.dispose();
+            stockController.dispose();
+            unitController.dispose();
+            lowStockController.dispose();
+            return true;
+          },
+          child: Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           backgroundColor: Colors.white,
           child: Container(
@@ -211,7 +220,8 @@ class _InventoryPageState extends State<InventoryPage> {
           ),
         ),
       ),
-    );
+    ))
+    ;
   }
 
   Widget _buildSimpleInputField({
