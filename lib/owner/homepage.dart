@@ -40,13 +40,16 @@ class POSHomePage extends StatefulWidget {
 class _POSHomePageState extends State<POSHomePage> {
   int _currentIndex = 0;
 
+  // key for dashboard so we can call its refresh method
+  final GlobalKey<DashboardViewState> _dashboardKey = GlobalKey();
+
   late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
     _pages = [
-      DashboardView(onNavigate: _onPageNavigate),
+      DashboardView(key: _dashboardKey, onNavigate: _onPageNavigate),
       const AnalyticsView(),
       const POSGridView(),
       const InventoryMenuView(),
@@ -56,6 +59,10 @@ class _POSHomePageState extends State<POSHomePage> {
 
   void _onPageNavigate(int pageIndex) {
     setState(() => _currentIndex = pageIndex);
+    if (pageIndex == 0) {
+      // refresh dashboard when navigated back to it
+      _dashboardKey.currentState?.refresh();
+    }
   }
 
   @override
@@ -73,7 +80,12 @@ class _POSHomePageState extends State<POSHomePage> {
       ),
       bottomNavigationBar: POSBottomNavBar(
         currentIndex: _currentIndex,
-        onItemTapped: (index) => setState(() => _currentIndex = index),
+        onItemTapped: (index) {
+          setState(() => _currentIndex = index);
+          if (index == 0) {
+            _dashboardKey.currentState?.refresh();
+          }
+        },
       ),
     );
   }
