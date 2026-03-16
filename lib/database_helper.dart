@@ -138,9 +138,6 @@ class DatabaseHelper {
     required String paymentMethod,
     required String paymentStatus,
   }) async {
-    print(
-      '[DB] recordSale called with totalAmount=$totalAmount, paymentMethod=$paymentMethod, items=$items',
-    );
     final db = await database;
     return db.transaction((txn) async {
       final saleId = await txn.insert('Sales', {
@@ -148,7 +145,6 @@ class DatabaseHelper {
         'date_time': DateTime.now().toIso8601String(),
         'total_amount': totalAmount,
       });
-      print('[DB] recordSale inserted row with saleId=$saleId');
       for (final item in items) {
         await txn.insert('SaleItems', {
           'sale_id': saleId,
@@ -172,7 +168,6 @@ class DatabaseHelper {
         'method': paymentMethod,
         'status': paymentStatus,
       });
-      print('[DB] recordSale transaction completed for saleId=$saleId');
       return saleId;
     });
   }
@@ -268,28 +263,18 @@ Future<int> getBillsPaid() async {
 DateTime _todayStart() {
   final now = DateTime.now();
   final result = DateTime(now.year, now.month, now.day);
-  print('[DB] _todayStart() => $result, iso8601=${result.toIso8601String()}');
   return result;
 }
 
 Future<int> getTodaysTransactionCount() async {
   final db = await DatabaseHelper.instance.database;
   final start = _todayStart().toIso8601String();
-  print('[DB] getTodaysTransactionCount querying with start=$start');
-
-  // DEBUG: Show all rows in Sales table
-  final allRows = await db.query('Sales');
-  print('[DB] All rows in Sales table: ${allRows.length} rows');
-  for (var row in allRows) {
-    print('[DB]   Row=$row');
-  }
 
   final res = await db.rawQuery(
     'SELECT COUNT(*) as count FROM Sales WHERE date_time >= ?',
     [start],
   );
   final count = Sqflite.firstIntValue(res) ?? 0;
-  print('[DB] getTodaysTransactionCount result: $count');
   return count;
 }
 
@@ -319,7 +304,6 @@ Future<int> getTotalItemsSold() async {
   final res = await db.rawQuery('SELECT SUM(quantity) as total FROM SaleItems');
   final total = res.first['total'];
   final result = total == null ? 0 : (total as num).toInt();
-  print('[DB] getTotalItemsSold result: $result');
   return result;
 }
 
@@ -327,13 +311,11 @@ Future<int> getTotalItemsSold() async {
 Future<int> getTodaysItemsSold() async {
   final db = await DatabaseHelper.instance.database;
   final start = _todayStart().toIso8601String();
-  print('[DB] getTodaysItemsSold querying with start=$start');
   final res = await db.rawQuery(
     'SELECT SUM(si.quantity) as total FROM SaleItems si JOIN Sales s ON si.sale_id = s.sale_id WHERE s.date_time >= ?',
     [start],
   );
   final total = res.first['total'];
   final result = total == null ? 0 : (total as num).toInt();
-  print('[DB] getTodaysItemsSold result: $result');
   return result;
 }

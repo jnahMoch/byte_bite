@@ -4,7 +4,6 @@ import '../../../model/pos_item_model.dart';
 import '../../../data/inventory_data.dart';
 import '../../../data/sales_data.dart';
 import '../../../data/bills_data.dart';
-import '../../../database_helper.dart';
 
 class DashboardView extends StatefulWidget {
   final Function(int)? onNavigate;
@@ -37,7 +36,6 @@ class _DashboardViewState extends State<DashboardView> {
   }
 
   Future<void> _loadSummary() async {
-    print('[DASHBOARD] _loadSummary called');
     // fall back to in-memory data (was the previous working state)
     final todayTx = SalesData.getTransactionsForToday();
     final txCount = todayTx.length;
@@ -49,7 +47,6 @@ class _DashboardViewState extends State<DashboardView> {
       totalSales = totSales;
       billsPaid = bills;
     });
-    print('[DASHBOARD] setState called with: tx=$txCount, sales=$totSales, bills=$bills');
   }
 
   @override

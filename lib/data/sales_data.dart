@@ -7,7 +7,6 @@ class SalesData {
 
   static void addTransaction(SalesTransaction transaction) {
     transactions.add(transaction);
-    print('[SALESDATA] addTransaction called - notifier fired');
     notifier.value++; // signal change
   }
 

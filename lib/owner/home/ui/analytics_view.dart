@@ -17,7 +17,6 @@ class _AnalyticsViewState extends State<AnalyticsView> {
   double _totalSales = 0.0;
   double _avgSale = 0.0;
   int _itemsSold = 0;
-  bool _isLoading = true;
 
   @override
   void initState() {
@@ -26,7 +25,6 @@ class _AnalyticsViewState extends State<AnalyticsView> {
   }
 
   Future<void> _loadAnalyticsData() async {
-    setState(() => _isLoading = true);
     try {
       int txCount;
       double totalSales;
@@ -41,12 +39,10 @@ class _AnalyticsViewState extends State<AnalyticsView> {
         totalSales = await getTodaysTotalSales();
         itemsSold = await getTodaysItemsSold();
       } else if (_selectedPeriod == 'This Week') {
-        // TODO: Implement week filtering
         txCount = await getTransactionCount();
         totalSales = await getTotalSales();
         itemsSold = await getTotalItemsSold();
       } else if (_selectedPeriod == 'This Month') {
-        // TODO: Implement month filtering
         txCount = await getTransactionCount();
         totalSales = await getTotalSales();
         itemsSold = await getTotalItemsSold();
@@ -62,14 +58,9 @@ class _AnalyticsViewState extends State<AnalyticsView> {
         _totalSales = totalSales;
         _itemsSold = itemsSold;
         _avgSale = txCount > 0 ? totalSales / txCount : 0.0;
-        _isLoading = false;
       });
-      print(
-        '[ANALYTICS] Loaded for period=$_selectedPeriod: tx=$txCount, sales=$totalSales, items=$itemsSold',
-      );
     } catch (e) {
-      print('[ANALYTICS] Error loading data: $e');
-      setState(() => _isLoading = false);
+      // Error loading data silently
     }
   }
 
