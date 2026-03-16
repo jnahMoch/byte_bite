@@ -21,7 +21,10 @@ class _InventoryPageState extends State<InventoryPage> {
   List<dynamic> get _filteredItems {
     if (_searchQuery.isEmpty) return InventoryData.items;
     return InventoryData.items
-        .where((item) => item.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where(
+          (item) =>
+              item.name.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
         .toList();
   }
 
@@ -32,155 +35,192 @@ class _InventoryPageState extends State<InventoryPage> {
     final unitController = TextEditingController();
     final lowStockController = TextEditingController(text: '10');
     String selectedCategory = 'Food';
-    
-    final categories = ['Food', 'Beverages', 'Snacks', 'Desserts', 'Supplies', 'Other'];
+
+    final categories = [
+      'Food',
+      'Beverages',
+      'Snacks',
+      'Desserts',
+      'Supplies',
+      'Other',
+    ];
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          backgroundColor: Colors.white,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-            constraints: const BoxConstraints(maxWidth: 320),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  
-                  const Text(
-                    'Add New Item',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  
-                  _buildSimpleInputField(
-                    controller: nameController,
-                    label: 'Name',
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  _buildSimpleInputField(
-                    controller: priceController,
-                    label: 'Price',
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  _buildSimpleInputField(
-                    controller: stockController,
-                    label: 'Stock',
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  _buildSimpleInputField(
-                    controller: unitController,
-                    label: 'Unit (e.g., pieces)',
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  _buildSimpleInputField(
-                    controller: lowStockController,
-                    label: 'Low Stock Alert',
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  InputDecorator(
-                    decoration: InputDecoration(
-                      labelText: 'Category',
-                      labelStyle: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                      ),
-                      floatingLabelStyle: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade400),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade400),
+        builder: (dialogContext, setDialogState) => WillPopScope(
+          onWillPop: () async {
+            nameController.dispose();
+            priceController.dispose();
+            stockController.dispose();
+            unitController.dispose();
+            lowStockController.dispose();
+            return true;
+          },
+          child: Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            backgroundColor: Colors.white,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Add New Item',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A1A),
                       ),
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedCategory,
-                        isExpanded: true,
-                        isDense: true,
-                        icon: Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
-                        style: const TextStyle(
+                    const SizedBox(height: 28),
+
+                    _buildSimpleInputField(
+                      controller: nameController,
+                      label: 'Name',
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildSimpleInputField(
+                      controller: priceController,
+                      label: 'Price',
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildSimpleInputField(
+                      controller: stockController,
+                      label: 'Stock',
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildSimpleInputField(
+                      controller: unitController,
+                      label: 'Unit (e.g., pieces)',
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildSimpleInputField(
+                      controller: lowStockController,
+                      label: 'Low Stock Alert',
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 16),
+
+                    InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Category',
+                        labelStyle: TextStyle(
+                          color: Colors.grey[600],
                           fontSize: 16,
-                          color: Color(0xFF1A1A1A),
                         ),
-                        items: categories.map((cat) => DropdownMenuItem(
-                          value: cat,
-                          child: Text(cat),
-                        )).toList(),
-                        onChanged: (value) {
-                          setDialogState(() => selectedCategory = value!);
-                        },
+                        floatingLabelStyle: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade400),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade400),
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedCategory,
+                          isExpanded: true,
+                          isDense: true,
+                          icon: Icon(
+                            Icons.arrow_drop_down,
+                            color: Colors.grey[600],
+                          ),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF1A1A1A),
+                          ),
+                          items: categories
+                              .map(
+                                (cat) => DropdownMenuItem(
+                                  value: cat,
+                                  child: Text(cat),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            setDialogState(() => selectedCategory = value!);
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 28),
-                  
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        ),
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(
-                            color: Colors.purple[400],
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
+                    const SizedBox(height: 28),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: Colors.purple[400],
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () {
-                          if (nameController.text.isNotEmpty && 
-                              priceController.text.isNotEmpty && 
-                              stockController.text.isNotEmpty) {
-                            final newItem = POSItem(
-                              name: nameController.text,
-                              category: selectedCategory,
-                              price: int.tryParse(priceController.text) ?? 0,
-                              stock: int.tryParse(stockController.text) ?? 0,
-                              unit: unitController.text.isNotEmpty ? unitController.text : 'pieces',
-                              lowStockAlert: int.tryParse(lowStockController.text) ?? 10,
-                            );
-                            setState(() {
-                              InventoryData.items.add(newItem);
-                            });
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (nameController.text.isNotEmpty &&
+                                priceController.text.isNotEmpty &&
+                                stockController.text.isNotEmpty) {
+                              final newItem = POSItem(
+                                name: nameController.text,
+                                category: selectedCategory,
+                                price: int.tryParse(priceController.text) ?? 0,
+                                stock: int.tryParse(stockController.text) ?? 0,
+                                unit: unitController.text.isNotEmpty
+                                    ? unitController.text
+                                    : 'pieces',
+                                lowStockAlert:
+                                    int.tryParse(lowStockController.text) ?? 10,
+                              );
+                              setState(() {
+                                InventoryData.items.add(newItem);
+                              });
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('${nameController.text} added to inventory'),
+                                  content: Text(
+                                    '${nameController.text} added to inventory',
+                                  ),
                                   backgroundColor: const Color(0xFF009661),
                                 ),
                               );
                             } else {
                               ScaffoldMessenger.of(dialogContext).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Please fill in Name, Price, and Stock'),
+                                  content: Text(
+                                    'Please fill in Name, Price, and Stock',
+                                  ),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -188,7 +228,10 @@ class _InventoryPageState extends State<InventoryPage> {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF009661),
-                            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 28,
+                              vertical: 12,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(24),
                             ),
@@ -203,9 +246,10 @@ class _InventoryPageState extends State<InventoryPage> {
                             ),
                           ),
                         ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -225,15 +269,12 @@ class _InventoryPageState extends State<InventoryPage> {
       style: const TextStyle(fontSize: 16, color: Color(0xFF1A1A1A)),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(
-          color: Colors.grey[600],
-          fontSize: 16,
+        labelStyle: TextStyle(color: Colors.grey[600], fontSize: 16),
+        floatingLabelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 18,
         ),
-        floatingLabelStyle: TextStyle(
-          color: Colors.grey[600],
-          fontSize: 14,
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: Colors.grey.shade400),
@@ -252,7 +293,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
   void _showAddStockDialog(BuildContext context, dynamic item) {
     final TextEditingController quantityController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -264,25 +305,46 @@ class _InventoryPageState extends State<InventoryPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Add Stock', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Add Stock',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.close, size: 20, color: Colors.grey),
+                    child: const Icon(
+                      Icons.close,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              
-              const Text('Product', style: TextStyle(fontSize: 12, color: Colors.grey)),
-              Text(item.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              Text('Current: ${item.stock} ${item.unit}', style: const TextStyle(fontSize: 12, color: Color(0xFF009661))),
+
+              const Text(
+                'Product',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              Text(
+                item.name,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'Current: ${item.stock} ${item.unit}',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF009661)),
+              ),
               const SizedBox(height: 16),
-              
-              Text('Quantity to Add (${item.unit})', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+
+              Text(
+                'Quantity to Add (${item.unit})',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
               const SizedBox(height: 8),
               TextField(
                 controller: quantityController,
@@ -290,7 +352,10 @@ class _InventoryPageState extends State<InventoryPage> {
                 decoration: InputDecoration(
                   hintText: 'Enter quantity',
                   hintStyle: TextStyle(color: Colors.grey[400]),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: Colors.grey.shade300),
@@ -306,7 +371,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              
+
               Row(
                 children: [
                   Expanded(
@@ -315,9 +380,14 @@ class _InventoryPageState extends State<InventoryPage> {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         side: BorderSide(color: Colors.grey.shade300),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(color: Colors.grey),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -332,7 +402,9 @@ class _InventoryPageState extends State<InventoryPage> {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Added $qty ${item.unit} to ${item.name}'),
+                              content: Text(
+                                'Added $qty ${item.unit} to ${item.name}',
+                              ),
                               backgroundColor: const Color(0xFF009661),
                             ),
                           );
@@ -341,9 +413,14 @@ class _InventoryPageState extends State<InventoryPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF009661),
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      child: const Text('Add Stock', style: TextStyle(color: Colors.white)),
+                      child: const Text(
+                        'Add Stock',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                 ],
@@ -362,7 +439,6 @@ class _InventoryPageState extends State<InventoryPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          
           Container(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
             decoration: const BoxDecoration(
@@ -404,26 +480,44 @@ class _InventoryPageState extends State<InventoryPage> {
                     ),
                     ElevatedButton.icon(
                       onPressed: () => _showAddNewItemDialog(context),
-                      icon: const Icon(Icons.add_rounded, size: 20, color: Colors.white),
-                      label: const Text('Add Item', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                      icon: const Icon(
+                        Icons.add_rounded,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                      label: const Text(
+                        'Add Item',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF009661),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         elevation: 0,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 TextField(
                   controller: _searchController,
                   onChanged: (value) => setState(() => _searchQuery = value),
                   decoration: InputDecoration(
                     hintText: "Search products...",
                     hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
-                    prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF9CA3AF)),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: Color(0xFF9CA3AF),
+                    ),
                     filled: true,
                     fillColor: const Color(0xFFF3F4F6),
                     contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -443,10 +537,7 @@ class _InventoryPageState extends State<InventoryPage> {
               itemCount: _filteredItems.length,
               itemBuilder: (context, index) {
                 final item = _filteredItems[index];
-                return _buildInventoryCard(
-                  context: context,
-                  item: item,
-                );
+                return _buildInventoryCard(context: context, item: item);
               },
             ),
           ),
@@ -460,14 +551,16 @@ class _InventoryPageState extends State<InventoryPage> {
     required dynamic item,
   }) {
     final bool isLowStock = item.stock <= item.lowStockAlert;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: isLowStock ? Border.all(color: Colors.orange.shade200, width: 1.5) : null,
+        border: isLowStock
+            ? Border.all(color: Colors.orange.shade200, width: 1.5)
+            : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -479,7 +572,6 @@ class _InventoryPageState extends State<InventoryPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -493,27 +585,45 @@ class _InventoryPageState extends State<InventoryPage> {
                         Flexible(
                           child: Text(
                             item.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Color(0xFF1F2937)),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 17,
+                              color: Color(0xFF1F2937),
+                            ),
                           ),
                         ),
                         if (isLowStock) ...[
                           const SizedBox(width: 10),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [Colors.orange.shade400, Colors.orange.shade300],
+                                colors: [
+                                  Colors.orange.shade400,
+                                  Colors.orange.shade300,
+                                ],
                               ),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.warning_amber_rounded, size: 12, color: Colors.white),
+                                Icon(
+                                  Icons.warning_amber_rounded,
+                                  size: 12,
+                                  color: Colors.white,
+                                ),
                                 SizedBox(width: 4),
                                 Text(
                                   'Low Stock',
-                                  style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ],
                             ),
@@ -523,14 +633,21 @@ class _InventoryPageState extends State<InventoryPage> {
                     ),
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF3F4F6),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         item.category,
-                        style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12, fontWeight: FontWeight.w500),
+                        style: const TextStyle(
+                          color: Color(0xFF6B7280),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -545,18 +662,31 @@ class _InventoryPageState extends State<InventoryPage> {
                   ],
                 ),
               ),
-              
+
               ElevatedButton.icon(
                 onPressed: () => _showAddStockDialog(context, item),
-                icon: const Icon(Icons.add_rounded, size: 18, color: Color(0xFF009661)),
+                icon: const Icon(
+                  Icons.add_rounded,
+                  size: 18,
+                  color: Color(0xFF009661),
+                ),
                 label: const Text(
                   "Add Stock",
-                  style: TextStyle(color: Color(0xFF009661), fontSize: 13, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: Color(0xFF009661),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF009661).withValues(alpha: 0.1),
+                  backgroundColor: const Color(
+                    0xFF009661,
+                  ).withValues(alpha: 0.1),
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -564,7 +694,7 @@ class _InventoryPageState extends State<InventoryPage> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(14),
@@ -575,11 +705,21 @@ class _InventoryPageState extends State<InventoryPage> {
             child: Row(
               children: [
                 Expanded(
-                  child: _buildStockIndicator("Current Stock", "${item.stock} ${item.unit}", Icons.inventory_2_rounded, const Color(0xFF009661)),
+                  child: _buildStockIndicator(
+                    "Current Stock",
+                    "${item.stock} ${item.unit}",
+                    Icons.inventory_2_rounded,
+                    const Color(0xFF009661),
+                  ),
                 ),
                 Container(width: 1, height: 40, color: const Color(0xFFE5E7EB)),
                 Expanded(
-                  child: _buildStockIndicator("Alert Level", "${item.lowStockAlert} ${item.unit}", Icons.notifications_outlined, const Color(0xFFF59E0B)),
+                  child: _buildStockIndicator(
+                    "Alert Level",
+                    "${item.lowStockAlert} ${item.unit}",
+                    Icons.notifications_outlined,
+                    const Color(0xFFF59E0B),
+                  ),
                 ),
               ],
             ),
@@ -589,7 +729,12 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
-  Widget _buildStockIndicator(String label, String value, IconData icon, Color color) {
+  Widget _buildStockIndicator(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [

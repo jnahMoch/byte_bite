@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../data/inventory_data.dart';
 import '../data/sales_data.dart';
 import '../model/sales_transaction_model.dart';
+import '../database_helper.dart';
 
 // UI Components
 import 'menu/ui/category_filter.dart';
@@ -30,8 +31,14 @@ class MenuPage extends StatelessWidget {
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Byte & Bite POS", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            Text("Helper", style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal)),
+            Text(
+              "Byte & Bite POS",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            Text(
+              "Helper",
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+            ),
           ],
         ),
       ),
@@ -70,13 +77,17 @@ class _MenuContentState extends State<MenuContent> {
 
   // --- Getters for computed values ---
 
-  List<Map<String, String>> get _items => InventoryData.items.map((item) => {
-    'name': item.name,
-    'price': '₱${item.price}',
-    'stock': '${item.stock} ${item.unit}',
-    'category': item.category,
-    'image': item.image ?? '',
-  }).toList();
+  List<Map<String, String>> get _items => InventoryData.items
+      .map(
+        (item) => {
+          'name': item.name,
+          'price': '₱${item.price}',
+          'stock': '${item.stock} ${item.unit}',
+          'category': item.category,
+          'image': item.image ?? '',
+        },
+      )
+      .toList();
 
   List<String> get _categories {
     final cats = InventoryData.items.map((e) => e.category).toSet().toList();
@@ -112,7 +123,10 @@ class _MenuContentState extends State<MenuContent> {
     });
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Added to cart'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Added to cart'),
+          backgroundColor: Colors.green,
+        ),
       );
     }
   }
@@ -132,14 +146,18 @@ class _MenuContentState extends State<MenuContent> {
     setState(() => _selectedPayment = method);
   }
 
-  void _completeTransaction() {
+  Future<void> _completeTransaction() async {
     if (_cart.isEmpty) return;
 
     double? amountPaid = double.tryParse(_amountPaidController.text);
-    if (amountPaid == null || !MenuBusinessLogic.isPaymentSufficient(amountPaid, _cartTotal)) {
+    if (amountPaid == null ||
+        !MenuBusinessLogic.isPaymentSufficient(amountPaid, _cartTotal)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Insufficient payment'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('Insufficient payment'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
       return;
@@ -157,7 +175,10 @@ class _MenuContentState extends State<MenuContent> {
         orElse: () => InventoryData.items.first,
       );
       if (inventoryItem.name == itemName) {
-        inventoryItem.stock = (inventoryItem.stock - qty).clamp(0, inventoryItem.stock);
+        inventoryItem.stock = (inventoryItem.stock - qty).clamp(
+          0,
+          inventoryItem.stock,
+        );
       }
     }
 
@@ -166,19 +187,35 @@ class _MenuContentState extends State<MenuContent> {
     final change = paid - total;
     final now = DateTime.now();
     final receiptNumber = MenuBusinessLogic.generateReceiptNumber();
-    final paymentMethod = MenuBusinessLogic.getPaymentMethodDisplay(_selectedPayment);
+    final paymentMethod = MenuBusinessLogic.getPaymentMethodDisplay(
+      _selectedPayment,
+    );
 
-    // Record transaction
-    SalesData.addTransaction(SalesTransaction(
-      receiptNumber: receiptNumber,
-      dateTime: now,
-      items: cartItems,
-      total: total,
-      amountPaid: paid,
-      change: change,
-      paymentMethod: paymentMethod,
-    ));
+    // persist header row so dashboard can query it
+    try {
+      await DatabaseHelper.instance.recordSale(
+        userId: 1,
+        totalAmount: total.toDouble(),
+        items: [],
+        paymentMethod: paymentMethod,
+        paymentStatus: 'Success',
+      );
+    } catch (e) {
+      debugPrint('menu_page db recordSale failed: $e');
+    }
 
+    // Record transaction in memory afterwards (notifier will fire)
+    SalesData.addTransaction(
+      SalesTransaction(
+        receiptNumber: receiptNumber,
+        dateTime: now,
+        items: cartItems,
+        total: total,
+        amountPaid: paid,
+        change: change,
+        paymentMethod: paymentMethod,
+      ),
+    );
     // Clear cart
     setState(() {
       _cart.clear();
@@ -264,16 +301,25 @@ class _MenuContentState extends State<MenuContent> {
         children: [
           const Text(
             'Menu Management',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF050A1F)),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF050A1F),
+            ),
           ),
           ElevatedButton.icon(
             onPressed: () {},
             icon: const Icon(Icons.add, size: 18, color: Colors.white),
-            label: const Text('Add Item', style: TextStyle(color: Colors.white, fontSize: 12)),
+            label: const Text(
+              'Add Item',
+              style: TextStyle(color: Colors.white, fontSize: 12),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF008A5E),
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           ),
         ],

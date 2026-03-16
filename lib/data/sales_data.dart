@@ -1,19 +1,26 @@
+import 'package:flutter/foundation.dart';
 import '../model/sales_transaction_model.dart';
 
 class SalesData {
   static final List<SalesTransaction> transactions = [];
+  static final ValueNotifier<int> notifier = ValueNotifier<int>(0);
 
   static void addTransaction(SalesTransaction transaction) {
     transactions.add(transaction);
+    print('[SALESDATA] addTransaction called - notifier fired');
+    notifier.value++; // signal change
   }
 
   static List<SalesTransaction> getTransactionsForToday() {
     final now = DateTime.now();
-    return transactions.where((t) =>
-      t.dateTime.year == now.year &&
-      t.dateTime.month == now.month &&
-      t.dateTime.day == now.day
-    ).toList();
+    return transactions
+        .where(
+          (t) =>
+              t.dateTime.year == now.year &&
+              t.dateTime.month == now.month &&
+              t.dateTime.day == now.day,
+        )
+        .toList();
   }
 
   static List<SalesTransaction> getTransactionsForWeek() {
@@ -24,9 +31,10 @@ class SalesData {
 
   static List<SalesTransaction> getTransactionsForMonth() {
     final now = DateTime.now();
-    return transactions.where((t) =>
-      t.dateTime.year == now.year &&
-      t.dateTime.month == now.month
-    ).toList();
+    return transactions
+        .where(
+          (t) => t.dateTime.year == now.year && t.dateTime.month == now.month,
+        )
+        .toList();
   }
 }

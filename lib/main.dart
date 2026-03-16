@@ -9,9 +9,7 @@ import 'user_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const ByteAndBiteApp());
 }
 
@@ -77,8 +75,7 @@ class AppStartupPage extends StatelessWidget {
             ),
           );
         }
-        final ownerExists =
-            snapshot.data ?? UserStorage.isOwnerRegistered;
+        final ownerExists = snapshot.data ?? UserStorage.isOwnerRegistered;
         return ownerExists ? const LoginPage() : const SignUpPage();
       },
     );
