@@ -147,7 +147,6 @@ class _POSGridViewState extends State<POSGridView> {
 
     // persist the sale to the SQLite database with cart items
     try {
-      print('[POS] recordSale starting with total=$savedTotal');
       
       // Build items list for database insertion
       final itemsForDB = savedCart.map((cartItem) {
@@ -157,7 +156,6 @@ class _POSGridViewState extends State<POSGridView> {
           'subtotal': (cartItem.item.price * cartItem.quantity).toDouble(),
         };
       }).toList();
-      print('[POS] itemsForDB = $itemsForDB');
       
       await DatabaseHelper.instance.recordSale(
         userId: 1, // replace with actual current user id if available
@@ -166,10 +164,8 @@ class _POSGridViewState extends State<POSGridView> {
         paymentMethod: _selectedPayment,
         paymentStatus: 'Success',
       );
-      print('[POS] recordSale completed successfully');
     } catch (e) {
       // log but don't block the UI
-      print('db recordSale failed: $e');
     }
 
     _showSaleSuccessDialog(

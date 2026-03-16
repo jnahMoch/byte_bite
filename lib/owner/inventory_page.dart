@@ -48,6 +48,7 @@ class _InventoryPageState extends State<InventoryPage> {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
+        // ignore: deprecated_member_use
         builder: (dialogContext, setDialogState) => WillPopScope(
           onWillPop: () async {
             nameController.dispose();

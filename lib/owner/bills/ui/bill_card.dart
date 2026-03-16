@@ -188,6 +188,7 @@ class _BillCardState extends State<BillCard> {
             debugPrint('bill id is not numeric: ${widget.bill.id}');
           }
           widget.onMarkedAsPaid();
+          // ignore: use_build_context_synchronously
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${widget.bill.title} marked as paid'),

@@ -69,6 +69,7 @@ class _AddBillDialogState extends State<AddBillDialog> {
       debugPrint('db insertExpense failed: $e');
     }
 
+    // ignore: use_build_context_synchronously
     Navigator.pop(context);
     widget.onBillAdded();
   }
