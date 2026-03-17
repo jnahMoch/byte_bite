@@ -2,25 +2,79 @@ import 'package:flutter/material.dart';
 
 import '../../../model/pos_item_model.dart';
 import '../../../data/inventory_data.dart';
+import '../../../data/sales_data.dart';
+import '../../../data/bills_data.dart';
 
-class DashboardView extends StatelessWidget {
+class DashboardView extends StatefulWidget {
   final Function(int)? onNavigate;
   const DashboardView({super.key, this.onNavigate});
 
   @override
+  State<DashboardView> createState() => _DashboardViewState();
+}
+
+// expose the state type so callers can refresh the summary
+class DashboardViewState extends _DashboardViewState {}
+
+class _DashboardViewState extends State<DashboardView> {
+  int transactionCount = 0;
+  double totalSales = 0.0;
+  int billsPaid = 0;
+
+  /// refresh the summary from outside
+  Future<void> refresh() async {
+    await _loadSummary();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSummary();
+    // listen for in-memory data changes as well
+    SalesData.notifier.addListener(_loadSummary);
+    BillsData.notifier.addListener(_loadSummary);
+  }
+
+  Future<void> _loadSummary() async {
+    // fall back to in-memory data (was the previous working state)
+    final todayTx = SalesData.getTransactionsForToday();
+    final txCount = todayTx.length;
+    final totSales = todayTx.fold<double>(0.0, (sum, t) => sum + t.total);
+    final bills = BillsData.bills.where((b) => b.isPaid).length;
+
+    setState(() {
+      transactionCount = txCount;
+      totalSales = totSales;
+      billsPaid = bills;
+    });
+  }
+
+  @override
+  void dispose() {
+    SalesData.notifier.removeListener(_loadSummary);
+    BillsData.notifier.removeListener(_loadSummary);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    
     int totalProducts = InventoryData.items.length;
-    int totalStock = InventoryData.items.fold(0, (sum, item) => sum + item.stock);
-    int lowStockItems = InventoryData.items.where((item) => item.stock <= item.lowStockAlert).length;
-    double inventoryValue = InventoryData.items.fold(0, (sum, item) => sum + (item.price * item.stock)).toDouble();
+    int totalStock = InventoryData.items.fold(
+      0,
+      (sum, item) => sum + item.stock,
+    );
+    int lowStockItems = InventoryData.items
+        .where((item) => item.stock <= item.lowStockAlert)
+        .length;
+    double inventoryValue = InventoryData.items
+        .fold(0, (sum, item) => sum + (item.price * item.stock))
+        .toDouble();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -52,24 +106,18 @@ class DashboardView extends StatelessWidget {
                 const SizedBox(height: 8),
                 const Text(
                   'Byte & Bite POS - Tagum City',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   _getGreeting(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
-          
+
           const Text(
             'Quick Overview',
             style: TextStyle(
@@ -79,7 +127,7 @@ class DashboardView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          
+
           Row(
             children: [
               Expanded(
@@ -102,7 +150,7 @@ class DashboardView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          
+
           Row(
             children: [
               Expanded(
@@ -110,7 +158,9 @@ class DashboardView extends StatelessWidget {
                   'Low Stock',
                   '$lowStockItems',
                   Icons.warning_amber_outlined,
-                  lowStockItems > 0 ? const Color(0xFFEF4444) : const Color(0xFF22C55E),
+                  lowStockItems > 0
+                      ? const Color(0xFFEF4444)
+                      : const Color(0xFF22C55E),
                 ),
               ),
               const SizedBox(width: 12),
@@ -125,7 +175,7 @@ class DashboardView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          
+
           const Text(
             "Today's Summary",
             style: TextStyle(
@@ -151,16 +201,31 @@ class DashboardView extends StatelessWidget {
             ),
             child: Column(
               children: [
-                _summaryRow(Icons.shopping_cart_outlined, 'Transactions', '0', const Color(0xFF009661)),
+                _summaryRow(
+                  Icons.shopping_cart_outlined,
+                  'Transactions',
+                  '$transactionCount',
+                  const Color(0xFF009661),
+                ),
                 const Divider(height: 24),
-                _summaryRow(Icons.attach_money, 'Total Sales', '₱0.00', const Color(0xFF3B82F6)),
+                _summaryRow(
+                  Icons.attach_money,
+                  'Total Sales',
+                  '₱${totalSales.toStringAsFixed(2)}',
+                  const Color(0xFF3B82F6),
+                ),
                 const Divider(height: 24),
-                _summaryRow(Icons.receipt_outlined, 'Bills Paid', '0', const Color(0xFF8B5CF6)),
+                _summaryRow(
+                  Icons.receipt_outlined,
+                  'Bills Paid',
+                  '$billsPaid',
+                  const Color(0xFF8B5CF6),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 24),
-          
+
           const Text(
             'Quick Actions',
             style: TextStyle(
@@ -178,7 +243,7 @@ class DashboardView extends StatelessWidget {
                   Icons.point_of_sale,
                   'New Sale',
                   const Color(0xFF009661),
-                  2, 
+                  2,
                 ),
               ),
               const SizedBox(width: 12),
@@ -188,7 +253,7 @@ class DashboardView extends StatelessWidget {
                   Icons.add_box_outlined,
                   'Add Stock',
                   const Color(0xFF3B82F6),
-                  3, 
+                  3,
                 ),
               ),
               const SizedBox(width: 12),
@@ -198,13 +263,13 @@ class DashboardView extends StatelessWidget {
                   Icons.bar_chart,
                   'Reports',
                   const Color(0xFF8B5CF6),
-                  1, 
+                  1,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
-          
+
           if (lowStockItems > 0) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -218,7 +283,10 @@ class DashboardView extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red.shade50,
                     borderRadius: BorderRadius.circular(12),
@@ -312,10 +380,7 @@ class DashboardView extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
         ),
         Text(
@@ -330,10 +395,16 @@ class DashboardView extends StatelessWidget {
     );
   }
 
-  Widget _actionCard(BuildContext context, IconData icon, String label, Color color, int pageIndex) {
+  Widget _actionCard(
+    BuildContext context,
+    IconData icon,
+    String label,
+    Color color,
+    int pageIndex,
+  ) {
     return GestureDetector(
       onTap: () {
-        onNavigate?.call(pageIndex);
+        widget.onNavigate?.call(pageIndex);
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -406,10 +477,7 @@ class DashboardView extends StatelessWidget {
                 ),
                 Text(
                   '${item.stock} ${item.unit} left',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                 ),
               ],
             ),

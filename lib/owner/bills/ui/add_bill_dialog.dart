@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import '../logic/bills_helper.dart';
 import '../../../owner/homepage.dart' show BillsData, Bill;
+import '../../../database_helper.dart';
 
 /// Dialog for adding a new bill
 class AddBillDialog extends StatefulWidget {
   final VoidCallback onBillAdded;
 
-  const AddBillDialog({
-    super.key,
-    required this.onBillAdded,
-  });
+  const AddBillDialog({super.key, required this.onBillAdded});
 
   @override
   State<AddBillDialog> createState() => _AddBillDialogState();
@@ -35,7 +33,7 @@ class _AddBillDialogState extends State<AddBillDialog> {
     super.dispose();
   }
 
-  void _handleAddBill() {
+  Future<void> _handleAddBill() async {
     final name = nameController.text.trim();
     final amount = double.tryParse(amountController.text) ?? 0;
 
@@ -49,14 +47,29 @@ class _AddBillDialogState extends State<AddBillDialog> {
       return;
     }
 
-    BillsData.addBill(Bill(
-      id: BillsHelper.generateBillId(),
-      title: name,
-      category: selectedCategory,
-      amount: amount,
-      dueDate: selectedDate,
-    ));
+    BillsData.addBill(
+      Bill(
+        id: BillsHelper.generateBillId(),
+        title: name,
+        category: selectedCategory,
+        amount: amount,
+        dueDate: selectedDate,
+      ),
+    );
 
+    // persist the expense so dashboard/bills queries work
+    try {
+      await DatabaseHelper.instance.insertExpense({
+        'user_id': 1, // replace with real user id
+        'description': name,
+        'amount': amount,
+        'due_date': selectedDate.toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('db insertExpense failed: $e');
+    }
+
+    // ignore: use_build_context_synchronously
     Navigator.pop(context);
     widget.onBillAdded();
   }
@@ -95,7 +108,10 @@ class _AddBillDialogState extends State<AddBillDialog> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text('Add New Bill', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const Text(
+          'Add New Bill',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
         GestureDetector(
           onTap: () => Navigator.pop(context),
           child: const Icon(Icons.close, size: 20, color: Colors.grey),
@@ -108,14 +124,20 @@ class _AddBillDialogState extends State<AddBillDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Bill Name *', style: TextStyle(fontSize: 12, color: Colors.grey)),
+        const Text(
+          'Bill Name *',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
         const SizedBox(height: 4),
         TextField(
           controller: nameController,
           decoration: InputDecoration(
             hintText: 'e.g., Electricity Bill',
             hintStyle: TextStyle(color: Colors.grey[400]),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey.shade300),
@@ -134,12 +156,18 @@ class _AddBillDialogState extends State<AddBillDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Category *', style: TextStyle(fontSize: 12, color: Colors.grey)),
+        const Text(
+          'Category *',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
         const SizedBox(height: 4),
         DropdownButtonFormField<String>(
           initialValue: selectedCategory,
           decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey.shade300),
@@ -158,14 +186,20 @@ class _AddBillDialogState extends State<AddBillDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Amount (₱) *', style: TextStyle(fontSize: 12, color: Colors.grey)),
+        const Text(
+          'Amount (₱) *',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
         const SizedBox(height: 4),
         TextField(
           controller: amountController,
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
             hintText: '0',
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey.shade300),
@@ -184,7 +218,10 @@ class _AddBillDialogState extends State<AddBillDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Due Date *', style: TextStyle(fontSize: 12, color: Colors.grey)),
+        const Text(
+          'Due Date *',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
         const SizedBox(height: 4),
         GestureDetector(
           onTap: () async {
@@ -226,7 +263,9 @@ class _AddBillDialogState extends State<AddBillDialog> {
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
               side: BorderSide(color: Colors.grey.shade300),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
@@ -238,9 +277,14 @@ class _AddBillDialogState extends State<AddBillDialog> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF009661),
               padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            child: const Text('Add Bill', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Add Bill',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ),
       ],

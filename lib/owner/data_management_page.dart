@@ -158,6 +158,7 @@ class _HeaderIcon extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
+        // ignore: deprecated_member_use
         color: const Color(0xFF009661).withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -263,6 +264,7 @@ class ImportSection extends StatelessWidget {
       icon: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
+          // ignore: deprecated_member_use
           color: const Color(0xFF3B82F6).withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
         ),
@@ -445,6 +447,7 @@ class _SectionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),

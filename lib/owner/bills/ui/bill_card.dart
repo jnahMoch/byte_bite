@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../logic/bills_helper.dart';
 import '../../../owner/homepage.dart' show Bill, BillsData;
+import '../../../database_helper.dart';
 
 /// Individual bill card/item display
 class BillCard extends StatefulWidget {
@@ -22,7 +23,9 @@ class BillCard extends StatefulWidget {
 class _BillCardState extends State<BillCard> {
   @override
   Widget build(BuildContext context) {
-    final accentColor = widget.isOverdue ? const Color(0xFFEF4444) : const Color(0xFF3B82F6);
+    final accentColor = widget.isOverdue
+        ? const Color(0xFFEF4444)
+        : const Color(0xFF3B82F6);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -38,7 +41,10 @@ class _BillCardState extends State<BillCard> {
           ),
         ],
         border: widget.isOverdue
-            ? Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3), width: 1.5)
+            ? Border.all(
+                color: const Color(0xFFEF4444).withValues(alpha: 0.3),
+                width: 1.5,
+              )
             : null,
       ),
       child: Column(
@@ -64,7 +70,9 @@ class _BillCardState extends State<BillCard> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
-            widget.isOverdue ? Icons.warning_rounded : Icons.receipt_long_rounded,
+            widget.isOverdue
+                ? Icons.warning_rounded
+                : Icons.receipt_long_rounded,
             color: accentColor,
             size: 22,
           ),
@@ -76,7 +84,11 @@ class _BillCardState extends State<BillCard> {
             children: [
               Text(
                 widget.bill.title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1A1A2E)),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Color(0xFF1A1A2E),
+                ),
               ),
               const SizedBox(height: 2),
               Container(
@@ -87,7 +99,11 @@ class _BillCardState extends State<BillCard> {
                 ),
                 child: Text(
                   widget.bill.category,
-                  style: const TextStyle(color: Color(0xFF6B7280), fontSize: 11, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
@@ -98,7 +114,11 @@ class _BillCardState extends State<BillCard> {
           children: [
             Text(
               '₱${widget.bill.amount.toStringAsFixed(2)}',
-              style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(
+                color: accentColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
             ),
             if (widget.isOverdue)
               Container(
@@ -110,7 +130,11 @@ class _BillCardState extends State<BillCard> {
                 ),
                 child: Text(
                   BillsHelper.formatOverdueText(widget.bill.daysOverdue),
-                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
           ],
@@ -133,7 +157,11 @@ class _BillCardState extends State<BillCard> {
           const SizedBox(width: 8),
           Text(
             "Due: ${BillsHelper.formatDate(widget.bill.dueDate)}",
-            style: TextStyle(color: accentColor, fontSize: 13, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              color: accentColor,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -144,25 +172,50 @@ class _BillCardState extends State<BillCard> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: () {
+        onPressed: () async {
           BillsData.markAsPaid(widget.bill.id);
+          final int? numericId = int.tryParse(widget.bill.id);
+          if (numericId != null) {
+            try {
+              await DatabaseHelper.instance.updateExpenseStatus(
+                numericId,
+                'Dismissed',
+              );
+            } catch (e) {
+              debugPrint('db updateExpenseStatus failed: $e');
+            }
+          } else {
+            debugPrint('bill id is not numeric: ${widget.bill.id}');
+          }
           widget.onMarkedAsPaid();
+          // ignore: use_build_context_synchronously
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${widget.bill.title} marked as paid'),
               backgroundColor: const Color(0xFF009661),
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           );
         },
-        icon: const Icon(Icons.check_circle_rounded, size: 18, color: Colors.white),
-        label: const Text("Mark as Paid", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        icon: const Icon(
+          Icons.check_circle_rounded,
+          size: 18,
+          color: Colors.white,
+        ),
+        label: const Text(
+          "Mark as Paid",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF009661),
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );

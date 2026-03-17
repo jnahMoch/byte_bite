@@ -94,8 +94,7 @@ class AppStartupPage extends StatelessWidget {
             ),
           );
         }
-        final ownerExists =
-            snapshot.data ?? UserStorage.isOwnerRegistered;
+        final ownerExists = snapshot.data ?? UserStorage.isOwnerRegistered;
         return ownerExists ? const LoginPage() : const SignUpPage();
       },
     );
