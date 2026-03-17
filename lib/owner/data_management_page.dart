@@ -1,9 +1,6 @@
 // ============================================================================
-// data_management_page.dart
 // Refactored to follow SOLID principles 
 // ============================================================================
-
-
 import 'package:byte_bite/data/bills_data.dart';
 import 'package:byte_bite/data/inventory_data.dart';
 import 'package:byte_bite/data/sales_data.dart';

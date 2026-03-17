@@ -1,6 +1,7 @@
 import 'package:byte_bite/owner/homepage.dart';
 import 'package:byte_bite/helper/homepage.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // ← added
 import 'package:flutter/material.dart';
 import 'firebase_options.dart';
 import 'login_page.dart';
@@ -12,6 +13,22 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // ── Offline + Cloud Sync ────────────────────────────────────────────────
+  // Must be set BEFORE any Firestore read/write in the app.
+  //
+  // persistenceEnabled: true  → Firestore caches all data locally.
+  //   Reads are served from cache when offline.
+  //   Writes (sales, stock, users) are queued and auto-sent when back online.
+  //
+  // cacheSizeBytes: UNLIMITED → Cache never evicts data automatically.
+  //   Safe for a POS app where the product catalog must always be available.
+  // ────────────────────────────────────────────────────────────────────────
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
+
   runApp(const ByteAndBiteApp());
 }
 
