@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
-import '../../../model/pos_item_model.dart';
 import '../../../data/inventory_data.dart';
+import '../../../model/pos_item_model.dart';
+import '../logic/inventory_controller.dart';
+import '../logic/notifications_controller.dart';
 
 class InventoryView extends StatefulWidget {
   const InventoryView({super.key});
@@ -10,12 +14,67 @@ class InventoryView extends StatefulWidget {
 }
 
 class _InventoryViewState extends State<InventoryView> {
+  final InventoryController _inventoryController = const InventoryController();
+  final NotificationsController _notificationsController =
+      const NotificationsController();
   String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInventory();
+  }
+
+  Future<void> _loadInventory() async {
+    final loaded = await _inventoryController.loadProducts();
+    if (!mounted) return;
+
+    setState(() {
+      InventoryData.items
+        ..clear()
+        ..addAll(loaded);
+    });
+    InventoryData.notifier.value = List<POSItem>.from(InventoryData.items);
+    await _notificationsController.syncLowStockAlertsWithInventory();
+  }
+
+  Future<void> _persistItemUpdate({
+    required POSItem original,
+    required POSItem updated,
+  }) async {
+    await _inventoryController.updateProduct(
+      original: original,
+      updated: updated,
+    );
+
+    final index = InventoryData.items.indexOf(original);
+    if (index >= 0) {
+      InventoryData.items[index] = POSItem(
+        productId: original.productId,
+        name: updated.name,
+        price: updated.price,
+        stock: updated.stock,
+        unit: updated.unit,
+        category: updated.category,
+        lowStockAlert: updated.lowStockAlert,
+        image: updated.image,
+      );
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
+    InventoryData.notifier.value = List<POSItem>.from(InventoryData.items);
+    await _notificationsController.syncLowStockAlertsWithInventory();
+  }
 
   List<POSItem> get filteredItems {
     if (_searchQuery.isEmpty) return InventoryData.items;
     return InventoryData.items
-        .where((item) => item.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where(
+          (item) =>
+              item.name.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
         .toList();
   }
 
@@ -39,20 +98,118 @@ class _InventoryViewState extends State<InventoryView> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               int? qty = int.tryParse(stockController.text);
               if (qty != null && qty > 0) {
-                setState(() {
-                  item.stock += qty;
-                });
+                final updated = POSItem(
+                  productId: item.productId,
+                  name: item.name,
+                  price: item.price,
+                  stock: item.stock + qty,
+                  unit: item.unit,
+                  category: item.category,
+                  lowStockAlert: item.lowStockAlert,
+                  image: item.image,
+                );
+
+                await _persistItemUpdate(original: item, updated: updated);
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Added $qty ${item.unit} to ${item.name}')),
+                  SnackBar(
+                    content: Text('Added $qty ${item.unit} to ${item.name}'),
+                  ),
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF009661)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF009661),
+            ),
             child: const Text('Add', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditItemDialog(POSItem item) {
+    final stockController = TextEditingController(text: item.stock.toString());
+    final priceController = TextEditingController(text: item.price.toString());
+    final thresholdController = TextEditingController(
+      text: item.lowStockAlert.toString(),
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit ${item.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: stockController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Stock',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: thresholdController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Low Stock Alert',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: priceController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Price',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final parsedStock = int.tryParse(stockController.text);
+              final parsedThreshold = int.tryParse(thresholdController.text);
+              final parsedPrice = int.tryParse(priceController.text);
+
+              if (parsedStock == null ||
+                  parsedThreshold == null ||
+                  parsedPrice == null) {
+                return;
+              }
+
+              final updated = POSItem(
+                productId: item.productId,
+                name: item.name,
+                price: parsedPrice,
+                stock: parsedStock,
+                unit: item.unit,
+                category: item.category,
+                lowStockAlert: parsedThreshold,
+                image: item.image,
+              );
+
+              await _persistItemUpdate(original: item, updated: updated);
+              if (!context.mounted) return;
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF009661),
+            ),
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -98,7 +255,8 @@ class _InventoryViewState extends State<InventoryView> {
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: filteredItems.length,
-            itemBuilder: (context, index) => _inventoryCard(filteredItems[index]),
+            itemBuilder: (context, index) =>
+                _inventoryCard(filteredItems[index]),
           ),
         ),
       ],
@@ -128,26 +286,39 @@ class _InventoryViewState extends State<InventoryView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+              Expanded(
+                child: Row(
+                  children: [
+                    _buildProductImageThumb(item.image),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            item.category,
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    item.category,
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               OutlinedButton.icon(
                 onPressed: () => _showAddStockDialog(item),
                 icon: const Icon(Icons.add, size: 16, color: Color(0xFF009661)),
@@ -160,7 +331,33 @@ class _InventoryViewState extends State<InventoryView> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: () => _showEditItemDialog(item),
+                icon: const Icon(
+                  Icons.edit,
+                  size: 16,
+                  color: Color(0xFF3B82F6),
+                ),
+                label: const Text(
+                  'Edit',
+                  style: TextStyle(color: Color(0xFF3B82F6), fontSize: 12),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF3B82F6)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                 ),
               ),
             ],
@@ -219,6 +416,56 @@ class _InventoryViewState extends State<InventoryView> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProductImageThumb(String? imagePathOrUrl) {
+    final fallback = Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: const Color(0xFF009661).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Icon(Icons.image_outlined, color: Color(0xFF009661)),
+    );
+
+    if (imagePathOrUrl == null || imagePathOrUrl.trim().isEmpty) {
+      return fallback;
+    }
+
+    final imageRef = imagePathOrUrl.trim();
+    final parsed = Uri.tryParse(imageRef);
+    final isNetwork =
+        parsed != null && (parsed.scheme == 'http' || parsed.scheme == 'https');
+
+    if (isNetwork) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.network(
+          imageRef,
+          width: 52,
+          height: 52,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => fallback,
+        ),
+      );
+    }
+
+    final file = File(imageRef);
+    if (!file.existsSync()) {
+      return fallback;
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Image.file(
+        file,
+        width: 52,
+        height: 52,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => fallback,
       ),
     );
   }

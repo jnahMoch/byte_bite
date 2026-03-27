@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../model/pos_item_model.dart';
 import '../../../data/inventory_data.dart';
-import '../../../data/sales_data.dart';
-import '../../../data/bills_data.dart';
+import '../logic/dashboard_controller.dart';
 
 class DashboardView extends StatefulWidget {
   final Function(int)? onNavigate;
@@ -17,6 +16,7 @@ class DashboardView extends StatefulWidget {
 class DashboardViewState extends _DashboardViewState {}
 
 class _DashboardViewState extends State<DashboardView> {
+  final DashboardController _dashboardController = const DashboardController();
   int transactionCount = 0;
   double totalSales = 0.0;
   int billsPaid = 0;
@@ -30,29 +30,30 @@ class _DashboardViewState extends State<DashboardView> {
   void initState() {
     super.initState();
     _loadSummary();
-    // listen for in-memory data changes as well
-    SalesData.notifier.addListener(_loadSummary);
-    BillsData.notifier.addListener(_loadSummary);
   }
 
   Future<void> _loadSummary() async {
-    // fall back to in-memory data (was the previous working state)
-    final todayTx = SalesData.getTransactionsForToday();
-    final txCount = todayTx.length;
-    final totSales = todayTx.fold<double>(0.0, (sum, t) => sum + t.total);
-    final bills = BillsData.bills.where((b) => b.isPaid).length;
+    try {
+      final summary = await _dashboardController.loadTodaysSummary();
+      if (!mounted) return;
 
-    setState(() {
-      transactionCount = txCount;
-      totalSales = totSales;
-      billsPaid = bills;
-    });
+      setState(() {
+        transactionCount = summary.transactions;
+        totalSales = summary.totalSales;
+        billsPaid = summary.billsPaid;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        transactionCount = 0;
+        totalSales = 0.0;
+        billsPaid = 0;
+      });
+    }
   }
 
   @override
   void dispose() {
-    SalesData.notifier.removeListener(_loadSummary);
-    BillsData.notifier.removeListener(_loadSummary);
     super.dispose();
   }
 

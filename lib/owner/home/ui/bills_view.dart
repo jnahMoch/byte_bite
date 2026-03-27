@@ -1,24 +1,58 @@
 import 'package:flutter/material.dart';
 
 import '../../../model/bill_model.dart';
-import '../../../data/bills_data.dart';
+import '../logic/bills_controller.dart';
 
 class BillsView extends StatefulWidget {
   const BillsView({super.key});
+
   @override
   State<BillsView> createState() => _BillsViewState();
 }
 
 class _BillsViewState extends State<BillsView> {
-  List<Bill> get overdueBills => BillsData.overdueBills;
-  List<Bill> get upcomingBills => BillsData.upcomingBills;
-  List<Bill> get paidBills => BillsData.bills.where((b) => b.isPaid).toList();
+  final BillsController _billsController = const BillsController();
+  List<Bill> _bills = [];
 
-  double get overdueTotal => BillsData.totalOverdue;
-  double get upcomingTotal => BillsData.totalUpcoming;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(_lifecycleObserver);
+    _loadBills();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(_lifecycleObserver);
+    super.dispose();
+  }
+
+  late final WidgetsBindingObserver _lifecycleObserver =
+      _BillsLifecycleObserver(onResume: _loadBills);
+
+  Future<void> _loadBills() async {
+    final loaded = await _billsController.loadBills();
+    if (!mounted) return;
+    setState(() {
+      _bills = loaded;
+    });
+  }
 
   String _formatDate(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${months[date.month - 1]} ${date.day.toString().padLeft(2, '0')}, ${date.year}';
   }
 
@@ -27,360 +61,439 @@ class _BillsViewState extends State<BillsView> {
     final amountController = TextEditingController();
     String selectedCategory = 'Utilities';
     DateTime selectedDate = DateTime.now().add(const Duration(days: 7));
+    final categories = ['Utilities', 'Rent', 'Supplies', 'Other'];
+    final categoryIcons = {
+      'Utilities': Icons.bolt,
+      'Rent': Icons.home,
+      'Supplies': Icons.inventory_2,
+      'Other': Icons.more_horiz,
+    };
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AlertDialog(
-        title: const Text('Add New Bill'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Bill Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Amount',
-                prefixText: '₱',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: selectedCategory,
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                border: OutlineInputBorder(),
-              ),
-              items: ['Utilities', 'Rent', 'Supplies', 'Other']
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                  .toList(),
-              onChanged: (v) => setDialogState(() => selectedCategory = v!),
-            ),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: dialogContext,
-                  initialDate: selectedDate,
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime.now().add(const Duration(days: 365)),
-                );
-                if (picked != null) {
-                  setDialogState(() => selectedDate = picked);
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Due: ${_formatDate(selectedDate)}'),
-                    const Icon(Icons.calendar_today, size: 18),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      isScrollControlled: true,
+      enableDrag: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          ElevatedButton(
-            onPressed: () {
-              if (nameController.text.isNotEmpty && amountController.text.isNotEmpty) {
-                setState(() {
-                  BillsData.addBill(Bill(
-                    id: DateTime.now().millisecondsSinceEpoch.toString(),
-                    title: nameController.text,
-                    category: selectedCategory,
-                    amount: double.tryParse(amountController.text) ?? 0,
-                    dueDate: selectedDate,
-                  ));
-                });
-                Navigator.pop(context);
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF009661)),
-            child: const Text('Add', style: TextStyle(color: Colors.white)),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
           ),
-        ],
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFB71C1C), Color(0xFFE53935)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.receipt_long,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Add New Bill',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            'Track your expenses',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Bill Name',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: TextField(
+                          controller: nameController,
+                          decoration: InputDecoration(
+                            hintText: 'e.g., Electricity Bill',
+                            hintStyle: TextStyle(color: Colors.grey[400]),
+                            prefixIcon: const Icon(
+                              Icons.receipt_long,
+                              color: Color(0xFF009661),
+                              size: 20,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Amount (₱)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: TextField(
+                          controller: amountController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            hintText: '0.00',
+                            hintStyle: TextStyle(color: Colors.grey[400]),
+                            prefixIcon: const Icon(
+                              Icons.attach_money,
+                              color: Color(0xFF009661),
+                              size: 20,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Category',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: categories.map((category) {
+                          final isSelected = selectedCategory == category;
+                          return GestureDetector(
+                            onTap: () => setDialogState(
+                              () => selectedCategory = category,
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? const Color(0xFF009661)
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? const Color(0xFF009661)
+                                      : Colors.grey.shade300,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    categoryIcons[category],
+                                    size: 16,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.grey[600],
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    category,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Due Date',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: dialogContext,
+                            initialDate: selectedDate,
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 365),
+                            ),
+                          );
+                          if (picked != null) {
+                            setDialogState(() => selectedDate = picked);
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _formatDate(selectedDate),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF333333),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const Icon(
+                                Icons.calendar_today,
+                                size: 18,
+                                color: Color(0xFF009661),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(dialogContext),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                side: const BorderSide(color: Colors.grey),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                if (nameController.text.isNotEmpty &&
+                                    amountController.text.isNotEmpty) {
+                                  final parsedAmount =
+                                      double.tryParse(amountController.text) ??
+                                      0;
+
+                                  await _billsController.addBill(
+                                    title: nameController.text,
+                                    category: selectedCategory,
+                                    amount: parsedAmount,
+                                    dueDate: selectedDate,
+                                  );
+                                  await _loadBills();
+
+                                  if (!mounted || !dialogContext.mounted) {
+                                    return;
+                                  }
+                                  Navigator.of(dialogContext).pop();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.check_circle,
+                                            color: Colors.white,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              '${nameController.text} added successfully!',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      backgroundColor: const Color(0xFF009661),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFB71C1C),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.add_circle_outline,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Add Bill',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Bill Reminders',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF333333),
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: _showAddBillDialog,
-                icon: const Icon(Icons.add, size: 18, color: Colors.white),
-                label: const Text('Add Bill', style: TextStyle(color: Colors.white)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF009661),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Overdue',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${overdueBills.length}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '₱${overdueTotal.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Upcoming',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${upcomingBills.length}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '₱${upcomingTotal.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          
-          if (overdueBills.isNotEmpty) ...[
-            const Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.red, size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'Overdue Bills',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ...overdueBills.map((bill) => _billCard(bill, isOverdue: true)),
-            const SizedBox(height: 16),
-          ],
-          
-          if (upcomingBills.isNotEmpty) ...[
-            const Row(
-              children: [
-                Icon(Icons.schedule, color: Colors.blue, size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'Upcoming Bills',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ...upcomingBills.map((bill) => _billCard(bill, isOverdue: false)),
-            const SizedBox(height: 16),
-          ],
-          
-          if (paidBills.isNotEmpty) ...[
-            const Text(
-              'Paid Bills',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF333333),
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...paidBills.map((bill) => _paidBillCard(bill)),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _billCard(Bill bill, {required bool isOverdue}) {
-    final bgColor = isOverdue ? const Color(0xFFFFF5F5) : Colors.white;
-    final borderColor = isOverdue ? Colors.red.shade100 : Colors.grey.shade200;
-    final accentColor = isOverdue ? Colors.red : Colors.blue;
-
+  Widget _summaryCard(String title, String value, IconData icon, Color color) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: bgColor,
+        color: color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    bill.title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF333333),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    bill.category,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                '₱${bill.amount.toStringAsFixed(2)}',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: accentColor,
+              Icon(icon, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.calendar_today_outlined, size: 14, color: accentColor),
-              const SizedBox(width: 8),
-              Text(
-                isOverdue
-                    ? 'Overdue by ${bill.daysOverdue} day(s) - Due: ${_formatDate(bill.dueDate)}'
-                    : 'Due: ${_formatDate(bill.dueDate)}',
-                style: TextStyle(fontSize: 12, color: accentColor),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                setState(() {
-                  BillsData.markAsPaid(bill.id);
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${bill.title} marked as paid'),
-                    backgroundColor: const Color(0xFF009661),
+          const SizedBox(height: 8),
+          Expanded(
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
                   ),
-                );
-              },
-              icon: const Icon(Icons.check, size: 18, color: Colors.white),
-              label: const Text('Mark as Paid', style: TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF009661),
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
               ),
             ),
           ),
@@ -389,17 +502,90 @@ class _BillsViewState extends State<BillsView> {
     );
   }
 
-  Widget _paidBillCard(Bill bill) {
+  Widget _buildSummarySection({
+    required int unpaidCount,
+    required double totalUnpaid,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final shouldStack = constraints.maxWidth < 300;
+
+        final unpaidCard = SizedBox(
+          height: 120,
+          child: _summaryCard(
+            'Unpaid Bills',
+            '$unpaidCount',
+            Icons.receipt_long,
+            Colors.orange,
+          ),
+        );
+
+        final totalDueCard = SizedBox(
+          height: 120,
+          child: _summaryCard(
+            'Total Due',
+            '₱${totalUnpaid.toStringAsFixed(2)}',
+            Icons.attach_money,
+            Colors.red,
+          ),
+        );
+
+        if (shouldStack) {
+          return Column(
+            children: [totalDueCard, const SizedBox(height: 12), unpaidCard],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: unpaidCard),
+            const SizedBox(width: 12),
+            Expanded(child: totalDueCard),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _billCard(Bill bill) {
+    final isPaid = bill.isPaid;
+    final isOverdue = bill.isOverdue;
+    final dateColor = isPaid
+        ? const Color(0xFF009661)
+        : (isOverdue ? Colors.red : const Color(0xFF3B82F6));
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(
+          color: isPaid ? Colors.green.shade200 : Colors.grey.shade200,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isPaid ? Colors.green.shade50 : Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.receipt_long,
+              color: isPaid ? Colors.green : Colors.orange,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,33 +593,43 @@ class _BillsViewState extends State<BillsView> {
                 Text(
                   bill.title,
                   style: const TextStyle(
-                    fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF333333),
+                    fontSize: 14,
                   ),
                 ),
-                const SizedBox(height: 2),
                 Text(
                   bill.category,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
                 ),
-                const SizedBox(height: 8),
-                const Row(
+                const SizedBox(height: 4),
+                Row(
                   children: [
                     Icon(
-                      Icons.check,
+                      isPaid ? Icons.check_circle : Icons.pending,
                       size: 14,
-                      color: Color(0xFF009661),
+                      color: isPaid ? Colors.green : Colors.orange,
                     ),
-                    SizedBox(width: 4),
+                    const SizedBox(width: 4),
                     Text(
-                      'Paid',
+                      isPaid ? 'Paid' : 'Pending',
                       style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF009661),
+                        fontSize: 11,
+                        color: isPaid ? Colors.green : Colors.orange,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 12, color: dateColor),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        isOverdue
+                            ? 'Overdue by ${bill.daysOverdue} day(s) • Due ${_formatDate(bill.dueDate)}'
+                            : 'Due ${_formatDate(bill.dueDate)}',
+                        style: TextStyle(fontSize: 11, color: dateColor),
                       ),
                     ),
                   ],
@@ -441,16 +637,154 @@ class _BillsViewState extends State<BillsView> {
               ],
             ),
           ),
-          Text(
-            '₱${bill.amount.toStringAsFixed(2)}',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF333333),
-            ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '₱${bill.amount.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+              const SizedBox(height: 4),
+              if (!isPaid)
+                GestureDetector(
+                  onTap: () async {
+                    await _billsController.markBillAsPaid(bill.id);
+                    await _loadBills();
+
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${bill.title} marked as paid'),
+                        backgroundColor: const Color(0xFF009661),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF009661),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'Mark Paid',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final unpaidBills = _bills.where((b) => !b.isPaid).toList();
+    final totalUnpaid = unpaidBills.fold<double>(0, (sum, b) => sum + b.amount);
+
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Bills & Reminders',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF333333),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildSummarySection(
+                unpaidCount: unpaidBills.length,
+                totalUnpaid: totalUnpaid,
+              ),
+              const SizedBox(height: 24),
+              if (_bills.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(40),
+                  width: double.infinity,
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.receipt_long_outlined,
+                        size: 64,
+                        color: Colors.grey[300],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No bills yet',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 16),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Tap + to add a bill reminder',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                      ),
+                    ],
+                  ),
+                )
+              else ...[
+                const Text(
+                  'All Bills',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF333333),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ..._bills.map(_billCard),
+              ],
+              const SizedBox(height: 80),
+            ],
+          ),
+        ),
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: FloatingActionButton.extended(
+            onPressed: _showAddBillDialog,
+            backgroundColor: const Color(0xFF009661),
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text(
+              'Add Bill',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BillsLifecycleObserver with WidgetsBindingObserver {
+  final Future<void> Function() onResume;
+
+  _BillsLifecycleObserver({required this.onResume});
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      onResume();
+    }
   }
 }

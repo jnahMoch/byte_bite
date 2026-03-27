@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -31,7 +33,7 @@ class _POSGridViewState extends State<POSGridView> {
   final List<CartItem> _cart = [];
   final TextEditingController _amountPaidController = TextEditingController();
   double _change = 0;
-  bool _isCartExpanded = false; 
+  bool _isCartExpanded = false;
 
   @override
   void initState() {
@@ -92,6 +94,33 @@ class _POSGridViewState extends State<POSGridView> {
     });
   }
 
+  Future<int> _resolveProductId(POSItem item) async {
+    if (item.productId != null) return item.productId!;
+
+    final db = await DatabaseHelper.instance.database;
+    final existing = await db.query(
+      'Products',
+      columns: ['product_id'],
+      where: 'LOWER(name) = LOWER(?)',
+      whereArgs: [item.name],
+      limit: 1,
+    );
+
+    if (existing.isNotEmpty) {
+      return (existing.first['product_id'] as num).toInt();
+    }
+
+    final insertedId = await DatabaseHelper.instance.insertProduct({
+      'name': item.name,
+      'category': item.category,
+      'price': item.price.toDouble(),
+      'stock_quantity': item.stock,
+      'min_threshold': item.lowStockAlert,
+      'description': null,
+    });
+    return insertedId;
+  }
+
   Future<void> _completeTransaction() async {
     if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -147,16 +176,17 @@ class _POSGridViewState extends State<POSGridView> {
 
     // persist the sale to the SQLite database with cart items
     try {
-      
-      // Build items list for database insertion
-      final itemsForDB = savedCart.map((cartItem) {
-        return {
-          'product_id': cartItem.item.productId ?? 1, // Use productId or default to 1
+      // Build items list with resolved product IDs to avoid seed-product fallback.
+      final itemsForDB = <Map<String, dynamic>>[];
+      for (final cartItem in savedCart) {
+        final productId = await _resolveProductId(cartItem.item);
+        itemsForDB.add({
+          'product_id': productId,
           'quantity': cartItem.quantity,
           'subtotal': (cartItem.item.price * cartItem.quantity).toDouble(),
-        };
-      }).toList();
-      
+        });
+      }
+
       await DatabaseHelper.instance.recordSale(
         userId: 1, // replace with actual current user id if available
         totalAmount: savedTotal.toDouble(),
@@ -165,7 +195,7 @@ class _POSGridViewState extends State<POSGridView> {
         paymentStatus: 'Success',
       );
     } catch (e) {
-      // log but don't block the UI
+      debugPrint('pos_grid_view recordSale failed: $e');
     }
 
     _showSaleSuccessDialog(
@@ -992,332 +1022,471 @@ class _POSGridViewState extends State<POSGridView> {
                             firstChild: const SizedBox.shrink(),
                             secondChild: Column(
                               mainAxisSize: MainAxisSize.min,
-                    children: [
-                      
-                      if (_cart.isNotEmpty)
-                        Container(
-                          constraints: const BoxConstraints(maxHeight: 180),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            itemCount: _cart.length,
-                            itemBuilder: (context, index) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _cartItemRow(_cart[index], index),
-                              );
-                            },
-                          ),
-                        ),
-                      Container(
-                        height: 1,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.grey.shade200, Colors.grey.shade100],
-                          ),
-                        ),
-                      ),
-                      
-                      SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                              // Payment Method Label & Options
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF009661).withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Payment Method',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF333333),
-                                        letterSpacing: 0.3,
-                                      ),
+                              children: [
+                                if (_cart.isNotEmpty)
+                                  Container(
+                                    constraints: const BoxConstraints(
+                                      maxHeight: 180,
                                     ),
-                                    const SizedBox(height: 10),
-                                    Row(
-                                      children: [
-                                        _paymentOption('Cash', Icons.payments_outlined),
-                                        const SizedBox(width: 10),
-                                        _paymentOption('QR', Icons.qr_code),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: ListView.builder(
+                                      shrinkWrap: true,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
+                                      itemCount: _cart.length,
+                                      itemBuilder: (context, index) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 12,
+                                          ),
+                                          child: _cartItemRow(
+                                            _cart[index],
+                                            index,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                Container(
+                                  height: 1,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.grey.shade200,
+                                        Colors.grey.shade100,
                                       ],
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 14),
-                              
-                              // Total Display Card
-                              Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: Colors.grey.shade200, width: 1.5),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF009661).withValues(alpha: 0.08),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Total Amount Due',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade600,
-                                            fontWeight: FontWeight.w500,
-                                            letterSpacing: 0.2,
+
+                                SingleChildScrollView(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Payment Method Label & Options
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: const Color(
+                                            0xFF009661,
+                                          ).withValues(alpha: 0.08),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '₱$cartTotal.00',
-                                          style: const TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w900,
-                                            color: Color(0xFF009661),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF009661).withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Icon(
-                                        Icons.local_offer_rounded,
-                                        color: Color(0xFF009661),
-                                        size: 24,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              
-                              // Amount Paid Input Card
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: Colors.grey.shade200, width: 1.5),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.04),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 1),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 8, left: 12, right: 12),
-                                      child: Text(
-                                        'Amount Paid',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.grey.shade600,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 0.2,
-                                        ),
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: TextField(
-                                            controller: _amountPaidController,
-                                            keyboardType: TextInputType.number,
-                                            textAlign: TextAlign.center,
-                                            style: const TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w700,
-                                              color: Color(0xFF009661),
-                                            ),
-                                            decoration: InputDecoration(
-                                              hintText: '0',
-                                              hintStyle: TextStyle(
-                                                fontSize: 20,
-                                                color: Colors.grey.shade300,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'Payment Method',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFF333333),
+                                                letterSpacing: 0.3,
                                               ),
-                                              border: InputBorder.none,
-                                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                              prefix: Text(
-                                                '₱ ',
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: Color(0xFF009661),
+                                            ),
+                                            const SizedBox(height: 10),
+                                            Row(
+                                              children: [
+                                                _paymentOption(
+                                                  'Cash',
+                                                  Icons.payments_outlined,
+                                                ),
+                                                const SizedBox(width: 10),
+                                                _paymentOption(
+                                                  'QR',
+                                                  Icons.qr_code,
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 14),
+
+                                      // Total Display Card
+                                      Container(
+                                        padding: const EdgeInsets.all(14),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.grey.shade200,
+                                            width: 1.5,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(
+                                                0xFF009661,
+                                              ).withValues(alpha: 0.08),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Total Amount Due',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey.shade600,
+                                                    fontWeight: FontWeight.w500,
+                                                    letterSpacing: 0.2,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  '₱$cartTotal.00',
+                                                  style: const TextStyle(
+                                                    fontSize: 24,
+                                                    fontWeight: FontWeight.w900,
+                                                    color: Color(0xFF009661),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.all(10),
+                                              decoration: BoxDecoration(
+                                                color: const Color(
+                                                  0xFF009661,
+                                                ).withValues(alpha: 0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: const Icon(
+                                                Icons.local_offer_rounded,
+                                                color: Color(0xFF009661),
+                                                size: 24,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+
+                                      // Amount Paid Input Card
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.grey.shade200,
+                                            width: 1.5,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.04,
+                                              ),
+                                              blurRadius: 6,
+                                              offset: const Offset(0, 1),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Column(
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 8,
+                                                left: 12,
+                                                right: 12,
+                                              ),
+                                              child: Text(
+                                                'Amount Paid',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.grey.shade600,
+                                                  fontWeight: FontWeight.w600,
+                                                  letterSpacing: 0.2,
                                                 ),
                                               ),
                                             ),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: TextField(
+                                                    controller:
+                                                        _amountPaidController,
+                                                    keyboardType:
+                                                        TextInputType.number,
+                                                    textAlign: TextAlign.center,
+                                                    style: const TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: Color(0xFF009661),
+                                                    ),
+                                                    decoration: InputDecoration(
+                                                      hintText: '0',
+                                                      hintStyle: TextStyle(
+                                                        fontSize: 20,
+                                                        color: Colors
+                                                            .grey
+                                                            .shade300,
+                                                      ),
+                                                      border: InputBorder.none,
+                                                      contentPadding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 16,
+                                                            vertical: 10,
+                                                          ),
+                                                      prefix: Text(
+                                                        '₱ ',
+                                                        style: const TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          color: Color(
+                                                            0xFF009661,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  decoration: BoxDecoration(
+                                                    border: Border(
+                                                      left: BorderSide(
+                                                        color: Colors
+                                                            .grey
+                                                            .shade200,
+                                                        width: 1,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  child: Column(
+                                                    children: [
+                                                      GestureDetector(
+                                                        onTap: () {
+                                                          int current =
+                                                              int.tryParse(
+                                                                _amountPaidController
+                                                                    .text,
+                                                              ) ??
+                                                              0;
+                                                          _amountPaidController
+                                                                  .text =
+                                                              (current + 1)
+                                                                  .toString();
+                                                        },
+                                                        child: Container(
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 10,
+                                                                vertical: 5,
+                                                              ),
+                                                          child: Icon(
+                                                            Icons.arrow_drop_up,
+                                                            size: 20,
+                                                            color: Colors
+                                                                .grey
+                                                                .shade600,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Container(
+                                                        height: 1,
+                                                        color: Colors
+                                                            .grey
+                                                            .shade200,
+                                                      ),
+                                                      GestureDetector(
+                                                        onTap: () {
+                                                          int current =
+                                                              int.tryParse(
+                                                                _amountPaidController
+                                                                    .text,
+                                                              ) ??
+                                                              0;
+                                                          if (current > 0) {
+                                                            _amountPaidController
+                                                                    .text =
+                                                                (current - 1)
+                                                                    .toString();
+                                                          }
+                                                        },
+                                                        child: Container(
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 10,
+                                                                vertical: 5,
+                                                              ),
+                                                          child: Icon(
+                                                            Icons
+                                                                .arrow_drop_down,
+                                                            size: 20,
+                                                            color: Colors
+                                                                .grey
+                                                                .shade600,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+
+                                      // Change Display Card
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: _change > 0
+                                              ? const Color(
+                                                  0xFF009661,
+                                                ).withValues(alpha: 0.08)
+                                              : Colors.grey.shade50,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          border: Border.all(
+                                            color: _change > 0
+                                                ? const Color(
+                                                    0xFF009661,
+                                                  ).withValues(alpha: 0.3)
+                                                : Colors.grey.shade200,
+                                            width: 1.5,
                                           ),
                                         ),
-                                        Container(
-                                          decoration: BoxDecoration(
-                                            border: Border(
-                                              left: BorderSide(color: Colors.grey.shade200, width: 1),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Change',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: Colors.grey.shade600,
+                                                    fontWeight: FontWeight.w500,
+                                                    letterSpacing: 0.2,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  '₱${_change.toStringAsFixed(2)}',
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.w900,
+                                                    color: _change > 0
+                                                        ? const Color(
+                                                            0xFF009661,
+                                                          )
+                                                        : Colors.grey.shade400,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: _change > 0
+                                                    ? const Color(
+                                                        0xFF009661,
+                                                      ).withValues(alpha: 0.15)
+                                                    : Colors.grey.shade100,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Icon(
+                                                _change > 0
+                                                    ? Icons.check_circle
+                                                    : Icons.info,
+                                                color: _change > 0
+                                                    ? const Color(0xFF009661)
+                                                    : Colors.grey.shade400,
+                                                size: 20,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+
+                                      // Complete Transaction Button
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          onPressed: _completeTransaction,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(
+                                              0xFF009661,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 14,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            elevation: 4,
+                                            shadowColor: const Color(
+                                              0xFF009661,
+                                            ).withValues(alpha: 0.4),
                                           ),
-                                          child: Column(
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
-                                              GestureDetector(
-                                                onTap: () {
-                                                  int current = int.tryParse(_amountPaidController.text) ?? 0;
-                                                  _amountPaidController.text = (current + 1).toString();
-                                                },
-                                                child: Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                                  child: Icon(
-                                                  Icons.arrow_drop_up,
-                                                    size: 20,
-                                                    color: Colors.grey.shade600,
-                                                  ),
-                                                ),
+                                              const Icon(
+                                                Icons.check_circle,
+                                                color: Colors.white,
+                                                size: 18,
                                               ),
-                                              Container(height: 1, color: Colors.grey.shade200),
-                                              GestureDetector(
-                                                onTap: () {
-                                                  int current = int.tryParse(_amountPaidController.text) ?? 0;
-                                                  if (current > 0) {
-                                                    _amountPaidController.text = (current - 1).toString();
-                                                  }
-                                                },
-                                                child: Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                                  child: Icon(
-                                                    Icons.arrow_drop_down,
-                                                    size: 20,
-                                                    color: Colors.grey.shade600,
-                                                  ),
+                                              const SizedBox(width: 8),
+                                              const Text(
+                                                'Complete Transaction',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w700,
+                                                  letterSpacing: 0.3,
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              
-                              // Change Display Card
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: _change > 0 ? const Color(0xFF009661).withValues(alpha: 0.08) : Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: _change > 0 ? const Color(0xFF009661).withValues(alpha: 0.3) : Colors.grey.shade200,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Change',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey.shade600,
-                                            fontWeight: FontWeight.w500,
-                                            letterSpacing: 0.2,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          '₱${_change.toStringAsFixed(2)}',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w900,
-                                            color: _change > 0 ? const Color(0xFF009661) : Colors.grey.shade400,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: _change > 0 ? const Color(0xFF009661).withValues(alpha: 0.15) : Colors.grey.shade100,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        _change > 0 ? Icons.check_circle : Icons.info,
-                                        color: _change > 0 ? const Color(0xFF009661) : Colors.grey.shade400,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              
-                              // Complete Transaction Button
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: _completeTransaction,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF009661),
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    elevation: 4,
-                                    shadowColor: const Color(0xFF009661).withValues(alpha: 0.4),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.check_circle, color: Colors.white, size: 18),
-                                      const SizedBox(width: 8),
-                                      const Text(
-                                        'Complete Transaction',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.3,
-                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                            crossFadeState: _isCartExpanded
+                                ? CrossFadeState.showSecond
+                                : CrossFadeState.showFirst,
+                            duration: const Duration(milliseconds: 200),
                           ),
-                        ),
-                    ],
-                  ),
-                  crossFadeState: _isCartExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-                  duration: const Duration(milliseconds: 200),
-                ),
                         ],
                       ),
                     ),
@@ -1398,41 +1567,11 @@ class _POSGridViewState extends State<POSGridView> {
                   color: iconColor.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: item.image != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          item.image!,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: double.infinity,
-                          errorBuilder: (context, error, stackTrace) => Center(
-                            child: Icon(
-                              iconData,
-                              size: 40,
-                              color: iconColor.withValues(alpha: 0.6),
-                            ),
-                          ),
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  iconColor,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      )
-                    : Center(
-                        child: Icon(
-                          iconData,
-                          size: 40,
-                          color: iconColor.withValues(alpha: 0.6),
-                        ),
-                      ),
+                child: _buildItemImage(
+                  imagePathOrUrl: item.image,
+                  iconData: iconData,
+                  iconColor: iconColor,
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -1473,6 +1612,63 @@ class _POSGridViewState extends State<POSGridView> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildItemImage({
+    required String? imagePathOrUrl,
+    required IconData iconData,
+    required Color iconColor,
+  }) {
+    Widget fallbackIcon() => Center(
+      child: Icon(iconData, size: 40, color: iconColor.withValues(alpha: 0.6)),
+    );
+
+    if (imagePathOrUrl == null || imagePathOrUrl.trim().isEmpty) {
+      return fallbackIcon();
+    }
+
+    final imageRef = imagePathOrUrl.trim();
+    final parsed = Uri.tryParse(imageRef);
+    final isNetwork =
+        parsed != null && (parsed.scheme == 'http' || parsed.scheme == 'https');
+
+    if (isNetwork) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          imageRef,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (context, error, stackTrace) => fallbackIcon(),
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    final file = File(imageRef);
+    if (!file.existsSync()) {
+      return fallbackIcon();
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Image.file(
+        file,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, error, stackTrace) => fallbackIcon(),
       ),
     );
   }

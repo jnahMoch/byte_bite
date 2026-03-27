@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class POSHeader extends StatelessWidget {
   final VoidCallback onNotifications;
   final VoidCallback onSettings;
+  final int unreadNotificationsCount;
 
   const POSHeader({
     super.key,
     required this.onNotifications,
     required this.onSettings,
+    this.unreadNotificationsCount = 0,
   });
 
   @override
@@ -44,13 +46,18 @@ class POSHeader extends StatelessWidget {
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Byte & Bite POS',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold)),
-                  Text('Owner',
-                      style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text(
+                    'Byte & Bite POS',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'Owner',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
                 ],
               ),
             ],
@@ -61,22 +68,25 @@ class POSHeader extends StatelessWidget {
                 children: [
                   IconButton(
                     onPressed: onNotifications,
-                    icon: const Icon(Icons.notifications_outlined,
-                        color: Colors.white),
+                    icon: const Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.white,
+                    ),
                     tooltip: 'Notifications',
                   ),
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
+                  if (unreadNotificationsCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
               IconButton(

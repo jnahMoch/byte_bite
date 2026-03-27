@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 
+import '../data/inventory_data.dart';
+import 'home/logic/inventory_controller.dart';
+import 'home/logic/notifications_controller.dart';
 import 'home/ui/analytics_view.dart';
-import 'home/ui/bills_reminders_view.dart';
+import 'home/ui/bills_view.dart';
 import 'home/ui/dashboard_view.dart';
 import 'home/ui/inventory_menu_view.dart';
 import 'home/ui/pos_grid_view.dart';
@@ -42,6 +45,9 @@ class POSHomePage extends StatefulWidget {
 
 class _POSHomePageState extends State<POSHomePage> {
   int _currentIndex = 0;
+  final InventoryController _inventoryController = const InventoryController();
+  final NotificationsController _notificationsController =
+      const NotificationsController();
 
   // key for dashboard so we can call its refresh method
   final GlobalKey<DashboardViewState> _dashboardKey = GlobalKey();
@@ -57,37 +63,61 @@ class _POSHomePageState extends State<POSHomePage> {
   // is not ConnectivityResult.none, making it safe for all v6 versions.
   bool _isOnline = true;
   late final StreamSubscription<List<ConnectivityResult>> _connectivitySub;
+  late final ValueNotifier<int> _unreadNotificationsNotifier;
 
   static bool _hasConnection(List<ConnectivityResult> results) =>
       results.any((r) => r != ConnectivityResult.none);
   // ─────────────────────────────────────────────────────────────────────────
 
+  Future<void> _hydrateInventoryFromStorage() async {
+    try {
+      final loadedItems = await _inventoryController.loadProducts();
+      if (loadedItems.isEmpty) return;
+
+      InventoryData.items
+        ..clear()
+        ..addAll(loadedItems);
+      InventoryData.notifier.value = List.from(InventoryData.items);
+
+      if (mounted) {
+        _updateNotificationBadge();
+      }
+    } catch (_) {
+      // Keep existing in-memory defaults if hydration fails.
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _unreadNotificationsNotifier = ValueNotifier(
+      _notificationsController.getUnreadNotificationsCount(),
+    );
     _pages = [
       DashboardView(key: _dashboardKey, onNavigate: _onPageNavigate),
       const AnalyticsView(),
       const POSGridView(),
       const InventoryMenuView(),
-      const BillsRemindersView(),
+      const BillsView(),
     ];
+
+    // Listen to inventory changes to update notification badge
+    InventoryData.notifier.addListener(_updateNotificationBadge);
+    _hydrateInventoryFromStorage();
 
     // ── Offline + Cloud Sync ───────────────────────────────────────────────
     // Step 1 — snapshot current status on startup.
     // checkConnectivity() in v6 returns List<ConnectivityResult>.
-    Connectivity()
-        .checkConnectivity()
-        .then((List<ConnectivityResult> results) {
+    Connectivity().checkConnectivity().then((List<ConnectivityResult> results) {
       if (mounted) setState(() => _isOnline = _hasConnection(results));
     });
 
     // Step 2 — stream changes for the rest of the session.
     // Firestore manages the actual data sync automatically;
     // this only drives the UI banner.
-    _connectivitySub = Connectivity()
-        .onConnectivityChanged
-        .listen((List<ConnectivityResult> results) {
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((
+      List<ConnectivityResult> results,
+    ) {
       if (!mounted) return;
       final nowOnline = _hasConnection(results);
       final wasOffline = !_isOnline;
@@ -117,7 +147,15 @@ class _POSHomePageState extends State<POSHomePage> {
   @override
   void dispose() {
     _connectivitySub.cancel();
+    InventoryData.notifier.removeListener(_updateNotificationBadge);
+    _unreadNotificationsNotifier.dispose();
     super.dispose();
+  }
+
+  void _updateNotificationBadge() {
+    final unreadCount = _notificationsController.getUnreadNotificationsCount();
+    _unreadNotificationsNotifier.value = unreadCount;
+    setState(() {});
   }
 
   void _onPageNavigate(int pageIndex) {
@@ -137,6 +175,8 @@ class _POSHomePageState extends State<POSHomePage> {
           POSHeader(
             onNotifications: _showNotificationsSheet,
             onSettings: _showSettingsBottomSheet,
+            unreadNotificationsCount: _notificationsController
+                .getUnreadNotificationsCount(),
           ),
 
           // ── Offline banner ───────────────────────────────────────────────
@@ -149,8 +189,8 @@ class _POSHomePageState extends State<POSHomePage> {
                 ? const SizedBox.shrink()
                 : const _OfflineBanner(key: ValueKey('offline')),
           ),
-          // ────────────────────────────────────────────────────────────────
 
+          // ────────────────────────────────────────────────────────────────
           Expanded(child: _pages[_currentIndex]),
         ],
       ),

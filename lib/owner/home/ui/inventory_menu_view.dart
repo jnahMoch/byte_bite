@@ -1,10 +1,12 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart' as cf;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../model/pos_item_model.dart';
 import '../../../data/inventory_data.dart';
+import '../logic/inventory_controller.dart';
 
 class InventoryMenuView extends StatefulWidget {
   const InventoryMenuView({super.key});
@@ -13,6 +15,7 @@ class InventoryMenuView extends StatefulWidget {
 }
 
 class _InventoryMenuViewState extends State<InventoryMenuView> {
+  final InventoryController _inventoryController = const InventoryController();
   String _searchQuery = '';
   String _selectedCategory = 'All';
   String _selectedFilter = 'All';
@@ -20,7 +23,11 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
   List<POSItem> get filteredItems {
     var items = InventoryData.items.toList();
     if (_searchQuery.isNotEmpty) {
-      items = items.where((i) => i.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+      items = items
+          .where(
+            (i) => i.name.toLowerCase().contains(_searchQuery.toLowerCase()),
+          )
+          .toList();
     }
     if (_selectedCategory != 'All') {
       items = items.where((i) => i.category == _selectedCategory).toList();
@@ -35,8 +42,24 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
 
   int get totalItems => InventoryData.items.length;
   int get totalStock => InventoryData.items.fold(0, (sum, i) => sum + i.stock);
-  int get lowStockCount => InventoryData.items.where((i) => i.stock <= i.lowStockAlert).length;
-  double get inventoryValue => InventoryData.items.fold(0, (sum, i) => sum + (i.price * i.stock)).toDouble();
+  int get lowStockCount =>
+      InventoryData.items.where((i) => i.stock <= i.lowStockAlert).length;
+  double get inventoryValue => InventoryData.items
+      .fold(0, (sum, i) => sum + (i.price * i.stock))
+      .toDouble();
+
+  String _syncErrorMessage(Object error) {
+    if (error is cf.FirebaseException) {
+      if (error.code == 'permission-denied') {
+        return 'Saved locally, but Firebase denied write access. Check Firestore rules for products collection.';
+      }
+      if (error.code == 'not-authenticated') {
+        return 'Saved locally, but Firebase sync requires an authenticated user. Please log in online first.';
+      }
+      return 'Saved locally, but Firebase sync failed: ${error.code}.';
+    }
+    return 'Saved locally, but sync failed: $error';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +67,6 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
       children: [
         Column(
           children: [
-            
             Container(
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
@@ -61,22 +83,45 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                   const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Inventory Overview', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text(
+                        'Inventory Overview',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      _statBox('Total Items', '$totalItems', Icons.inventory_2_outlined),
-                      _statBox('Total Stock', '$totalStock', Icons.widgets_outlined),
-                      _statBox('Low Stock', '$lowStockCount', Icons.warning_amber_outlined),
-                      _statBox('Value', '₱${inventoryValue.toStringAsFixed(0)}', Icons.attach_money),
+                      _statBox(
+                        'Total Items',
+                        '$totalItems',
+                        Icons.inventory_2_outlined,
+                      ),
+                      _statBox(
+                        'Total Stock',
+                        '$totalStock',
+                        Icons.widgets_outlined,
+                      ),
+                      _statBox(
+                        'Low Stock',
+                        '$lowStockCount',
+                        Icons.warning_amber_outlined,
+                      ),
+                      _statBox(
+                        'Value',
+                        '₱${inventoryValue.toStringAsFixed(0)}',
+                        Icons.attach_money,
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
-            
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
@@ -88,18 +133,35 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                       prefixIcon: const Icon(Icons.search, color: Colors.grey),
                       filled: true,
                       fillColor: Colors.grey[100],
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                       contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      _filterChip('All', _selectedFilter == 'All', () => setState(() => _selectedFilter = 'All')),
+                      _filterChip(
+                        'All',
+                        _selectedFilter == 'All',
+                        () => setState(() => _selectedFilter = 'All'),
+                      ),
                       const SizedBox(width: 8),
-                      _filterChip('Low Stock', _selectedFilter == 'Low Stock', () => setState(() => _selectedFilter = 'Low Stock'), color: Colors.red),
+                      _filterChip(
+                        'Low Stock',
+                        _selectedFilter == 'Low Stock',
+                        () => setState(() => _selectedFilter = 'Low Stock'),
+                        color: Colors.red,
+                      ),
                       const SizedBox(width: 8),
-                      _filterChip('In Stock', _selectedFilter == 'In Stock', () => setState(() => _selectedFilter = 'In Stock'), color: Colors.green),
+                      _filterChip(
+                        'In Stock',
+                        _selectedFilter == 'In Stock',
+                        () => setState(() => _selectedFilter = 'In Stock'),
+                        color: Colors.green,
+                      ),
                       const Spacer(),
                       _categoryDropdown(),
                     ],
@@ -108,17 +170,18 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: filteredItems.length,
-                itemBuilder: (context, index) => _inventoryCard(filteredItems[index]),
+                itemBuilder: (context, index) =>
+                    _inventoryCard(filteredItems[index]),
               ),
             ),
           ],
         ),
-        
+
         Positioned(
           right: 16,
           bottom: 16,
@@ -126,7 +189,13 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
             onPressed: () => _showAddItemDialog(),
             backgroundColor: const Color(0xFF009661),
             icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text('Add Item', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            label: const Text(
+              'Add Item',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       ],
@@ -139,14 +208,32 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
         children: [
           Icon(icon, size: 20, color: Colors.white.withValues(alpha: 0.8)),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 10)),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.8),
+              fontSize: 10,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _filterChip(String label, bool active, VoidCallback onTap, {Color? color}) {
+  Widget _filterChip(
+    String label,
+    bool active,
+    VoidCallback onTap, {
+    Color? color,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -154,9 +241,20 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
         decoration: BoxDecoration(
           color: active ? (color ?? const Color(0xFF009661)) : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: active ? (color ?? const Color(0xFF009661)) : Colors.grey.shade300),
+          border: Border.all(
+            color: active
+                ? (color ?? const Color(0xFF009661))
+                : Colors.grey.shade300,
+          ),
         ),
-        child: Text(label, style: TextStyle(fontSize: 12, color: active ? Colors.white : Colors.grey[600], fontWeight: FontWeight.w500)),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: active ? Colors.white : Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ),
     );
   }
@@ -173,7 +271,11 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
           value: _selectedCategory,
           icon: const Icon(Icons.arrow_drop_down, size: 20),
           style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-          items: ['All', 'Food', 'Beverage'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+          items: [
+            'All',
+            'Food',
+            'Beverage',
+          ].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
           onChanged: (v) => setState(() => _selectedCategory = v!),
         ),
       ),
@@ -188,7 +290,9 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isLowStock ? Colors.red.shade200 : Colors.grey.shade200),
+        border: Border.all(
+          color: isLowStock ? Colors.red.shade200 : Colors.grey.shade200,
+        ),
       ),
       child: Row(
         children: [
@@ -198,25 +302,50 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
               children: [
                 Row(
                   children: [
-                    Text(item.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                    Text(
+                      item.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
                     if (isLowStock) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(4)),
-                        child: const Text('Low', style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.w600)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Low',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ],
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text('${item.category} • ₱${item.price}', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                Text(
+                  '${item.category} • ₱${item.price}',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     _infoChip(Icons.inventory_2, '${item.stock} ${item.unit}'),
                     const SizedBox(width: 8),
-                    _infoChip(Icons.warning_amber, 'Alert: ${item.lowStockAlert}'),
+                    _infoChip(
+                      Icons.warning_amber,
+                      'Alert: ${item.lowStockAlert}',
+                    ),
                   ],
                 ),
               ],
@@ -226,11 +355,19 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
             children: [
               IconButton(
                 onPressed: () => _showEditItemDialog(item),
-                icon: const Icon(Icons.edit_outlined, size: 20, color: Color(0xFF009661)),
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  size: 20,
+                  color: Color(0xFF009661),
+                ),
               ),
               IconButton(
                 onPressed: () => _showAddStockDialog(item),
-                icon: const Icon(Icons.add_circle_outline, size: 20, color: Color(0xFF3B82F6)),
+                icon: const Icon(
+                  Icons.add_circle_outline,
+                  size: 20,
+                  color: Color(0xFF3B82F6),
+                ),
               ),
             ],
           ),
@@ -242,7 +379,10 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
   Widget _infoChip(IconData icon, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(6),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -263,20 +403,71 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Quantity to add', border: OutlineInputBorder()),
+          decoration: const InputDecoration(
+            labelText: 'Quantity to add',
+            border: OutlineInputBorder(),
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               int? qty = int.tryParse(controller.text);
               if (qty != null && qty > 0) {
-                setState(() => item.stock += qty);
+                final index = InventoryData.items.indexOf(item);
+                if (index < 0) {
+                  Navigator.pop(context);
+                  return;
+                }
+
+                final updatedItem = POSItem(
+                  productId: item.productId,
+                  name: item.name,
+                  price: item.price,
+                  stock: item.stock + qty,
+                  unit: item.unit,
+                  category: item.category,
+                  lowStockAlert: item.lowStockAlert,
+                  image: item.image,
+                );
+
+                setState(() {
+                  InventoryData.items[index] = updatedItem;
+                });
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added $qty ${item.unit} to ${item.name}')));
+
+                try {
+                  await _inventoryController.updateProduct(
+                    original: item,
+                    updated: updatedItem,
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(_syncErrorMessage(e)),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Added $qty ${item.unit} to ${updatedItem.name}',
+                    ),
+                    backgroundColor: const Color(0xFF009661),
+                  ),
+                );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF009661)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF009661),
+            ),
             child: const Text('Add', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -298,18 +489,48 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameC, decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder())),
+              TextField(
+                controller: nameC,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
               const SizedBox(height: 12),
-              TextField(controller: priceC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Price', border: OutlineInputBorder())),
+              TextField(
+                controller: priceC,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Price',
+                  border: OutlineInputBorder(),
+                ),
+              ),
               const SizedBox(height: 12),
-              TextField(controller: stockC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Stock', border: OutlineInputBorder())),
+              TextField(
+                controller: stockC,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Stock',
+                  border: OutlineInputBorder(),
+                ),
+              ),
               const SizedBox(height: 12),
-              TextField(controller: alertC, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Low Stock Alert', border: OutlineInputBorder())),
+              TextField(
+                controller: alertC,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Low Stock Alert',
+                  border: OutlineInputBorder(),
+                ),
+              ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () {
               setState(() => InventoryData.items.remove(item));
@@ -318,13 +539,75 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              final parsedPrice = int.tryParse(priceC.text.trim());
+              final parsedStock = int.tryParse(stockC.text.trim());
+              final parsedAlert = int.tryParse(alertC.text.trim());
+              final parsedName = nameC.text.trim();
+
+              if (parsedName.isEmpty ||
+                  parsedPrice == null ||
+                  parsedStock == null ||
+                  parsedAlert == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Please provide valid Name, Price, Stock, and Low Stock Alert values.',
+                    ),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              final index = InventoryData.items.indexOf(item);
+              if (index < 0) {
+                Navigator.pop(context);
+                return;
+              }
+
+              final updatedItem = POSItem(
+                productId: item.productId,
+                name: parsedName,
+                price: parsedPrice,
+                stock: parsedStock,
+                unit: item.unit,
+                category: item.category,
+                lowStockAlert: parsedAlert,
+                image: item.image,
+              );
+
               setState(() {
-                item.stock = int.tryParse(stockC.text) ?? item.stock;
+                InventoryData.items[index] = updatedItem;
               });
+
+              try {
+                await _inventoryController.updateProduct(
+                  original: item,
+                  updated: updatedItem,
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(_syncErrorMessage(e)),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+
+              if (!context.mounted) return;
               Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Product updated successfully.'),
+                  backgroundColor: Color(0xFF009661),
+                ),
+              );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF009661)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF009661),
+            ),
             child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -364,7 +647,6 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                
                 Center(
                   child: Container(
                     width: 40,
@@ -376,7 +658,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 Row(
                   children: [
                     Container(
@@ -387,7 +669,11 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                         ),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.add_box_rounded, color: Colors.white, size: 24),
+                      child: const Icon(
+                        Icons.add_box_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     const Column(
@@ -395,7 +681,11 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                       children: [
                         Text(
                           'Add New Item',
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF333333),
+                          ),
                         ),
                         Text(
                           'Fill in the product details',
@@ -406,10 +696,14 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                
+
                 const Text(
                   'Product Image',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF333333),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 GestureDetector(
@@ -420,95 +714,130 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                       enableDrag: true,
                       useSafeArea: true,
                       shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(20),
+                        ),
                       ),
                       builder: (ctx) => Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 40,
-                                height: 4,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(2),
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            const Text(
+                              'Choose Image Source',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      Navigator.pop(ctx);
+                                      final XFile? image = await picker
+                                          .pickImage(
+                                            source: ImageSource.camera,
+                                            maxWidth: 512,
+                                            maxHeight: 512,
+                                            imageQuality: 80,
+                                          );
+                                      if (image != null) {
+                                        setModalState(
+                                          () => selectedImagePath = image.path,
+                                        );
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(24),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF009661,
+                                        ).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: const Column(
+                                        children: [
+                                          Icon(
+                                            Icons.camera_alt_rounded,
+                                            size: 40,
+                                            color: Color(0xFF009661),
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            'Camera',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF009661),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 20),
-                              const Text(
-                                'Choose Image Source',
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 20),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: GestureDetector(
-                                      onTap: () async {
-                                        Navigator.pop(ctx);
-                                        final XFile? image = await picker.pickImage(
-                                          source: ImageSource.camera,
-                                          maxWidth: 512,
-                                          maxHeight: 512,
-                                          imageQuality: 80,
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      Navigator.pop(ctx);
+                                      final XFile? image = await picker
+                                          .pickImage(
+                                            source: ImageSource.gallery,
+                                            maxWidth: 512,
+                                            maxHeight: 512,
+                                            imageQuality: 80,
+                                          );
+                                      if (image != null) {
+                                        setModalState(
+                                          () => selectedImagePath = image.path,
                                         );
-                                        if (image != null) {
-                                          setModalState(() => selectedImagePath = image.path);
-                                        }
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.all(24),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF009661).withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(16),
-                                        ),
-                                        child: const Column(
-                                          children: [
-                                            Icon(Icons.camera_alt_rounded, size: 40, color: Color(0xFF009661)),
-                                            SizedBox(height: 8),
-                                            Text('Camera', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF009661))),
-                                          ],
-                                        ),
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(24),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF3B82F6,
+                                        ).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: const Column(
+                                        children: [
+                                          Icon(
+                                            Icons.photo_library_rounded,
+                                            size: 40,
+                                            color: Color(0xFF3B82F6),
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            'Gallery',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF3B82F6),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: GestureDetector(
-                                      onTap: () async {
-                                        Navigator.pop(ctx);
-                                        final XFile? image = await picker.pickImage(
-                                          source: ImageSource.gallery,
-                                          maxWidth: 512,
-                                          maxHeight: 512,
-                                          imageQuality: 80,
-                                        );
-                                        if (image != null) {
-                                          setModalState(() => selectedImagePath = image.path);
-                                        }
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.all(24),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(16),
-                                        ),
-                                        child: const Column(
-                                          children: [
-                                            Icon(Icons.photo_library_rounded, size: 40, color: Color(0xFF3B82F6)),
-                                            SizedBox(height: 8),
-                                            Text('Gallery', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF3B82F6))),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                            ],
-                          ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -519,7 +848,9 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                       color: Colors.grey[50],
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: selectedImagePath != null ? const Color(0xFF009661) : Colors.grey.shade300,
+                        color: selectedImagePath != null
+                            ? const Color(0xFF009661)
+                            : Colors.grey.shade300,
                         width: selectedImagePath != null ? 2 : 1,
                         strokeAlign: BorderSide.strokeAlignInside,
                       ),
@@ -540,14 +871,20 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                                 top: 8,
                                 right: 8,
                                 child: GestureDetector(
-                                  onTap: () => setModalState(() => selectedImagePath = null),
+                                  onTap: () => setModalState(
+                                    () => selectedImagePath = null,
+                                  ),
                                   child: Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: const BoxDecoration(
                                       color: Colors.red,
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(Icons.close, color: Colors.white, size: 16),
+                                    child: const Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -555,7 +892,10 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                                 bottom: 8,
                                 left: 8,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF009661),
                                     borderRadius: BorderRadius.circular(20),
@@ -563,9 +903,20 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                                   child: const Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.check_circle, color: Colors.white, size: 14),
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: Colors.white,
+                                        size: 14,
+                                      ),
                                       SizedBox(width: 4),
-                                      Text('Image added', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                                      Text(
+                                        'Image added',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -578,27 +929,39 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF009661).withValues(alpha: 0.1),
+                                  color: const Color(
+                                    0xFF009661,
+                                  ).withValues(alpha: 0.1),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.add_photo_alternate_outlined, size: 32, color: Color(0xFF009661)),
+                                child: const Icon(
+                                  Icons.add_photo_alternate_outlined,
+                                  size: 32,
+                                  color: Color(0xFF009661),
+                                ),
                               ),
                               const SizedBox(height: 8),
                               const Text(
                                 'Tap to add product image',
-                                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 'Camera or Gallery',
-                                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 12,
+                                ),
                               ),
                             ],
                           ),
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 _buildInputField(
                   controller: nameC,
                   label: 'Product Name',
@@ -606,7 +969,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                   icon: Icons.fastfood_outlined,
                 ),
                 const SizedBox(height: 16),
-                
+
                 Row(
                   children: [
                     Expanded(
@@ -631,7 +994,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 Row(
                   children: [
                     Expanded(
@@ -655,21 +1018,35 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 const Text(
                   'Category',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF333333),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _buildCategoryChip('Food', category, Icons.restaurant, (val) => setModalState(() => category = val)),
+                    _buildCategoryChip(
+                      'Food',
+                      category,
+                      Icons.restaurant,
+                      (val) => setModalState(() => category = val),
+                    ),
                     const SizedBox(width: 12),
-                    _buildCategoryChip('Beverage', category, Icons.local_cafe, (val) => setModalState(() => category = val)),
+                    _buildCategoryChip(
+                      'Beverage',
+                      category,
+                      Icons.local_cafe,
+                      (val) => setModalState(() => category = val),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 28),
-                
+
                 Row(
                   children: [
                     Expanded(
@@ -678,72 +1055,142 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           side: const BorderSide(color: Colors.grey),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       flex: 2,
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (nameC.text.isNotEmpty && priceC.text.isNotEmpty) {
-                            setState(() {
-                              InventoryData.items.add(POSItem(
-                                name: nameC.text,
-                                price: int.tryParse(priceC.text) ?? 0,
-                                stock: int.tryParse(stockC.text) ?? 0,
-                                unit: unitC.text.isEmpty ? 'pcs' : unitC.text,
-                                category: category,
-                                lowStockAlert: int.tryParse(alertC.text) ?? 10,
-                                image: selectedImagePath,
-                              ));
-                            });
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Row(
-                                  children: [
-                                    const Icon(Icons.check_circle, color: Colors.white),
-                                    const SizedBox(width: 8),
-                                    Text('${nameC.text} added successfully!'),
-                                  ],
-                                ),
-                                backgroundColor: const Color(0xFF009661),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                            );
-                          } else {
+                        onPressed: () async {
+                          final name = nameC.text.trim();
+                          final price = int.tryParse(priceC.text.trim());
+
+                          if (name.isEmpty || price == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: const Row(
                                   children: [
-                                    Icon(Icons.error_outline, color: Colors.white),
+                                    Icon(
+                                      Icons.error_outline,
+                                      color: Colors.white,
+                                    ),
                                     SizedBox(width: 8),
-                                    Text('Please fill in Name and Price'),
+                                    Text('Please fill in valid Name and Price'),
                                   ],
                                 ),
                                 backgroundColor: Colors.red,
                                 behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          final localItem = POSItem(
+                            name: name,
+                            price: price,
+                            stock: int.tryParse(stockC.text.trim()) ?? 0,
+                            unit: unitC.text.trim().isEmpty
+                                ? 'pcs'
+                                : unitC.text.trim(),
+                            category: category,
+                            lowStockAlert:
+                                int.tryParse(alertC.text.trim()) ?? 10,
+                            image: selectedImagePath,
+                          );
+
+                          setState(() {
+                            InventoryData.items.add(localItem);
+                          });
+
+                          Navigator.pop(context);
+
+                          try {
+                            final persisted = await _inventoryController
+                                .createProduct(item: localItem);
+                            if (context.mounted) {
+                              final idx = InventoryData.items.indexOf(
+                                localItem,
+                              );
+                              if (idx >= 0) {
+                                setState(() {
+                                  InventoryData.items[idx] = persisted;
+                                });
+                              }
+                            }
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(_syncErrorMessage(e)),
+                                backgroundColor: Colors.orange,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                               ),
                             );
                           }
+
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text('$name added successfully!'),
+                                ],
+                              ),
+                              backgroundColor: const Color(0xFF009661),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF009661),
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           elevation: 0,
                         ),
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add_circle_outline, color: Colors.white, size: 20),
+                            Icon(
+                              Icons.add_circle_outline,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                             SizedBox(width: 8),
-                            Text('Add Item', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text(
+                              'Add Item',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -771,7 +1218,11 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF333333),
+          ),
         ),
         const SizedBox(height: 8),
         Container(
@@ -788,7 +1239,10 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
               hintStyle: TextStyle(color: Colors.grey[400]),
               prefixIcon: Icon(icon, color: const Color(0xFF009661), size: 20),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
             ),
           ),
         ),
@@ -796,7 +1250,12 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
     );
   }
 
-  Widget _buildCategoryChip(String label, String selected, IconData icon, Function(String) onSelect) {
+  Widget _buildCategoryChip(
+    String label,
+    String selected,
+    IconData icon,
+    Function(String) onSelect,
+  ) {
     final isSelected = label == selected;
     return Expanded(
       child: GestureDetector(
@@ -805,8 +1264,10 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            gradient: isSelected 
-                ? const LinearGradient(colors: [Color(0xFF009661), Color(0xFF00B377)])
+            gradient: isSelected
+                ? const LinearGradient(
+                    colors: [Color(0xFF009661), Color(0xFF00B377)],
+                  )
                 : null,
             color: isSelected ? null : Colors.grey[100],
             borderRadius: BorderRadius.circular(12),
@@ -815,7 +1276,11 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 20, color: isSelected ? Colors.white : Colors.grey[600]),
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected ? Colors.white : Colors.grey[600],
+              ),
               const SizedBox(width: 8),
               Text(
                 label,
