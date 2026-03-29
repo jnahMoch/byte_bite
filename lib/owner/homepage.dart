@@ -71,7 +71,14 @@ class _POSHomePageState extends State<POSHomePage> {
 
   Future<void> _hydrateInventoryFromStorage() async {
     try {
-      final loadedItems = await _inventoryController.loadProducts();
+      var loadedItems = await _inventoryController.loadProducts();
+      if (loadedItems.isEmpty) {
+        // First-run fallback: persist default catalog into SQLite once,
+        // then hydrate from SQLite so totals/cards remain stable after restart.
+        loadedItems = await _inventoryController.bootstrapLocalFromSeedIfEmpty(
+          InventoryData.items,
+        );
+      }
       if (loadedItems.isEmpty) return;
 
       InventoryData.items

@@ -48,209 +48,198 @@ class _InventoryPageState extends State<InventoryPage> {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        // ignore: deprecated_member_use
-        builder: (dialogContext, setDialogState) => WillPopScope(
-          onWillPop: () async {
-            nameController.dispose();
-            priceController.dispose();
-            stockController.dispose();
-            unitController.dispose();
-            lowStockController.dispose();
-            return true;
-          },
-          child: Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            backgroundColor: Colors.white,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-              constraints: const BoxConstraints(maxWidth: 320),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Add New Item',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
+        builder: (dialogContext, setDialogState) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          backgroundColor: Colors.white,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+            constraints: const BoxConstraints(maxWidth: 320),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Add New Item',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  _buildSimpleInputField(
+                    controller: nameController,
+                    label: 'Name',
+                  ),
+                  const SizedBox(height: 16),
+
+                  _buildSimpleInputField(
+                    controller: priceController,
+                    label: 'Price',
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+
+                  _buildSimpleInputField(
+                    controller: stockController,
+                    label: 'Stock',
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+
+                  _buildSimpleInputField(
+                    controller: unitController,
+                    label: 'Unit (e.g., pieces)',
+                  ),
+                  const SizedBox(height: 16),
+
+                  _buildSimpleInputField(
+                    controller: lowStockController,
+                    label: 'Low Stock Alert',
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+
+                  InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: 'Category',
+                      labelStyle: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 16,
+                      ),
+                      floatingLabelStyle: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey.shade400),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey.shade400),
                       ),
                     ),
-                    const SizedBox(height: 28),
-
-                    _buildSimpleInputField(
-                      controller: nameController,
-                      label: 'Name',
-                    ),
-                    const SizedBox(height: 16),
-
-                    _buildSimpleInputField(
-                      controller: priceController,
-                      label: 'Price',
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 16),
-
-                    _buildSimpleInputField(
-                      controller: stockController,
-                      label: 'Stock',
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 16),
-
-                    _buildSimpleInputField(
-                      controller: unitController,
-                      label: 'Unit (e.g., pieces)',
-                    ),
-                    const SizedBox(height: 16),
-
-                    _buildSimpleInputField(
-                      controller: lowStockController,
-                      label: 'Low Stock Alert',
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 16),
-
-                    InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: 'Category',
-                        labelStyle: TextStyle(
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedCategory,
+                        isExpanded: true,
+                        isDense: true,
+                        icon: Icon(
+                          Icons.arrow_drop_down,
                           color: Colors.grey[600],
+                        ),
+                        style: const TextStyle(
                           fontSize: 16,
+                          color: Color(0xFF1A1A1A),
                         ),
-                        floatingLabelStyle: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade400),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade400),
-                        ),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: selectedCategory,
-                          isExpanded: true,
-                          isDense: true,
-                          icon: Icon(
-                            Icons.arrow_drop_down,
-                            color: Colors.grey[600],
-                          ),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF1A1A1A),
-                          ),
-                          items: categories
-                              .map(
-                                (cat) => DropdownMenuItem(
-                                  value: cat,
-                                  child: Text(cat),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            setDialogState(() => selectedCategory = value!);
-                          },
-                        ),
+                        items: categories
+                            .map(
+                              (cat) => DropdownMenuItem(
+                                value: cat,
+                                child: Text(cat),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setDialogState(() => selectedCategory = value!);
+                        },
                       ),
                     ),
-                    const SizedBox(height: 28),
+                  ),
+                  const SizedBox(height: 28),
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                          ),
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(
-                              color: Colors.purple[400],
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () {
-                            if (nameController.text.isNotEmpty &&
-                                priceController.text.isNotEmpty &&
-                                stockController.text.isNotEmpty) {
-                              final newItem = POSItem(
-                                name: nameController.text,
-                                category: selectedCategory,
-                                price: int.tryParse(priceController.text) ?? 0,
-                                stock: int.tryParse(stockController.text) ?? 0,
-                                unit: unitController.text.isNotEmpty
-                                    ? unitController.text
-                                    : 'pieces',
-                                lowStockAlert:
-                                    int.tryParse(lowStockController.text) ?? 10,
-                              );
-                              setState(() {
-                                InventoryData.items.add(newItem);
-                              });
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    '${nameController.text} added to inventory',
-                                  ),
-                                  backgroundColor: const Color(0xFF009661),
-                                ),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Please fill in Name, Price, and Stock',
-                                  ),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF009661),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 28,
-                              vertical: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Add',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Colors.purple[400],
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (nameController.text.isNotEmpty &&
+                              priceController.text.isNotEmpty &&
+                              stockController.text.isNotEmpty) {
+                            final newItem = POSItem(
+                              name: nameController.text,
+                              category: selectedCategory,
+                              price: int.tryParse(priceController.text) ?? 0,
+                              stock: int.tryParse(stockController.text) ?? 0,
+                              unit: unitController.text.isNotEmpty
+                                  ? unitController.text
+                                  : 'pieces',
+                              lowStockAlert:
+                                  int.tryParse(lowStockController.text) ?? 10,
+                            );
+                            setState(() {
+                              InventoryData.items.add(newItem);
+                            });
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '${nameController.text} added to inventory',
+                                ),
+                                backgroundColor: const Color(0xFF009661),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(dialogContext).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Please fill in Name, Price, and Stock',
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF009661),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Add',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),

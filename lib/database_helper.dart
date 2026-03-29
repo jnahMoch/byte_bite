@@ -138,13 +138,48 @@ class DatabaseHelper {
     required String paymentMethod,
     required String paymentStatus,
   }) async {
+    print(
+      '[DB] recordSale called with totalAmount=$totalAmount, paymentMethod=$paymentMethod, items=$items',
+    );
     final db = await database;
     return db.transaction((txn) async {
+      // Resolve a valid user row for FK safety on existing/legacy databases.
+      int effectiveUserId = userId;
+      final userRows = await txn.query(
+        'Users',
+        columns: ['user_id'],
+        where: 'user_id = ?',
+        whereArgs: [userId],
+        limit: 1,
+      );
+
+      if (userRows.isEmpty) {
+        final anyUser = await txn.query(
+          'Users',
+          columns: ['user_id'],
+          orderBy: 'user_id ASC',
+          limit: 1,
+        );
+
+        if (anyUser.isNotEmpty) {
+          effectiveUserId = (anyUser.first['user_id'] as num).toInt();
+        } else {
+          effectiveUserId = await txn.insert('Users', {
+            'name': 'Auto Owner',
+            'role': 'Owner',
+            'username': 'owner',
+            'email': 'owner@bytebite.com',
+            'password': 'password123',
+          });
+        }
+      }
+
       final saleId = await txn.insert('Sales', {
-        'user_id': userId,
+        'user_id': effectiveUserId,
         'date_time': DateTime.now().toIso8601String(),
         'total_amount': totalAmount,
       });
+      print('[DB] recordSale inserted row with saleId=$saleId');
       for (final item in items) {
         await txn.insert('SaleItems', {
           'sale_id': saleId,
@@ -168,6 +203,7 @@ class DatabaseHelper {
         'method': paymentMethod,
         'status': paymentStatus,
       });
+      print('[DB] recordSale transaction completed for saleId=$saleId');
       return saleId;
     });
   }
@@ -230,92 +266,4 @@ class DatabaseHelper {
       );
 
   Future<void> close() async => (await database).close();
-}
-
-// For Today's Summary
-// helper that counts all sales (not restricted to today)
-Future<int> getTransactionCount() async {
-  final db = await DatabaseHelper.instance.database;
-  final res = await db.rawQuery('SELECT COUNT(*) as count FROM Sales');
-  return Sqflite.firstIntValue(res) ?? 0;
-}
-
-// helper that sums all sales
-Future<double> getTotalSales() async {
-  final db = await DatabaseHelper.instance.database;
-  final res = await db.rawQuery('SELECT SUM(total_amount) as total FROM Sales');
-  final total = res.first['total'];
-  if (total == null) return 0.0;
-  // SQLite may return int for whole numbers, handle both
-  return (total as num).toDouble();
-}
-
-// only expenses marked 'Dismissed' count as paid in current schema
-Future<int> getBillsPaid() async {
-  final db = await DatabaseHelper.instance.database;
-  final res = await db.rawQuery(
-    "SELECT COUNT(*) as count FROM Expenses WHERE reminder_status = 'Dismissed'",
-  );
-  return Sqflite.firstIntValue(res) ?? 0;
-}
-
-// versions scoped to today --------------------------------------------------
-DateTime _todayStart() {
-  final now = DateTime.now();
-  final result = DateTime(now.year, now.month, now.day);
-  return result;
-}
-
-Future<int> getTodaysTransactionCount() async {
-  final db = await DatabaseHelper.instance.database;
-  final start = _todayStart().toIso8601String();
-
-  final res = await db.rawQuery(
-    'SELECT COUNT(*) as count FROM Sales WHERE date_time >= ?',
-    [start],
-  );
-  final count = Sqflite.firstIntValue(res) ?? 0;
-  return count;
-}
-
-Future<double> getTodaysTotalSales() async {
-  final db = await DatabaseHelper.instance.database;
-  final start = _todayStart().toIso8601String();
-  final res = await db.rawQuery(
-    'SELECT SUM(total_amount) as total FROM Sales WHERE date_time >= ?',
-    [start],
-  );
-  final total = res.first['total'];
-  if (total == null) return 0.0;
-  return (total as num).toDouble();
-}
-
-Future<int> getTodaysBillsPaid() async {
-  // the Expenses schema does not track when a bill was marked paid;
-  // at the moment, we only know which bills have been dismissed.
-  // return the total paid count as a compromise, or add a paid_date
-  // column if you need true day-of filtering.
-  return getBillsPaid();
-}
-
-// Get total quantity of items sold (all time)
-Future<int> getTotalItemsSold() async {
-  final db = await DatabaseHelper.instance.database;
-  final res = await db.rawQuery('SELECT SUM(quantity) as total FROM SaleItems');
-  final total = res.first['total'];
-  final result = total == null ? 0 : (total as num).toInt();
-  return result;
-}
-
-// Get today's items sold
-Future<int> getTodaysItemsSold() async {
-  final db = await DatabaseHelper.instance.database;
-  final start = _todayStart().toIso8601String();
-  final res = await db.rawQuery(
-    'SELECT SUM(si.quantity) as total FROM SaleItems si JOIN Sales s ON si.sale_id = s.sale_id WHERE s.date_time >= ?',
-    [start],
-  );
-  final total = res.first['total'];
-  final result = total == null ? 0 : (total as num).toInt();
-  return result;
 }

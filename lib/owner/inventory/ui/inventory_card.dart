@@ -129,7 +129,7 @@ class InventoryCard extends StatelessWidget {
                   if (qty != null && qty > 0) {
                     InventoryCore.addStock(item, qty);
                     onUpdated();
-                    // ignore: use_build_context_synchronously
+                    if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(

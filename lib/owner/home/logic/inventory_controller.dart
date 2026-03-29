@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../database_helper.dart';
 import '../../../model/pos_item_model.dart';
@@ -85,11 +86,22 @@ class InventoryController {
       return localItems;
     }
 
-    // Merge cloud state when available, then mirror it back to SQLite.
-    final cloudSnapshot = await FirebaseFirestore.instance
-        .collection(_productsCollection)
-        .orderBy('name')
-        .get();
+    // Merge cloud state when available.
+    // Keep local SQLite as source of truth for stock counts, and only import
+    // cloud products that do not exist locally to avoid losing items.
+    QuerySnapshot<Map<String, dynamic>> cloudSnapshot;
+    try {
+      cloudSnapshot = await FirebaseFirestore.instance
+          .collection(_productsCollection)
+          .orderBy('name')
+          .get();
+    } catch (e) {
+      // Keep local persisted data as source-of-truth if cloud merge is unavailable.
+      debugPrint(
+        'inventory_controller.loadProducts: cloud read failed, using local SQLite data: $e',
+      );
+      return localItems;
+    }
 
     if (cloudSnapshot.docs.isEmpty) {
       return localItems;
@@ -103,11 +115,82 @@ class InventoryController {
         )
         .toList();
 
+    if (localItems.isEmpty) {
+      for (final item in cloudItems) {
+        await _upsertProductToSqlFromItem(item);
+      }
+
+      // Return SQL-backed items so productId values always match local DB IDs.
+      final hydratedRows = await db.query(
+        'Products',
+        orderBy: 'name COLLATE NOCASE ASC',
+      );
+      return hydratedRows
+          .map(_mapSqlRowToItem)
+          .where(
+            (item) => includeSeed || item.name.toLowerCase() != 'seed product',
+          )
+          .toList();
+    }
+
+    final localNames = localItems
+        .map((item) => item.name.toLowerCase())
+        .toSet();
+    var insertedFromCloud = false;
     for (final item in cloudItems) {
+      if (localNames.contains(item.name.toLowerCase())) continue;
+      await _upsertProductToSqlFromItem(item);
+      insertedFromCloud = true;
+    }
+
+    if (!insertedFromCloud) {
+      return localItems;
+    }
+
+    final mergedRows = await db.query(
+      'Products',
+      orderBy: 'name COLLATE NOCASE ASC',
+    );
+    return mergedRows
+        .map(_mapSqlRowToItem)
+        .where(
+          (item) => includeSeed || item.name.toLowerCase() != 'seed product',
+        )
+        .toList();
+  }
+
+  Future<List<POSItem>> bootstrapLocalFromSeedIfEmpty(
+    List<POSItem> seedItems,
+  ) async {
+    final db = await DatabaseHelper.instance.database;
+    final sqlRows = await db.query(
+      'Products',
+      orderBy: 'name COLLATE NOCASE ASC',
+    );
+
+    final existing = sqlRows
+        .map(_mapSqlRowToItem)
+        .where((item) => item.name.toLowerCase() != 'seed product')
+        .toList();
+    if (existing.isNotEmpty) {
+      return existing;
+    }
+
+    // First-run bootstrap: persist default catalog once so future app restarts
+    // read from SQLite instead of in-memory seed values.
+    for (final item in seedItems) {
+      if (item.name.toLowerCase() == 'seed product') continue;
       await _upsertProductToSqlFromItem(item);
     }
 
-    return cloudItems;
+    final hydratedRows = await db.query(
+      'Products',
+      orderBy: 'name COLLATE NOCASE ASC',
+    );
+    return hydratedRows
+        .map(_mapSqlRowToItem)
+        .where((item) => item.name.toLowerCase() != 'seed product')
+        .toList();
   }
 
   void _ensureAuthenticatedForSync() {
@@ -121,6 +204,12 @@ class InventoryController {
     }
   }
 
+  /// Sync a product's updated stock to Firestore after local SQLite changes.
+  /// Called AFTER local stock is decremented in sales transaction.
+  /// Uses merge:true to preserve other cloud fields (e.g., description, price).
+  ///
+  /// WHY: Ensures Firestore copy stays in sync with local SQLite source-of-truth.
+  /// Firestore caches writes offline and syncs automatically when reconnected.
   Future<void> _syncProductToFirebase({
     required int productId,
     required POSItem item,

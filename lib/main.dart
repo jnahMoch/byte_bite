@@ -1,7 +1,7 @@
 import 'package:byte_bite/owner/homepage.dart';
 import 'package:byte_bite/helper/homepage.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // ← added
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'firebase_options.dart';
 import 'login_page.dart';
@@ -10,9 +10,7 @@ import 'user_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // ── Offline + Cloud Sync ────────────────────────────────────────────────
   // Must be set BEFORE any Firestore read/write in the app.
@@ -28,7 +26,6 @@ void main() async {
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
-
   runApp(const ByteAndBiteApp());
 }
 
