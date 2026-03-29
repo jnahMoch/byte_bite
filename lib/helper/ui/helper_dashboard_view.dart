@@ -1,9 +1,9 @@
-import 'package:byte_bite/helper/logic/helper_business_logic.dart';
-import 'package:byte_bite/model/pos_item_model.dart';
 import 'package:flutter/material.dart';
+
+import '../../helper/logic/helper_business_logic.dart';
+import '../../model/pos_item_model.dart';
 import '../../data/inventory_data.dart';
 import '../../data/sales_data.dart';
-import '../../user_storage.dart';
 
 /// Dashboard view for Helper showing overview and quick actions
 class HelperDashboardView extends StatelessWidget {
@@ -14,6 +14,13 @@ class HelperDashboardView extends StatelessWidget {
   int get _lowStockCount => HelperBusinessLogic.getLowStockCount(InventoryData.items);
   int get _totalProducts => InventoryData.items.length;
   int get _totalStock => InventoryData.items.fold(0, (sum, item) => sum + item.stock);
+  double get _inventoryValue => InventoryData.items
+      .fold(0, (sum, item) => sum + (item.price * item.stock))
+      .toDouble();
+  int get _transactionCount => SalesData.transactions.where((t) => HelperBusinessLogic.isToday(t.dateTime)).length;
+  double get _totalSales => SalesData.transactions
+      .where((t) => HelperBusinessLogic.isToday(t.dateTime))
+      .fold(0.0, (sum, t) => sum + t.total.toDouble());
 
   @override
   Widget build(BuildContext context) {
@@ -26,13 +33,14 @@ class HelperDashboardView extends StatelessWidget {
           const SizedBox(height: 20),
           _buildQuickOverviewSection(),
           const SizedBox(height: 24),
+          _buildTodaysSummarySection(),
+          const SizedBox(height: 24),
           _buildQuickActionsSection(context),
           const SizedBox(height: 24),
           if (_lowStockCount > 0) ...[
             _buildLowStockAlertsSection(),
             const SizedBox(height: 16),
           ],
-          _buildHelperTipsSection(),
         ],
       ),
     );
@@ -54,14 +62,14 @@ class HelperDashboardView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: [
-              const Icon(Icons.waving_hand, color: Colors.amber, size: 28),
-              const SizedBox(width: 10),
+            children: const [
+              Icon(Icons.waving_hand, color: Colors.amber, size: 28),
+              SizedBox(width: 10),
               Text(
-                'Welcome, ${UserStorage.currentUser ?? "Helper"}!',
-                style: const TextStyle(
+                'Welcome Back!',
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -107,7 +115,7 @@ class HelperDashboardView extends StatelessWidget {
               child: _statCard(
                 'Total Products',
                 '$_totalProducts',
-                Icons.restaurant_menu,
+                Icons.inventory_2_outlined,
                 const Color(0xFF3B82F6),
               ),
             ),
@@ -116,8 +124,8 @@ class HelperDashboardView extends StatelessWidget {
               child: _statCard(
                 'Total Stock',
                 '$_totalStock',
-                Icons.inventory_2_outlined,
-                const Color(0xFF22C55E),
+                Icons.widgets_outlined,
+                const Color(0xFF8B5CF6),
               ),
             ),
           ],
@@ -129,20 +137,71 @@ class HelperDashboardView extends StatelessWidget {
               child: _statCard(
                 'Low Stock',
                 '$_lowStockCount',
-                Icons.warning_amber_rounded,
-                _lowStockCount > 0 ? Colors.red : const Color(0xFF22C55E),
+                Icons.warning_amber_outlined,
+                _lowStockCount > 0
+                    ? const Color(0xFFEF4444)
+                    : const Color(0xFF22C55E),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _statCard(
-                "Today's Orders",
-                '${SalesData.transactions.where((t) => HelperBusinessLogic.isToday(t.dateTime)).length}',
-                Icons.shopping_cart_outlined,
-                const Color(0xFF8B5CF6),
+                'Inventory Value',
+                '₱${_inventoryValue.toStringAsFixed(0)}',
+                Icons.attach_money,
+                const Color(0xFFF59E0B),
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTodaysSummarySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Today's Summary",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF333333),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _summaryRow(
+                Icons.shopping_cart_outlined,
+                'Transactions',
+                '$_transactionCount',
+                const Color(0xFF009661),
+              ),
+              const Divider(height: 24),
+              _summaryRow(
+                Icons.attach_money,
+                'Total Sales',
+                '₱${_totalSales.toStringAsFixed(2)}',
+                const Color(0xFF3B82F6),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -234,81 +293,37 @@ class HelperDashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildHelperTipsSection() {
+  Widget _statCard(String title, String value, IconData icon, Color color) {
     return Container(
-      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF009661).withValues(alpha: 0.08),
-            const Color(0xFF00B377).withValues(alpha: 0.12),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF009661).withValues(alpha: 0.2)),
+        color: color,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF009661).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
                 ),
-                child: const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFF009661), size: 20),
               ),
-              const SizedBox(width: 10),
-              const Text(
-                'Helper Tips',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF009661),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                child: Icon(icon, size: 18, color: Colors.white),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          const Text(
-            '• Use POS to process customer orders\n• Check Inventory for stock levels\n• Update stock quantities when restocking\n• Contact Owner to add new products',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF333333),
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _statCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [color, color.withValues(alpha: 0.8)],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 32, color: Colors.white),
           const SizedBox(height: 8),
           Text(
             value,
@@ -318,17 +333,38 @@ class HelperDashboardView extends StatelessWidget {
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.white70,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
         ],
       ),
+    );
+  }
+
+  Widget _summaryRow(IconData icon, String label, String value, Color color) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 20, color: color),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF333333),
+          ),
+        ),
+      ],
     );
   }
 
@@ -338,10 +374,10 @@ class HelperDashboardView extends StatelessWidget {
         onNavigate?.call(pageIndex);
       },
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -353,7 +389,7 @@ class HelperDashboardView extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),

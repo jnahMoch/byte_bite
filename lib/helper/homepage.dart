@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 
 // UI Components
 import 'ui/helper_dashboard_view.dart';
+import 'ui/helper_analytics_view.dart';
+import 'ui/helper_pos_grid_view.dart';
 import 'ui/helper_basic_views.dart';
 import 'ui/helper_inventory_view.dart';
 import 'ui/helper_notifications_view.dart';
 import 'ui/helper_settings_sheet.dart';
+import 'ui/helper_header.dart';
+import 'ui/helper_bottom_nav_bar.dart';
 
 /// Main Helper Home Page
 /// 
@@ -32,11 +36,10 @@ class _HelperHomePageState extends State<HelperHomePage> {
     super.initState();
     _pages = [
       HelperDashboardView(onNavigate: _navigateToPage),
-      const HelperPOSView(),
-      const HelperBillsView(),
+      const HelperAnalyticsView(),
+      const HelperPOSGridView(),
       const HelperInventoryView(),
-      HelperNotificationsView(),
-      HelperSettingsSheet(scrollController: ScrollController()),
+      const HelperBillsView(),
     ];
   }
 
@@ -44,48 +47,62 @@ class _HelperHomePageState extends State<HelperHomePage> {
     setState(() => _currentIndex = index);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: _buildBottomNav(),
+  void _showNotificationsSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      enableDrag: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+      ),
+      builder: (ctx) => HelperNotificationsView(),
     );
   }
 
-  Widget _buildBottomNav() {
-    return BottomNavigationBar(
-      currentIndex: _currentIndex,
-      onTap: _navigateToPage,
-      type: BottomNavigationBarType.fixed,
+  void _showSettingsBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      enableDrag: true,
       backgroundColor: Colors.white,
-      selectedItemColor: const Color(0xFF009661),
-      unselectedItemColor: Colors.grey,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Dashboard',
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.point_of_sale),
-          label: 'POS',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.receipt_long),
-          label: 'Bills',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.inventory_2),
-          label: 'Inventory',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.notifications),
-          label: 'Alerts',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Settings',
-        ),
-      ],
+      ),
+      builder: (ctx) => HelperSettingsSheet(
+        scrollController: ScrollController(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          HelperHeader(
+            onNotifications: _showNotificationsSheet,
+            onSettings: _showSettingsBottomSheet,
+            unreadNotificationsCount: 0,
+          ),
+          Expanded(
+            child: _pages[_currentIndex],
+          ),
+        ],
+      ),
+      bottomNavigationBar: HelperBottomNavBar(
+        currentIndex: _currentIndex,
+        onItemTapped: _navigateToPage,
+      ),
     );
   }
 }
