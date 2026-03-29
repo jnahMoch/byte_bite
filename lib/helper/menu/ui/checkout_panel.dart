@@ -31,7 +31,11 @@ class CheckoutPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(color: Colors.grey.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, -3)),
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
         ],
       ),
       child: Column(
@@ -46,7 +50,7 @@ class CheckoutPanel extends StatelessWidget {
 
   Widget _buildCartItemsList() {
     if (cart.isEmpty) return const SizedBox.shrink();
-    
+
     return Container(
       constraints: const BoxConstraints(maxHeight: 180),
       decoration: BoxDecoration(
@@ -61,71 +65,97 @@ class CheckoutPanel extends StatelessWidget {
           final c = cart[index];
           final item = c['item'] as Map<String, String>;
           final qty = c['quantity'] as int;
-          final price = int.tryParse(item['price']?.replaceAll('₱', '') ?? '0') ?? 0;
+          final price =
+              int.tryParse(item['price']?.replaceAll('₱', '') ?? '0') ?? 0;
           final total = price * qty;
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item['name'] ?? '',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        '₱$price each',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
                   children: [
-                    Text(item['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text('₱$price each', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                    GestureDetector(
+                      onTap: () => onUpdateQuantity(index, -1),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF009661),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          '-',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      width: 36,
+                      alignment: Alignment.center,
+                      child: Text(
+                        '$qty',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => onUpdateQuantity(index, 1),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF009661),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          '+',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      width: 60,
+                      child: Text(
+                        '₱$total.00',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF009661),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => onRemoveFromCart(index),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.red,
+                          size: 18,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => onUpdateQuantity(index, -1),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF009661),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text('-', style: TextStyle(color: Colors.white)),
-                    ),
-                  ),
-                  Container(
-                    width: 36,
-                    alignment: Alignment.center,
-                    child: Text('$qty', style: const TextStyle(fontWeight: FontWeight.w600)),
-                  ),
-                  GestureDetector(
-                    onTap: () => onUpdateQuantity(index, 1),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF009661),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text('+', style: TextStyle(color: Colors.white)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 60,
-                    child: Text('₱$total.00', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF009661))),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => onRemoveFromCart(index),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
             ),
           );
         },
@@ -134,47 +164,139 @@ class CheckoutPanel extends StatelessWidget {
   }
 
   Widget _buildPaymentSection() {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Payment Method', style: TextStyle(fontSize: 12, color: Colors.grey)),
-          const SizedBox(height: 8),
-          Row(children: [
-            Expanded(child: _paymentOption('Cash', Icons.payments_outlined)),
-            const SizedBox(width: 8),
-            Expanded(child: _paymentOption('GCash', Icons.phone_android)),
-            const SizedBox(width: 8),
-            Expanded(child: _paymentOption('QR', Icons.qr_code)),
-          ]),
-          const SizedBox(height: 12),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('Total:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            Text('₱$cartTotal.00', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF009661))),
-          ]),
-          const SizedBox(height: 10),
-          _buildAmountPaidInput(),
-          const SizedBox(height: 10),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('Change:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            Text('₱${change.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF009661))),
-          ]),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onCompleteTransaction,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF009661),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: const Text('Complete Transaction', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Payment Method Header
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          color: Colors.grey.shade50,
+          child: const Text(
+            'Payment Method',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Payment Options
+              Row(
+                children: [
+                  Expanded(
+                    child: _paymentOption('Cash', Icons.payments_outlined),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: _paymentOption('QR', Icons.qr_code)),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Total Amount Due
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Total Amount Due',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '₱$cartTotal.00',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF009661),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.local_offer,
+                        color: Color(0xFF009661),
+                        size: 24,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Amount Paid',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 8),
+              _buildAmountPaidInput(),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Change:',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    '₱${change.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF009661),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: onCompleteTransaction,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF009661),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'Complete Transaction',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -183,17 +305,39 @@ class CheckoutPanel extends StatelessWidget {
     return GestureDetector(
       onTap: () => onPaymentMethodChanged(label),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           color: active ? const Color(0xFF009661) : Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: active ? const Color(0xFF009661) : Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: active ? const Color(0xFF009661) : Colors.grey.shade300,
+          ),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF009661).withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Column(
           children: [
-            Icon(icon, color: active ? Colors.white : Colors.grey, size: 20),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 11, color: active ? Colors.white : Colors.grey, fontWeight: active ? FontWeight.w600 : FontWeight.normal)),
+            Icon(
+              icon,
+              color: active ? Colors.white : Colors.grey.shade400,
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                color: active ? Colors.white : Colors.grey.shade700,
+              ),
+            ),
           ],
         ),
       ),
@@ -203,7 +347,7 @@ class CheckoutPanel extends StatelessWidget {
   Widget _buildAmountPaidInput() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.grey.shade300),
       ),
@@ -214,11 +358,18 @@ class CheckoutPanel extends StatelessWidget {
               controller: amountPaidController,
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF009661),
+              ),
               decoration: const InputDecoration(
                 hintText: '0',
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
               ),
             ),
           ),
@@ -230,17 +381,24 @@ class CheckoutPanel extends StatelessWidget {
                   amountPaidController.text = (current + 1).toString();
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   child: const Icon(Icons.arrow_drop_up, size: 20),
                 ),
               ),
               GestureDetector(
                 onTap: () {
                   int current = int.tryParse(amountPaidController.text) ?? 0;
-                  if (current > 0) amountPaidController.text = (current - 1).toString();
+                  if (current > 0)
+                    amountPaidController.text = (current - 1).toString();
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   child: const Icon(Icons.arrow_drop_down, size: 20),
                 ),
               ),

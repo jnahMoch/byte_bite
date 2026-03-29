@@ -672,14 +672,37 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                   ),
                                   const SizedBox(height: 12),
                                   for (int i = 0; i < _cart.length; i++)
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 12,
+                                    Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[50],
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: Colors.grey.shade200,
+                                        ),
                                       ),
                                       child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
                                         children: [
+                                          // Product image or icon
+                                          Container(
+                                            width: 50,
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF009661)
+                                                  .withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Icon(
+                                              Icons.shopping_bag,
+                                              color:
+                                                  const Color(0xFF009661),
+                                              size: 24,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          // Product info
                                           Expanded(
                                             child: Column(
                                               crossAxisAlignment:
@@ -690,16 +713,16 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                                   style: const TextStyle(
                                                     fontWeight:
                                                         FontWeight.w600,
-                                                    fontSize: 13,
+                                                    fontSize: 14,
                                                   ),
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                 ),
                                                 const SizedBox(height: 4),
                                                 Text(
-                                                  '₱${_cart[i].item.price} x ${_cart[i].quantity}',
+                                                  '₱${_cart[i].item.price} each',
                                                   style: TextStyle(
-                                                    fontSize: 11,
+                                                    fontSize: 12,
                                                     color:
                                                         Colors.grey[600],
                                                   ),
@@ -707,16 +730,29 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                               ],
                                             ),
                                           ),
-                                          Row(
+                                          const SizedBox(width: 12),
+                                          // Quantity and price
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
                                             children: [
+                                              Text(
+                                                '₱${_cart[i].total}',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                  color: Color(0xFF009661),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
                                               Container(
                                                 decoration: BoxDecoration(
                                                   border: Border.all(
-                                                    color: Colors.grey[300]!,
+                                                    color: const Color(0xFF009661),
                                                   ),
                                                   borderRadius:
                                                       BorderRadius.circular(
-                                                    4,
+                                                    6,
                                                   ),
                                                 ),
                                                 child: Row(
@@ -731,14 +767,13 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                                         padding: const EdgeInsets
                                                             .symmetric(
                                                           horizontal: 6,
-                                                          vertical: 4,
+                                                          vertical: 3,
                                                         ),
-                                                        child: const Text(
-                                                          '-',
-                                                          style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w600,
+                                                        child: const Icon(
+                                                          Icons.remove,
+                                                          size: 14,
+                                                          color: Color(
+                                                            0xFF009661,
                                                           ),
                                                         ),
                                                       ),
@@ -747,7 +782,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                                       padding: const EdgeInsets
                                                           .symmetric(
                                                         horizontal: 8,
-                                                        vertical: 4,
+                                                        vertical: 3,
                                                       ),
                                                       child: Text(
                                                         '${_cart[i].quantity}',
@@ -755,6 +790,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                                             const TextStyle(
                                                           fontWeight:
                                                               FontWeight.w600,
+                                                          fontSize: 12,
                                                         ),
                                                       ),
                                                     ),
@@ -768,14 +804,13 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                                         padding: const EdgeInsets
                                                             .symmetric(
                                                           horizontal: 6,
-                                                          vertical: 4,
+                                                          vertical: 3,
                                                         ),
-                                                        child: const Text(
-                                                          '+',
-                                                          style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w600,
+                                                        child: const Icon(
+                                                          Icons.add,
+                                                          size: 14,
+                                                          color: Color(
+                                                            0xFF009661,
                                                           ),
                                                         ),
                                                       ),
@@ -783,17 +818,17 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                                   ],
                                                 ),
                                               ),
-                                              const SizedBox(width: 8),
-                                              GestureDetector(
-                                                onTap: () =>
-                                                    _removeFromCart(i),
-                                                child: const Icon(
-                                                  Icons.close,
-                                                  size: 18,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
                                             ],
+                                          ),
+                                          const SizedBox(width: 8),
+                                          GestureDetector(
+                                            onTap: () =>
+                                                _removeFromCart(i),
+                                            child: const Icon(
+                                              Icons.delete_outline,
+                                              size: 20,
+                                              color: Colors.red,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -801,67 +836,199 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                   const SizedBox(height: 16),
                                   const Divider(),
                                   const SizedBox(height: 16),
+                                  // Total Amount Due
+                                  Container(
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF009661)
+                                          .withValues(alpha: 0.1),
+                                      borderRadius:
+                                          BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: const Color(0xFF009661)
+                                            .withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment
+                                              .spaceBetween,
+                                      children: [
+                                        const Text(
+                                          'Total Amount Due',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight:
+                                                FontWeight.w600,
+                                            color: Color(0xFF333333),
+                                          ),
+                                        ),
+                                        Text(
+                                          '₱$cartTotal',
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight:
+                                                FontWeight.bold,
+                                            color: Color(0xFF009661),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
                                   const Text(
-                                    'Payment Details',
+                                    'Payment Method',
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                   const SizedBox(height: 12),
-                                  DropdownButtonFormField<String>(
-                                    // ignore: deprecated_member_use
-                                    value: _selectedPayment,
-                                    items: ['Cash', 'Card', 'Check']
-                                        .map(
-                                          (method) =>
-                                              DropdownMenuItem(
-                                            value: method,
-                                            child: Text(method),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () => setState(
+                                            () => _selectedPayment =
+                                                'Cash',
                                           ),
-                                        )
-                                        .toList(),
-                                    onChanged: (value) {
-                                      if (value != null) {
-                                        setState(
-                                          () =>
-                                              _selectedPayment = value,
-                                        );
-                                      }
-                                    },
-                                    decoration: InputDecoration(
-                                      filled: true,
-                                      fillColor:
-                                          Colors.grey.shade50,
-                                      border: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(
-                                          8,
-                                        ),
-                                        borderSide: BorderSide(
-                                          color: Colors
-                                              .grey.shade200,
+                                          child: Container(
+                                            padding:
+                                                const EdgeInsets
+                                                    .symmetric(
+                                              vertical: 12,
+                                              horizontal: 16,
+                                            ),
+                                            decoration:
+                                                BoxDecoration(
+                                              color: _selectedPayment ==
+                                                      'Cash'
+                                                  ? const Color(
+                                                      0xFF009661,
+                                                    )
+                                                  : Colors.grey[100],
+                                              borderRadius:
+                                                  BorderRadius
+                                                      .circular(10),
+                                              border: Border.all(
+                                                color: _selectedPayment ==
+                                                        'Cash'
+                                                    ? const Color(
+                                                        0xFF009661,
+                                                      )
+                                                    : Colors.grey
+                                                        .shade300,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .center,
+                                              children: [
+                                                Icon(
+                                                  Icons.wallet,
+                                                  color: _selectedPayment ==
+                                                          'Cash'
+                                                      ? Colors.white
+                                                      : Colors.grey
+                                                          .shade600,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(
+                                                  width: 8,
+                                                ),
+                                                Text(
+                                                  'Cash',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight:
+                                                        FontWeight
+                                                            .w600,
+                                                    color: _selectedPayment ==
+                                                            'Cash'
+                                                        ? Colors.white
+                                                        : Colors.grey
+                                                            .shade600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                      enabledBorder:
-                                          OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(
-                                          8,
-                                        ),
-                                        borderSide: BorderSide(
-                                          color: Colors
-                                              .grey.shade200,
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () => setState(
+                                            () =>
+                                                _selectedPayment =
+                                                    'QR Code',
+                                          ),
+                                          child: Container(
+                                            padding:
+                                                const EdgeInsets
+                                                    .symmetric(
+                                              vertical: 12,
+                                              horizontal: 16,
+                                            ),
+                                            decoration:
+                                                BoxDecoration(
+                                              color: _selectedPayment ==
+                                                      'QR Code'
+                                                  ? const Color(
+                                                      0xFF009661,
+                                                    )
+                                                  : Colors.grey[100],
+                                              borderRadius:
+                                                  BorderRadius
+                                                      .circular(10),
+                                              border: Border.all(
+                                                color: _selectedPayment ==
+                                                        'QR Code'
+                                                    ? const Color(
+                                                        0xFF009661,
+                                                      )
+                                                    : Colors.grey
+                                                        .shade300,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .center,
+                                              children: [
+                                                Icon(
+                                                  Icons.qr_code,
+                                                  color: _selectedPayment ==
+                                                          'QR Code'
+                                                      ? Colors.white
+                                                      : Colors.grey
+                                                          .shade600,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(
+                                                  width: 8,
+                                                ),
+                                                Text(
+                                                  'QR Code',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight:
+                                                        FontWeight
+                                                            .w600,
+                                                    color: _selectedPayment ==
+                                                            'QR Code'
+                                                        ? Colors.white
+                                                        : Colors.grey
+                                                            .shade600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                      isDense: true,
-                                      contentPadding:
-                                          const EdgeInsets
-                                              .symmetric(
-                                            horizontal: 12,
-                                            vertical: 10,
-                                          ),
-                                    ),
+                                    ],
                                   ),
                                   const SizedBox(height: 12),
                                   TextField(
