@@ -138,9 +138,6 @@ class DatabaseHelper {
     required String paymentMethod,
     required String paymentStatus,
   }) async {
-    print(
-      '[DB] recordSale called with totalAmount=$totalAmount, paymentMethod=$paymentMethod, items=$items',
-    );
     final db = await database;
     return db.transaction((txn) async {
       // Resolve a valid user row for FK safety on existing/legacy databases.
@@ -179,7 +176,6 @@ class DatabaseHelper {
         'date_time': DateTime.now().toIso8601String(),
         'total_amount': totalAmount,
       });
-      print('[DB] recordSale inserted row with saleId=$saleId');
       for (final item in items) {
         await txn.insert('SaleItems', {
           'sale_id': saleId,
@@ -203,7 +199,6 @@ class DatabaseHelper {
         'method': paymentMethod,
         'status': paymentStatus,
       });
-      print('[DB] recordSale transaction completed for saleId=$saleId');
       return saleId;
     });
   }

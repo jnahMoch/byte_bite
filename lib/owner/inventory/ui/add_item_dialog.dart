@@ -19,7 +19,7 @@ Future<POSItem?> showAddItemDialog(BuildContext context) {
     'Other',
   ];
 
-  Widget _buildSimpleInputField({
+  Widget buildSimpleInputField({
     required TextEditingController controller,
     required String label,
     TextInputType? keyboardType,
@@ -77,33 +77,33 @@ Future<POSItem?> showAddItemDialog(BuildContext context) {
                 ),
                 const SizedBox(height: 28),
 
-                _buildSimpleInputField(
+                buildSimpleInputField(
                   controller: nameController,
                   label: 'Name',
                 ),
                 const SizedBox(height: 16),
 
-                _buildSimpleInputField(
+                buildSimpleInputField(
                   controller: priceController,
                   label: 'Price',
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
 
-                _buildSimpleInputField(
+                buildSimpleInputField(
                   controller: stockController,
                   label: 'Stock',
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
 
-                _buildSimpleInputField(
+                buildSimpleInputField(
                   controller: unitController,
                   label: 'Unit (e.g., pieces)',
                 ),
                 const SizedBox(height: 16),
 
-                _buildSimpleInputField(
+                buildSimpleInputField(
                   controller: lowStockController,
                   label: 'Low Stock Alert',
                   keyboardType: TextInputType.number,

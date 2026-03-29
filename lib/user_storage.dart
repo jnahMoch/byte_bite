@@ -110,6 +110,14 @@ class UserStorage {
     return '${username.toLowerCase().trim().replaceAll(' ', '_')}@bytebite.app';
   }
 
+  static String fromFirebaseEmail(String email) {
+    // Convert '@bytebite.app' email back to username
+    return email
+        .replaceAll('@bytebite.app', '')
+        .replaceAll('_', ' ')
+        .trim();
+  }
+
   static void setCurrentUserWithRole(String username, String role) {
     _currentUser = username;
     _currentUserRole = role;

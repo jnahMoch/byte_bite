@@ -39,6 +39,7 @@ class _LoginPageState extends State<LoginPage> {
           .get();
 
       if (!doc.exists) {
+        if (mounted) setState(() => _isLoading = false);
         _showSnackBar('User profile not found. Contact your owner.',
             Colors.redAccent);
         return;
@@ -48,6 +49,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (data['isActive'] == false) {
         await FirebaseAuth.instance.signOut();
+        if (mounted) setState(() => _isLoading = false);
         _showSnackBar('Your account has been deactivated.', Colors.redAccent);
         return;
       }
@@ -58,12 +60,15 @@ class _LoginPageState extends State<LoginPage> {
 
       UserStorage.syncUsersFromFirestore();
 
+      if (mounted) setState(() => _isLoading = false);
       _navigateByRole(role);
       return;
-    } catch (_) {
-
+    } catch (e) {
+      // Firebase auth failed, try offline mode
+      if (mounted) setState(() => _isLoading = false);
     }
 
+    // Offline fallback authentication
     if (UserStorage.validateUser(username, password)) {
       UserStorage.setCurrentUser(username);
       final String? role = UserStorage.getUserRole(username);
@@ -71,9 +76,8 @@ class _LoginPageState extends State<LoginPage> {
       _navigateByRole(role ?? 'Helper');
     } else {
       _showSnackBar('Invalid username or password', Colors.redAccent);
+      if (mounted) setState(() => _isLoading = false);
     }
-
-    if (mounted) setState(() => _isLoading = false);
   }
 
   void _navigateByRole(String role) {
