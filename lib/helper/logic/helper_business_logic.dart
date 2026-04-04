@@ -53,7 +53,9 @@ class HelperBusinessLogic {
     }
     if (searchQuery.isNotEmpty) {
       filtered = filtered
-          .where((i) => i.name.toLowerCase().contains(searchQuery.toLowerCase()))
+          .where(
+            (i) => i.name.toLowerCase().contains(searchQuery.toLowerCase()),
+          )
           .toList();
     }
     return filtered;
@@ -63,6 +65,18 @@ class HelperBusinessLogic {
   static List<String> getCategories(List<POSItem> items) {
     final cats = items.map((e) => e.category).toSet().toList();
     return ['All', ...cats];
+  }
+
+  /// Get status icon based on status name
+  static IconData getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'in stock':
+        return Icons.check_circle;
+      case 'low stock':
+        return Icons.warning;
+      default:
+        return Icons.info;
+    }
   }
 
   /// Get count of low stock items

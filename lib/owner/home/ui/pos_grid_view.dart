@@ -1675,147 +1675,161 @@ class _POSGridViewState extends State<POSGridView> {
 
   Widget _cartItemRow(CartItem cartItem, int index) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade100, width: 0.8),
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.grey.shade200,
         ),
-        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
-          // Item Name & Price
+          // Product image or icon
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: const Color(0xFF009661)
+                  .withValues(alpha: 0.1),
+              borderRadius:
+                  BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.shopping_bag,
+              color:
+                  const Color(0xFF009661),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Product info
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   cartItem.item.name,
                   style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: Color(0xFF333333),
+                    fontWeight:
+                        FontWeight.w600,
+                    fontSize: 14,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow:
+                      TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 4),
                 Text(
-                  '₱${cartItem.item.price}/each',
+                  '₱${cartItem.item.price} each',
                   style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Quantity Controls
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () => _updateQuantity(index, -1),
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF009661),
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        '−',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Container(
-                  width: 32,
-                  alignment: Alignment.center,
-                  child: Text(
-                    '${cartItem.quantity}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      color: Color(0xFF333333),
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => _updateQuantity(index, 1),
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF009661),
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        '+',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                    fontSize: 12,
+                    color:
+                        Colors.grey[600],
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 12),
-
-          // Total Price
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF009661).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '₱${cartItem.total}',
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-                color: Color(0xFF009661),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          // Delete Button
-          GestureDetector(
-            onTap: () => _removeFromCart(index),
-            child: Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.red.shade100),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.delete_outline,
-                  color: Colors.red.shade600,
-                  size: 16,
+          // Quantity and price
+          Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.end,
+            children: [
+              Text(
+                '₱${cartItem.total}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Color(0xFF009661),
                 ),
               ),
+              const SizedBox(height: 6),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: const Color(0xFF009661),
+                  ),
+                  borderRadius:
+                      BorderRadius.circular(
+                        6,
+                      ),
+                ),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () =>
+                          _updateQuantity(
+                            index,
+                            -1,
+                          ),
+                      child: Container(
+                        padding: const EdgeInsets
+                            .symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
+                        child: const Icon(
+                          Icons.remove,
+                          size: 14,
+                          color: Color(
+                            0xFF009661,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets
+                          .symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      child: Text(
+                        '${cartItem.quantity}',
+                        style:
+                            const TextStyle(
+                          fontWeight:
+                              FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () =>
+                          _updateQuantity(
+                            index,
+                            1,
+                          ),
+                      child: Container(
+                        padding: const EdgeInsets
+                            .symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          size: 14,
+                          color: Color(
+                            0xFF009661,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () =>
+                _removeFromCart(index),
+            child: const Icon(
+              Icons.delete_outline,
+              size: 20,
+              color: Colors.red,
             ),
           ),
         ],

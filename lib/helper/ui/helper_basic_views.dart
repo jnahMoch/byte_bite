@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'helper_bills_reminders_view.dart';
 
 /// Simple POS view placeholder for Helper
 class HelperPOSView extends StatelessWidget {
@@ -21,23 +22,12 @@ class HelperPOSView extends StatelessWidget {
   }
 }
 
-/// Simple Bills view placeholder for Helper
+/// Bills view for Helper - Use HelperBillsRemindersView
 class HelperBillsView extends StatelessWidget {
   const HelperBillsView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.receipt_long, size: 80, color: Color(0xFF009661)),
-          SizedBox(height: 16),
-          Text('Bills & Orders', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text('View and manage bills here', style: TextStyle(color: Colors.grey)),
-        ],
-      ),
-    );
+    return const HelperBillsRemindersView();
   }
 }
