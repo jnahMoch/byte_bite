@@ -14,6 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _userController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
 
+  bool _isPasswordVisible = false;
   bool _isLoading = false;
 
   Future<void> _handleLogin() async {
@@ -30,8 +31,10 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final email = UserStorage.toFirebaseEmail(username);
 
-      final credential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: email, password: password);
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
       final doc = await FirebaseFirestore.instance
           .collection('users')
@@ -40,8 +43,10 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!doc.exists) {
         if (mounted) setState(() => _isLoading = false);
-        _showSnackBar('User profile not found. Contact your owner.',
-            Colors.redAccent);
+        _showSnackBar(
+          'User profile not found. Contact your owner.',
+          Colors.redAccent,
+        );
         return;
       }
 
@@ -84,15 +89,14 @@ class _LoginPageState extends State<LoginPage> {
     if (role == 'Helper') {
       Navigator.pushReplacementNamed(context, '/helper-dashboard');
     } else {
-      
       Navigator.pushReplacementNamed(context, '/dashboard');
     }
   }
 
   void _showSnackBar(String message, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: color),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
   }
 
   @override
@@ -150,27 +154,31 @@ class _LoginPageState extends State<LoginPage> {
                   const Text(
                     'Welcome Back',
                     style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A2E)),
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A2E),
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Text('Sign in to continue',
-                      style:
-                          TextStyle(fontSize: 14, color: Colors.grey[500])),
+                  Text(
+                    'Sign in to continue',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  ),
                   const SizedBox(height: 28),
                   _buildTextField(
-                      label: 'Username',
-                      hint: 'Enter username',
-                      controller: _userController,
-                      icon: Icons.person_outline),
+                    label: 'Username',
+                    hint: 'Enter username',
+                    controller: _userController,
+                    icon: Icons.person_outline,
+                  ),
                   const SizedBox(height: 20),
                   _buildTextField(
-                      label: 'Password',
-                      hint: 'Enter password',
-                      isPassword: true,
-                      controller: _passController,
-                      icon: Icons.lock_outline),
+                    label: 'Password',
+                    hint: 'Enter password',
+                    isPassword: true,
+                    controller: _passController,
+                    icon: Icons.lock_outline,
+                  ),
                   const SizedBox(height: 28),
 
                   SizedBox(
@@ -182,24 +190,34 @@ class _LoginPageState extends State<LoginPage> {
                         backgroundColor: const Color(0xFF009661),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                        shadowColor:
-                            const Color(0xFF009661).withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        shadowColor: const Color(
+                          0xFF009661,
+                        ).withValues(alpha: 0.4),
                       ),
                       child: _isLoading
                           ? const CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2)
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            )
                           : const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.login_rounded,
-                                    color: Colors.white, size: 20),
+                                Icon(
+                                  Icons.login_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
                                 SizedBox(width: 10),
-                                Text('Login',
-                                    style: TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white)),
+                                Text(
+                                  'Login',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ],
                             ),
                     ),
@@ -228,25 +246,43 @@ class _LoginPageState extends State<LoginPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-                color: Color(0xFF374151))),
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: Color(0xFF374151),
+          ),
+        ),
         const SizedBox(height: 10),
         TextField(
           controller: controller,
-          obscureText: isPassword,
+          obscureText: isPassword && !_isPasswordVisible,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(color: Colors.grey[400]),
             prefixIcon: icon != null
                 ? Icon(icon, color: const Color(0xFF009661), size: 20)
                 : null,
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                      _isPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      color: const Color(0xFF009661),
+                    ),
+                    onPressed: () => setState(() {
+                      _isPasswordVisible = !_isPasswordVisible;
+                    }),
+                  )
+                : null,
             filled: true,
             fillColor: const Color(0xFFF8FAFC),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey.shade200),
@@ -257,8 +293,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: Color(0xFF009661), width: 2),
+              borderSide: const BorderSide(color: Color(0xFF009661), width: 2),
             ),
           ),
         ),

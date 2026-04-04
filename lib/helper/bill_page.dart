@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../user_storage.dart';
+
 class BillsPage extends StatelessWidget {
   const BillsPage({super.key});
 
@@ -25,7 +27,7 @@ class BillsPage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 16, top: 20, bottom: 20),
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () => _confirmLogout(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF006B4A),
                 elevation: 0,
@@ -115,6 +117,31 @@ class BillsPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Logout?'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Logout', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true) {
+      await UserStorage.logout();
+      if (context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+    }
   }
 
   // Refined Summary Card Helper

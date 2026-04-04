@@ -631,13 +631,18 @@ class _SettingsSheetState extends State<SettingsSheet> {
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
+              final messenger = ScaffoldMessenger.of(context);
+              final navigator = Navigator.of(context);
+              await UserStorage.logout();
+              if (!mounted) return;
+              messenger.showSnackBar(
                 const SnackBar(
                     content: Text('Logged out'),
                     backgroundColor: Color(0xFF009661)),
               );
+              navigator.pushNamedAndRemoveUntil('/login', (route) => false);
             },
             style:
                 ElevatedButton.styleFrom(backgroundColor: Colors.red),

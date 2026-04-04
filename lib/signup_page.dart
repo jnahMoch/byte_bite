@@ -16,6 +16,9 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+
   bool _isLoading = false;
 
   @override
@@ -41,8 +44,7 @@ class _SignUpPageState extends State<SignUpPage> {
       return;
     }
     if (password.length < 6) {
-      _showSnackBar(
-          'Password must be at least 6 characters', Colors.redAccent);
+      _showSnackBar('Password must be at least 6 characters', Colors.redAccent);
       return;
     }
     if (password != confirmPassword) {
@@ -53,16 +55,17 @@ class _SignUpPageState extends State<SignUpPage> {
     setState(() => _isLoading = true);
 
     try {
-      
-      final existingOwner =
-          await UserStorage.checkOwnerExistsInFirestore();
+      final existingOwner = await UserStorage.checkOwnerExistsInFirestore();
       if (existingOwner) {
         _showSnackBar(
-            'Owner already registered. Please login.', Colors.redAccent);
+          'Owner already registered. Please login.',
+          Colors.redAccent,
+        );
         Future.delayed(
-            const Duration(seconds: 1),
-            // ignore: use_build_context_synchronously
-            () => Navigator.pushReplacementNamed(context, '/login'));
+          const Duration(seconds: 1),
+          // ignore: use_build_context_synchronously
+          () => Navigator.pushReplacementNamed(context, '/login'),
+        );
         return;
       }
 
@@ -74,33 +77,37 @@ class _SignUpPageState extends State<SignUpPage> {
           .collection('users')
           .doc(credential.user!.uid)
           .set({
-        'username': username,
-        'role': 'Owner',
-        'isActive': true,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+            'username': username,
+            'role': 'Owner',
+            'isActive': true,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
 
       UserStorage.registerOwner(username, password);
 
-      _showSnackBar(
-          'Owner account created! You can now login.', Colors.green);
-      Future.delayed(const Duration(seconds: 2),
-          // ignore: use_build_context_synchronously
-          () => Navigator.pushReplacementNamed(context, '/login'));
+      _showSnackBar('Owner account created! You can now login.', Colors.green);
+      Future.delayed(
+        const Duration(seconds: 2),
+        // ignore: use_build_context_synchronously
+        () => Navigator.pushReplacementNamed(context, '/login'),
+      );
     } on FirebaseAuthException catch (e) {
-      
       final localSuccess = UserStorage.registerOwner(username, password);
       if (localSuccess) {
         _showSnackBar(
-            'Account created (offline mode). You can now login.',
-            Colors.orange);
-        Future.delayed(const Duration(seconds: 2),
-            // ignore: use_build_context_synchronously
-            () => Navigator.pushReplacementNamed(context, '/login'));
+          'Account created (offline mode). You can now login.',
+          Colors.orange,
+        );
+        Future.delayed(
+          const Duration(seconds: 2),
+          // ignore: use_build_context_synchronously
+          () => Navigator.pushReplacementNamed(context, '/login'),
+        );
       } else {
         _showSnackBar(
-            e.message ?? 'Registration failed. Try again.',
-            Colors.redAccent);
+          e.message ?? 'Registration failed. Try again.',
+          Colors.redAccent,
+        );
       }
     } catch (_) {
       _showSnackBar('An unexpected error occurred.', Colors.redAccent);
@@ -110,9 +117,9 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   void _showSnackBar(String message, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: color),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
   }
 
   @override
@@ -167,19 +174,25 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text('Owner Setup',
-                      style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A2E))),
+                  const Text(
+                    'Owner Setup',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A2E),
+                    ),
+                  ),
                   const SizedBox(height: 6),
-                  Text('Set up your owner account to get started',
-                      style:
-                          TextStyle(fontSize: 14, color: Colors.grey[500])),
+                  Text(
+                    'Set up your owner account to get started',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF009661).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -187,14 +200,20 @@ class _SignUpPageState extends State<SignUpPage> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: const [
-                        Icon(Icons.admin_panel_settings,
-                            size: 16, color: Color(0xFF009661)),
+                        Icon(
+                          Icons.admin_panel_settings,
+                          size: 16,
+                          color: Color(0xFF009661),
+                        ),
                         SizedBox(width: 6),
-                        Text('One-time setup',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF009661),
-                                fontWeight: FontWeight.w600)),
+                        Text(
+                          'One-time setup',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF009661),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -219,6 +238,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     hint: 'Re-enter password',
                     controller: _confirmPasswordController,
                     isPassword: true,
+                    isConfirmPassword: true,
                     icon: Icons.lock_outline,
                   ),
                   const SizedBox(height: 25),
@@ -232,22 +252,31 @@ class _SignUpPageState extends State<SignUpPage> {
                         backgroundColor: const Color(0xFF009661),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       child: _isLoading
                           ? const CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2)
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            )
                           : const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.how_to_reg_rounded,
-                                    color: Colors.white, size: 20),
+                                Icon(
+                                  Icons.how_to_reg_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
                                 SizedBox(width: 10),
-                                Text('Create Owner Account',
-                                    style: TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white)),
+                                Text(
+                                  'Create Owner Account',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ],
                             ),
                     ),
@@ -272,30 +301,55 @@ class _SignUpPageState extends State<SignUpPage> {
     required String hint,
     required TextEditingController controller,
     bool isPassword = false,
+    bool isConfirmPassword = false,
     IconData? icon,
   }) {
+    final bool showText = isPassword
+        ? (isConfirmPassword ? _isConfirmPasswordVisible : _isPasswordVisible)
+        : true;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-                color: Color(0xFF374151))),
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: Color(0xFF374151),
+          ),
+        ),
         const SizedBox(height: 10),
         TextField(
           controller: controller,
-          obscureText: isPassword,
+          obscureText: isPassword && !showText,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(color: Colors.grey[400]),
             prefixIcon: icon != null
                 ? Icon(icon, color: const Color(0xFF009661), size: 20)
                 : null,
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                      showText ? Icons.visibility : Icons.visibility_off,
+                      color: const Color(0xFF009661),
+                    ),
+                    onPressed: () => setState(() {
+                      if (isConfirmPassword) {
+                        _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                      } else {
+                        _isPasswordVisible = !_isPasswordVisible;
+                      }
+                    }),
+                  )
+                : null,
             filled: true,
             fillColor: const Color(0xFFF8FAFC),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey.shade200),
@@ -306,8 +360,7 @@ class _SignUpPageState extends State<SignUpPage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: Color(0xFF009661), width: 2),
+              borderSide: const BorderSide(color: Color(0xFF009661), width: 2),
             ),
           ),
         ),

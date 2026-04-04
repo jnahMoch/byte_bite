@@ -444,7 +444,7 @@ class _ReportsPageState extends State<ReportsPage> {
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 24),
-            ),
+            )
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,

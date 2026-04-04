@@ -454,12 +454,13 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
+                        Navigator.pop(ctx);
                         await UserStorage.logout();
-                        if (ctx.mounted) {
-                          Navigator.pop(ctx);
-                          if (ctx.mounted) {
-                            Navigator.of(ctx, rootNavigator: true).pushNamedAndRemoveUntil('/login', (route) => false);
-                          }
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Logged out'), backgroundColor: Color(0xFF009661)),
+                          );
+                          Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/login', (route) => false);
                         }
                       },
                       style: ElevatedButton.styleFrom(
