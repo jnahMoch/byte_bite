@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/inventory_data.dart';
-import '../../data/sales_data.dart';
+import '../logic/helper_analytics_controller.dart';
 
 class HelperAnalyticsView extends StatefulWidget {
   const HelperAnalyticsView({super.key});
@@ -11,6 +11,8 @@ class HelperAnalyticsView extends StatefulWidget {
 }
 
 class _HelperAnalyticsViewState extends State<HelperAnalyticsView> {
+  final HelperAnalyticsController _analyticsController =
+      const HelperAnalyticsController();
   String _selectedPeriod = 'Today';
 
   // Analytics data
@@ -26,53 +28,25 @@ class _HelperAnalyticsViewState extends State<HelperAnalyticsView> {
   }
 
   Future<void> _loadAnalyticsData() async {
-    // Calculate based on selected period
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final startOfWeek = startOfDay.subtract(
-      Duration(days: startOfDay.weekday - 1),
-    );
-    final startOfMonth = DateTime(now.year, now.month, 1);
+    try {
+      final summary = await _analyticsController.loadSummary(_selectedPeriod);
+      if (!mounted) return;
 
-    List<dynamic> filteredTransactions;
-
-    if (_selectedPeriod == 'Today') {
-      filteredTransactions = SalesData.transactions
-          .where((t) => t.dateTime.isAfter(startOfDay))
-          .toList();
-    } else if (_selectedPeriod == 'This Week') {
-      filteredTransactions = SalesData.transactions
-          .where((t) => t.dateTime.isAfter(startOfWeek))
-          .toList();
-    } else if (_selectedPeriod == 'This Month') {
-      filteredTransactions = SalesData.transactions
-          .where((t) => t.dateTime.isAfter(startOfMonth))
-          .toList();
-    } else {
-      filteredTransactions = SalesData.transactions;
+      setState(() {
+        _transactionCount = summary.transactionCount;
+        _totalSales = summary.totalSales;
+        _avgSale = summary.avgSale;
+        _itemsSold = summary.itemsSold;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _transactionCount = 0;
+        _totalSales = 0.0;
+        _avgSale = 0.0;
+        _itemsSold = 0;
+      });
     }
-
-    int transactionCount = filteredTransactions.length;
-    double totalSales = 0;
-    int itemsSold = 0;
-
-    for (var t in filteredTransactions) {
-      totalSales += t.total;
-      if (t.items != null) {
-        for (var item in t.items) {
-          itemsSold += item['quantity'] as int;
-        }
-      }
-    }
-
-    double avgSale = transactionCount > 0 ? totalSales / transactionCount : 0.0;
-
-    setState(() {
-      _transactionCount = transactionCount;
-      _totalSales = totalSales;
-      _avgSale = avgSale;
-      _itemsSold = itemsSold;
-    });
   }
 
   @override

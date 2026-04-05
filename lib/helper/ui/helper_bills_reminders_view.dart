@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../model/bill_model.dart';
+import '../../owner/home/logic/bills_controller.dart';
+
 class HelperBillsRemindersView extends StatefulWidget {
   const HelperBillsRemindersView({super.key});
   @override
@@ -8,12 +11,26 @@ class HelperBillsRemindersView extends StatefulWidget {
 }
 
 class _HelperBillsRemindersViewState extends State<HelperBillsRemindersView> {
-  final List<Map<String, dynamic>> _bills = [];
+  final BillsController _billsController = const BillsController();
+  List<Bill> _bills = [];
 
-  int get unpaidBills => _bills.where((b) => !b['isPaid']).length;
-  double get totalUnpaid => _bills
-      .where((b) => !b['isPaid'])
-      .fold(0, (sum, b) => sum + (b['amount'] as double));
+  @override
+  void initState() {
+    super.initState();
+    _loadBills();
+  }
+
+  Future<void> _loadBills() async {
+    final loadedBills = await _billsController.loadBills();
+    if (!mounted) return;
+    setState(() {
+      _bills = loadedBills;
+    });
+  }
+
+  int get unpaidBills => _bills.where((b) => !b.isPaid).length;
+  double get totalUnpaid =>
+      _bills.where((b) => !b.isPaid).fold(0, (sum, bill) => sum + bill.amount);
 
   @override
   Widget build(BuildContext context) {
@@ -132,8 +149,8 @@ class _HelperBillsRemindersViewState extends State<HelperBillsRemindersView> {
     );
   }
 
-  Widget _billCard(Map<String, dynamic> bill) {
-    bool isPaid = bill['isPaid'] ?? false;
+  Widget _billCard(Bill bill) {
+    final isPaid = bill.isPaid;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
@@ -171,14 +188,14 @@ class _HelperBillsRemindersViewState extends State<HelperBillsRemindersView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  bill['name'],
+                  bill.title,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
                 ),
                 Text(
-                  bill['category'],
+                  bill.category,
                   style: TextStyle(color: Colors.grey[500], fontSize: 12),
                 ),
                 const SizedBox(height: 4),
@@ -206,39 +223,12 @@ class _HelperBillsRemindersViewState extends State<HelperBillsRemindersView> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '₱${bill['amount'].toStringAsFixed(2)}',
+                '₱${bill.amount.toStringAsFixed(2)}',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
                 ),
               ),
-              const SizedBox(height: 4),
-              if (!isPaid)
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      bill['isPaid'] = true;
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF009661),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      'Mark Paid',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
             ],
           ),
         ],

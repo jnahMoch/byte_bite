@@ -1,27 +1,35 @@
 import 'package:flutter/material.dart';
 
 import '../../helper/logic/helper_business_logic.dart';
+import '../../owner/home/logic/dashboard_controller.dart';
 import '../../model/pos_item_model.dart';
 import '../../data/inventory_data.dart';
-import '../../data/sales_data.dart';
 
 /// Dashboard view for Helper showing overview and quick actions
-class HelperDashboardView extends StatelessWidget {
+class HelperDashboardView extends StatefulWidget {
   final Function(int)? onNavigate;
 
   const HelperDashboardView({super.key, this.onNavigate});
+
+  @override
+  State<HelperDashboardView> createState() => _HelperDashboardViewState();
+}
+
+class _HelperDashboardViewState extends State<HelperDashboardView> {
+  final DashboardController _dashboardController = const DashboardController();
+  late Future<DashboardSummary> _summaryFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _summaryFuture = _dashboardController.loadTodaysSummary();
+  }
 
   int get _lowStockCount =>
       HelperBusinessLogic.getLowStockCount(InventoryData.items);
   int get _totalProducts => InventoryData.items.length;
   int get _totalStock =>
       InventoryData.items.fold(0, (sum, item) => sum + item.stock);
-  int get _transactionCount => SalesData.transactions
-      .where((t) => HelperBusinessLogic.isToday(t.dateTime))
-      .length;
-  double get _totalSales => SalesData.transactions
-      .where((t) => HelperBusinessLogic.isToday(t.dateTime))
-      .fold(0.0, (sum, t) => sum + t.total.toDouble());
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +44,7 @@ class HelperDashboardView extends StatelessWidget {
           const SizedBox(height: 24),
           _buildTodaysSummarySection(),
           const SizedBox(height: 24),
-          _buildQuickActionsSection(context),
+          _buildQuickActionsSection(),
           const SizedBox(height: 24),
           if (_lowStockCount > 0) ...[
             _buildLowStockAlertsSection(),
@@ -145,55 +153,64 @@ class HelperDashboardView extends StatelessWidget {
   }
 
   Widget _buildTodaysSummarySection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Today's Summary",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF333333),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+    return FutureBuilder<DashboardSummary>(
+      future: _summaryFuture,
+      builder: (context, snapshot) {
+        final summary = snapshot.data;
+        final transactionCount = summary?.transactions ?? 0;
+        final totalSales = summary?.totalSales ?? 0.0;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Today's Summary",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF333333),
               ),
-            ],
-          ),
-          child: Column(
-            children: [
-              _summaryRow(
-                Icons.shopping_cart_outlined,
-                'Transactions',
-                '$_transactionCount',
-                const Color(0xFF009661),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              const Divider(height: 24),
-              _summaryRow(
-                Icons.attach_money,
-                'Total Sales',
-                '₱${_totalSales.toStringAsFixed(2)}',
-                const Color(0xFF3B82F6),
+              child: Column(
+                children: [
+                  _summaryRow(
+                    Icons.shopping_cart_outlined,
+                    'Transactions',
+                    '$transactionCount',
+                    const Color(0xFF009661),
+                  ),
+                  const Divider(height: 24),
+                  _summaryRow(
+                    Icons.attach_money,
+                    'Total Sales',
+                    '₱${totalSales.toStringAsFixed(2)}',
+                    const Color(0xFF3B82F6),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildQuickActionsSection(BuildContext context) {
+  Widget _buildQuickActionsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -210,7 +227,6 @@ class HelperDashboardView extends StatelessWidget {
           children: [
             Expanded(
               child: _actionCard(
-                context,
                 Icons.point_of_sale,
                 'New Sale',
                 const Color(0xFF009661),
@@ -220,7 +236,6 @@ class HelperDashboardView extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _actionCard(
-                context,
                 Icons.inventory_2_outlined,
                 'Add Stock',
                 const Color(0xFF3B82F6),
@@ -272,7 +287,7 @@ class HelperDashboardView extends StatelessWidget {
             .map((item) => _lowStockItem(item)),
         if (_lowStockCount > 3)
           TextButton(
-            onPressed: () => onNavigate?.call(3),
+            onPressed: () => widget.onNavigate?.call(3),
             child: const Text('View all low stock items →'),
           ),
       ],
@@ -354,16 +369,10 @@ class HelperDashboardView extends StatelessWidget {
     );
   }
 
-  Widget _actionCard(
-    BuildContext context,
-    IconData icon,
-    String label,
-    Color color,
-    int pageIndex,
-  ) {
+  Widget _actionCard(IconData icon, String label, Color color, int pageIndex) {
     return GestureDetector(
       onTap: () {
-        onNavigate?.call(pageIndex);
+        widget.onNavigate?.call(pageIndex);
       },
       child: Container(
         padding: const EdgeInsets.all(16),
