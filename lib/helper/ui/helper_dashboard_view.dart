@@ -8,16 +8,17 @@ import '../../data/sales_data.dart';
 /// Dashboard view for Helper showing overview and quick actions
 class HelperDashboardView extends StatelessWidget {
   final Function(int)? onNavigate;
-  
+
   const HelperDashboardView({super.key, this.onNavigate});
-  
-  int get _lowStockCount => HelperBusinessLogic.getLowStockCount(InventoryData.items);
+
+  int get _lowStockCount =>
+      HelperBusinessLogic.getLowStockCount(InventoryData.items);
   int get _totalProducts => InventoryData.items.length;
-  int get _totalStock => InventoryData.items.fold(0, (sum, item) => sum + item.stock);
-  double get _inventoryValue => InventoryData.items
-      .fold(0, (sum, item) => sum + (item.price * item.stock))
-      .toDouble();
-  int get _transactionCount => SalesData.transactions.where((t) => HelperBusinessLogic.isToday(t.dateTime)).length;
+  int get _totalStock =>
+      InventoryData.items.fold(0, (sum, item) => sum + item.stock);
+  int get _transactionCount => SalesData.transactions
+      .where((t) => HelperBusinessLogic.isToday(t.dateTime))
+      .length;
   double get _totalSales => SalesData.transactions
       .where((t) => HelperBusinessLogic.isToday(t.dateTime))
       .fold(0.0, (sum, t) => sum + t.total.toDouble());
@@ -78,18 +79,12 @@ class HelperDashboardView extends StatelessWidget {
           const SizedBox(height: 8),
           const Text(
             'Byte & Bite POS - Tagum City',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 16),
           Text(
             HelperBusinessLogic.getGreeting(),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 16),
           ),
         ],
       ),
@@ -141,15 +136,6 @@ class HelperDashboardView extends StatelessWidget {
                 _lowStockCount > 0
                     ? const Color(0xFFEF4444)
                     : const Color(0xFF22C55E),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _statCard(
-                'Inventory Value',
-                '₱${_inventoryValue.toStringAsFixed(0)}',
-                Icons.attach_money,
-                const Color(0xFFF59E0B),
               ),
             ),
           ],
@@ -236,7 +222,7 @@ class HelperDashboardView extends StatelessWidget {
               child: _actionCard(
                 context,
                 Icons.inventory_2_outlined,
-                'Inventory',
+                'Add Stock',
                 const Color(0xFF3B82F6),
                 3,
               ),
@@ -368,7 +354,13 @@ class HelperDashboardView extends StatelessWidget {
     );
   }
 
-  Widget _actionCard(BuildContext context, IconData icon, String label, Color color, int pageIndex) {
+  Widget _actionCard(
+    BuildContext context,
+    IconData icon,
+    String label,
+    Color color,
+    int pageIndex,
+  ) {
     return GestureDetector(
       onTap: () {
         onNavigate?.call(pageIndex);
@@ -428,7 +420,11 @@ class HelperDashboardView extends StatelessWidget {
               color: Colors.red.shade100,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 18),
+            child: const Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.red,
+              size: 18,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

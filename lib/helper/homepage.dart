@@ -5,20 +5,25 @@ import 'package:flutter/material.dart';
 
 // UI Components
 import 'ui/helper_dashboard_view.dart';
-import 'ui/helper_basic_views.dart';
+import 'ui/helper_analytics_view.dart';
+import 'ui/helper_bottom_nav_bar.dart';
+import 'ui/helper_header.dart';
 import 'ui/helper_inventory_view.dart';
 import 'ui/helper_notifications_view.dart';
+import 'ui/helper_pos_grid_view.dart';
 import 'ui/helper_settings_sheet.dart';
+import 'ui/helper_bills_reminders_view.dart';
+import '../data/inventory_data.dart';
 
 /// Main Helper Home Page
 ///
 /// Organizes navigation between different helper views:
 /// - Dashboard: Overview and quick actions
+/// - Analytics: Sales and stock insights
 /// - POS: Point of sale system
-/// - Bills: Order history
 /// - Inventory: Stock management
-/// - Notifications: Alerts
-/// - Settings: Account management
+/// - Bills: Order history and reminders
+/// Notifications and Settings are opened from the top header actions.
 class HelperHomePage extends StatefulWidget {
   const HelperHomePage({super.key});
 
@@ -38,6 +43,9 @@ class _HelperHomePageState extends State<HelperHomePage> {
 
   static bool _hasConnection(List<ConnectivityResult> results) =>
       results.any((r) => r != ConnectivityResult.none);
+
+  int get _unreadNotificationsCount =>
+      InventoryData.items.where((i) => i.stock <= i.lowStockAlert).length;
   // ─────────────────────────────────────────────────────────────────────────
 
   @override
@@ -45,25 +53,22 @@ class _HelperHomePageState extends State<HelperHomePage> {
     super.initState();
     _pages = [
       HelperDashboardView(onNavigate: _navigateToPage),
-      const HelperPOSView(),
-      const HelperBillsView(),
+      const HelperAnalyticsView(),
+      const HelperPOSGridView(),
       const HelperInventoryView(),
-      HelperNotificationsView(),
-      HelperSettingsSheet(scrollController: ScrollController()),
+      const HelperBillsRemindersView(),
     ];
 
     // ── Offline + Cloud Sync ───────────────────────────────────────────────
     // Step 1 — check current status on startup.
-    Connectivity()
-        .checkConnectivity()
-        .then((List<ConnectivityResult> results) {
+    Connectivity().checkConnectivity().then((List<ConnectivityResult> results) {
       if (mounted) setState(() => _isOnline = _hasConnection(results));
     });
 
     // Step 2 — listen for changes throughout the session.
-    _connectivitySub = Connectivity()
-        .onConnectivityChanged
-        .listen((List<ConnectivityResult> results) {
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((
+      List<ConnectivityResult> results,
+    ) {
       if (!mounted) return;
       final nowOnline = _hasConnection(results);
       final wasOffline = !_isOnline;
@@ -103,8 +108,14 @@ class _HelperHomePageState extends State<HelperHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Column(
         children: [
+          HelperHeader(
+            onNotifications: _showNotificationsSheet,
+            onSettings: _showSettingsBottomSheet,
+            unreadNotificationsCount: _unreadNotificationsCount,
+          ),
           // ── Offline banner ─────────────────────────────────────────────
           // Sits at the very top of the screen above the current page.
           // Each helper page renders its own header below this banner.
@@ -118,44 +129,51 @@ class _HelperHomePageState extends State<HelperHomePage> {
           Expanded(child: _pages[_currentIndex]),
         ],
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: HelperBottomNavBar(
+        currentIndex: _currentIndex,
+        onItemTapped: _navigateToPage,
+      ),
     );
   }
 
-  Widget _buildBottomNav() {
-    return BottomNavigationBar(
-      currentIndex: _currentIndex,
-      onTap: _navigateToPage,
-      type: BottomNavigationBarType.fixed,
+  void _showSettingsBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      enableDrag: true,
       backgroundColor: Colors.white,
-      selectedItemColor: const Color(0xFF009661),
-      unselectedItemColor: Colors.grey,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Dashboard',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.point_of_sale),
-          label: 'POS',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.receipt_long),
-          label: 'Bills',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.inventory_2),
-          label: 'Inventory',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.notifications),
-          label: 'Alerts',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Settings',
-        ),
-      ],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) =>
+            HelperSettingsSheet(scrollController: scrollController),
+      ),
+    );
+  }
+
+  void _showNotificationsSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      enableDrag: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) => const HelperNotificationsView(),
+      ),
     );
   }
 }

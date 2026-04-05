@@ -65,8 +65,7 @@ class _HelperAnalyticsViewState extends State<HelperAnalyticsView> {
       }
     }
 
-    double avgSale =
-        transactionCount > 0 ? totalSales / transactionCount : 0.0;
+    double avgSale = transactionCount > 0 ? totalSales / transactionCount : 0.0;
 
     setState(() {
       _transactionCount = transactionCount;
@@ -83,18 +82,15 @@ class _HelperAnalyticsViewState extends State<HelperAnalyticsView> {
       0,
       (sum, item) => sum + item.stock,
     );
-    double inventoryValue = InventoryData.items
-        .fold(0, (sum, item) => sum + (item.price * item.stock))
-        .toDouble();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Analytics Header with Export
+          // Analytics Header
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const Text(
                 'Analytics',
@@ -102,31 +98,6 @@ class _HelperAnalyticsViewState extends State<HelperAnalyticsView> {
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF333333),
-                ),
-              ),
-              OutlinedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Export functionality coming soon'),
-                      backgroundColor: Color(0xFF009661),
-                    ),
-                  );
-                },
-                icon: const Icon(
-                  Icons.download,
-                  size: 18,
-                  color: Color(0xFF009661),
-                ),
-                label: const Text(
-                  'Export',
-                  style: TextStyle(color: Color(0xFF009661)),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF009661)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
                 ),
               ),
             ],
@@ -223,153 +194,12 @@ class _HelperAnalyticsViewState extends State<HelperAnalyticsView> {
                   children: [
                     _summaryItem('Products', '$totalProducts'),
                     _summaryItem('Total Stock', '$totalStock'),
-                    _summaryItem(
-                      'Value',
-                      '₱${inventoryValue.toStringAsFixed(0)}',
-                    ),
                   ],
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
-
-          // Best Selling Items
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFFFFFF), Color(0xFFF7FAFC)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x14000000),
-                  blurRadius: 14,
-                  offset: Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Best Selling Items',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF333333),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFECFDF3),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        _selectedPeriod,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF009661),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      'No sales data yet',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[400]),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Payment Methods
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFFFFFF), Color(0xFFF7FAFC)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x14000000),
-                  blurRadius: 14,
-                  offset: Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Payment Methods',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF333333),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        '$_transactionCount tx',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1D4ED8),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      'No payment data yet',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[400]),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -401,12 +231,7 @@ class _HelperAnalyticsViewState extends State<HelperAnalyticsView> {
     );
   }
 
-  Widget _statCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _statCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -434,11 +259,7 @@ class _HelperAnalyticsViewState extends State<HelperAnalyticsView> {
                   color: Colors.white70,
                 ),
               ),
-              Icon(
-                icon,
-                color: Colors.white,
-                size: 20,
-              ),
+              Icon(icon, color: Colors.white, size: 20),
             ],
           ),
           const SizedBox(height: 12),
