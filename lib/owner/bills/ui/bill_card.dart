@@ -61,83 +61,101 @@ class _BillCardState extends State<BillCard> {
   }
 
   Widget _buildBillHeader(Color accentColor) {
-    return Row(
+    final categoryColor = BillsHelper.getCategoryColor(widget.bill.category);
+    final categoryLightColor = BillsHelper.getCategoryLightColor(widget.bill.category);
+    final categoryIcon = BillsHelper.getCategoryIcon(widget.bill.category);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: accentColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            widget.isOverdue
-                ? Icons.warning_rounded
-                : Icons.receipt_long_rounded,
-            color: accentColor,
-            size: 22,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.bill.title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Color(0xFF1A1A2E),
-                ),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(height: 2),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  widget.bill.category,
-                  style: const TextStyle(
-                    color: Color(0xFF6B7280),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
+              child: Icon(
+                widget.isOverdue
+                    ? Icons.warning_rounded
+                    : Icons.receipt_long_rounded,
+                color: accentColor,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.bill.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color(0xFF1A1A2E),
+                    ),
                   ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '₱${widget.bill.amount.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    color: accentColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                if (widget.isOverdue)
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      BillsHelper.formatOverdueText(widget.bill.daysOverdue),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Enhanced Category Badge with Icon
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: categoryLightColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: categoryColor.withValues(alpha: 0.3), width: 1.5),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(categoryIcon, size: 16, color: categoryColor),
+              const SizedBox(width: 8),
+              Text(
+                widget.bill.category,
+                style: TextStyle(
+                  color: categoryColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '₱${widget.bill.amount.toStringAsFixed(2)}',
-              style: TextStyle(
-                color: accentColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            if (widget.isOverdue)
-              Container(
-                margin: const EdgeInsets.only(top: 4),
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  BillsHelper.formatOverdueText(widget.bill.daysOverdue),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-          ],
         ),
       ],
     );
@@ -191,7 +209,15 @@ class _BillCardState extends State<BillCard> {
           // ignore: use_build_context_synchronously
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${widget.bill.title} marked as paid'),
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text('${widget.bill.title} marked as paid'),
+                  ),
+                ],
+              ),
               backgroundColor: const Color(0xFF009661),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -202,17 +228,21 @@ class _BillCardState extends State<BillCard> {
         },
         icon: const Icon(
           Icons.check_circle_rounded,
-          size: 18,
+          size: 20,
           color: Colors.white,
         ),
         label: const Text(
           "Mark as Paid",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+          ),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF009661),
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          elevation: 2,
+          padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

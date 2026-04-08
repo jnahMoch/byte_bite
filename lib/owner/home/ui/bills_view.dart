@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../model/bill_model.dart';
 import '../logic/bills_controller.dart';
+import '../../bills/logic/bills_helper.dart';
 
 class BillsView extends StatefulWidget {
   const BillsView({super.key});
@@ -553,6 +554,9 @@ class _BillsViewState extends State<BillsView> {
     final dateColor = isPaid
         ? const Color(0xFF009661)
         : (isOverdue ? Colors.red : const Color(0xFF3B82F6));
+    final categoryColor = BillsHelper.getCategoryColor(bill.category);
+    final categoryLightColor = BillsHelper.getCategoryLightColor(bill.category);
+    final categoryIcon = BillsHelper.getCategoryIcon(bill.category);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -571,119 +575,192 @@ class _BillsViewState extends State<BillsView> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: isPaid ? Colors.green.shade50 : Colors.orange.shade50,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              Icons.receipt_long,
-              color: isPaid ? Colors.green : Colors.orange,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  bill.title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isPaid ? Colors.green.shade50 : Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                child: Icon(
+                  Icons.receipt_long,
+                  color: isPaid ? Colors.green : Colors.orange,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      bill.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '₱${bill.amount.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  if (isOverdue)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'OVERDUE',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    )
+                  else if (isPaid)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'PAID',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Enhanced Category Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: categoryLightColor,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: categoryColor.withValues(alpha: 0.3), width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(categoryIcon, size: 14, color: categoryColor),
+                const SizedBox(width: 6),
                 Text(
                   bill.category,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      isPaid ? Icons.check_circle : Icons.pending,
-                      size: 14,
-                      color: isPaid ? Colors.green : Colors.orange,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      isPaid ? 'Paid' : 'Pending',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isPaid ? Colors.green : Colors.orange,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.calendar_today, size: 12, color: dateColor),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        isOverdue
-                            ? 'Overdue by ${bill.daysOverdue} day(s) • Due ${_formatDate(bill.dueDate)}'
-                            : 'Due ${_formatDate(bill.dueDate)}',
-                        style: TextStyle(fontSize: 11, color: dateColor),
-                      ),
-                    ),
-                  ],
+                  style: TextStyle(
+                    color: categoryColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          const SizedBox(height: 10),
+          Row(
             children: [
+              Icon(
+                isPaid ? Icons.check_circle : Icons.pending,
+                size: 14,
+                color: isPaid ? Colors.green : Colors.orange,
+              ),
+              const SizedBox(width: 4),
               Text(
-                '₱${bill.amount.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
+                isPaid ? 'Paid' : 'Pending',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isPaid ? Colors.green : Colors.orange,
                 ),
               ),
-              const SizedBox(height: 4),
-              if (!isPaid)
-                GestureDetector(
-                  onTap: () async {
-                    await _billsController.markBillAsPaid(bill.id);
-                    await _loadBills();
-
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${bill.title} marked as paid'),
-                        backgroundColor: const Color(0xFF009661),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF009661),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      'Mark Paid',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+              const SizedBox(width: 16),
+              Icon(Icons.calendar_today, size: 12, color: dateColor),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  isOverdue
+                      ? 'Overdue by ${bill.daysOverdue} day(s) • Due ${_formatDate(bill.dueDate)}'
+                      : 'Due ${_formatDate(bill.dueDate)}',
+                  style: TextStyle(fontSize: 11, color: dateColor),
                 ),
+              ),
             ],
           ),
+          if (!isPaid) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  await _billsController.markBillAsPaid(bill.id);
+                  await _loadBills();
+
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.check_circle, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text('${bill.title} marked as paid'),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: const Color(0xFF009661),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(
+                  Icons.check_circle_rounded,
+                  size: 18,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'Mark Paid',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF009661),
+                  elevation: 1,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

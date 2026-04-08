@@ -153,6 +153,8 @@ class _AddBillDialogState extends State<AddBillDialog> {
   }
 
   Widget _buildCategoryDropdown(StateSetter setDialogState) {
+    final categories = BillsHelper.getBillCategories();
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -160,23 +162,50 @@ class _AddBillDialogState extends State<AddBillDialog> {
           'Category *',
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
-        const SizedBox(height: 4),
-        DropdownButtonFormField<String>(
-          initialValue: selectedCategory,
-          decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-          ),
-          items: BillsHelper.getBillCategories()
-              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-              .toList(),
-          onChanged: (v) => setDialogState(() => selectedCategory = v!),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: categories.map((category) {
+            final isSelected = selectedCategory == category;
+            final categoryColor = BillsHelper.getCategoryColor(category);
+            final categoryLightColor = BillsHelper.getCategoryLightColor(category);
+            final categoryIcon = BillsHelper.getCategoryIcon(category);
+            
+            return GestureDetector(
+              onTap: () => setDialogState(() => selectedCategory = category),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? categoryColor : categoryLightColor,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: categoryColor,
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      categoryIcon,
+                      color: isSelected ? Colors.white : categoryColor,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      category,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : categoryColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
