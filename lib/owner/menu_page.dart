@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'homepage.dart' show InventoryData, POSItem;
 import 'menu/ui/add_product_dialog.dart';
 import 'menu/ui/menu_card.dart';
+import '../ui/confirmation_dialog.dart';
 import 'menu/ui/category_header.dart';
 
 class MenuPage extends StatefulWidget {
@@ -13,36 +14,29 @@ class MenuPage extends StatefulWidget {
 }
 
 class _MenuPageState extends State<MenuPage> {
-  void _deleteProduct(POSItem item) {
-    showDialog(
+  void _deleteProduct(POSItem item) async {
+    final confirmed = await ConfirmationDialog.showDeleteConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Product'),
-        content: Text('Are you sure you want to delete "${item.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                InventoryData.items.remove(item);
-              });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${item.name} deleted'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      itemName: item.name,
+      additionalMessage: 'You will not be able to recover this product.',
     );
+
+    if (!confirmed!) return;
+
+    setState(() {
+      InventoryData.items.remove(item);
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${item.name} deleted successfully'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
   }
 
   @override

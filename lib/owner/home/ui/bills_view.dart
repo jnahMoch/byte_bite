@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../model/bill_model.dart';
 import '../logic/bills_controller.dart';
 import '../../bills/logic/bills_helper.dart';
+import '../../../ui/confirmation_dialog.dart';
 
 class BillsView extends StatefulWidget {
   const BillsView({super.key});
@@ -714,6 +715,14 @@ class _BillsViewState extends State<BillsView> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () async {
+                  final confirmed = await ConfirmationDialog.showMarkAsPaidConfirmation(
+                    context: context,
+                    billName: bill.title,
+                    amount: bill.amount,
+                  );
+
+                  if (!confirmed!) return;
+
                   await _billsController.markBillAsPaid(bill.id);
                   await _loadBills();
 

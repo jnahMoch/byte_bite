@@ -6,6 +6,7 @@ import '../../../data/inventory_data.dart';
 import '../../../model/pos_item_model.dart';
 import '../logic/inventory_controller.dart';
 import '../logic/notifications_controller.dart';
+import '../../../ui/confirmation_dialog.dart';
 
 class InventoryView extends StatefulWidget {
   const InventoryView({super.key});
@@ -101,6 +102,14 @@ class _InventoryViewState extends State<InventoryView> {
             onPressed: () async {
               int? qty = int.tryParse(stockController.text);
               if (qty != null && qty > 0) {
+                final confirmed = await ConfirmationDialog.showRestockConfirmation(
+                  context: context,
+                  itemName: item.name,
+                  quantity: qty,
+                );
+
+                if (!confirmed!) return;
+
                 final updated = POSItem(
                   productId: item.productId,
                   name: item.name,
@@ -118,6 +127,9 @@ class _InventoryViewState extends State<InventoryView> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Added $qty ${item.unit} to ${item.name}'),
+                    backgroundColor: const Color(0xFF009661),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                 );
               }
@@ -191,6 +203,13 @@ class _InventoryViewState extends State<InventoryView> {
                 return;
               }
 
+              final confirmed = await ConfirmationDialog.showEditConfirmation(
+                context: context,
+                itemName: item.name,
+              );
+
+              if (!confirmed!) return;
+
               final updated = POSItem(
                 productId: item.productId,
                 name: item.name,
@@ -205,6 +224,14 @@ class _InventoryViewState extends State<InventoryView> {
               await _persistItemUpdate(original: item, updated: updated);
               if (!context.mounted) return;
               Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${item.name} updated successfully'),
+                  backgroundColor: const Color(0xFF009661),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF009661),

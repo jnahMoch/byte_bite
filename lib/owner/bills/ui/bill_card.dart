@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../logic/bills_helper.dart';
 import '../../../owner/homepage.dart' show Bill, BillsData;
 import '../../../database_helper.dart';
+import '../../../ui/confirmation_dialog.dart';
 
 /// Individual bill card/item display
 class BillCard extends StatefulWidget {
@@ -191,6 +192,14 @@ class _BillCardState extends State<BillCard> {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () async {
+          final confirmed = await ConfirmationDialog.showMarkAsPaidConfirmation(
+            context: context,
+            billName: widget.bill.title,
+            amount: widget.bill.amount,
+          );
+
+          if (!confirmed!) return;
+
           BillsData.markAsPaid(widget.bill.id);
           final int? numericId = int.tryParse(widget.bill.id);
           if (numericId != null) {

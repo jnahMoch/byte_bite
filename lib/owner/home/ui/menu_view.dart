@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../model/pos_item_model.dart';
 import '../../../data/inventory_data.dart';
+import '../../../ui/confirmation_dialog.dart';
 
 class MenuView extends StatefulWidget {
   const MenuView({super.key});
@@ -321,7 +322,14 @@ class _MenuViewState extends State<MenuView> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              final confirmed = await ConfirmationDialog.showEditConfirmation(
+                context: context,
+                itemName: nameController.text,
+              );
+
+              if (!confirmed!) return;
+
               setState(() {
                 final index = InventoryData.items.indexOf(item);
                 if (index != -1) {
@@ -335,7 +343,17 @@ class _MenuViewState extends State<MenuView> {
                   );
                 }
               });
+              // ignore: use_build_context_synchronously
               Navigator.pop(context);
+              // ignore: use_build_context_synchronously
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${nameController.text} updated successfully'),
+                  backgroundColor: const Color(0xFF009661),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              );
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF009661)),
             child: const Text('Save', style: TextStyle(color: Colors.white)),
@@ -345,30 +363,29 @@ class _MenuViewState extends State<MenuView> {
     );
   }
 
-  void _deleteItem(POSItem item) {
-    showDialog(
+  void _deleteItem(POSItem item) async {
+    final confirmed = await ConfirmationDialog.showDeleteConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Item'),
-        content: Text('Are you sure you want to delete "${item.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                InventoryData.items.remove(item);
-              });
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      itemName: item.name,
+      additionalMessage: 'This action cannot be undone.',
     );
+
+    if (!confirmed!) return;
+
+    setState(() {
+      InventoryData.items.remove(item);
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${item.name} deleted successfully'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
   }
 
   @override

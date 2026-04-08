@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../bills/logic/bills_helper.dart';
+import '../../../ui/confirmation_dialog.dart';
 
 class BillsRemindersView extends StatefulWidget {
   const BillsRemindersView({super.key});
@@ -201,7 +202,18 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
+                onPressed: () async {
+                  final amount = (bill['amount'] ?? 0.0) as double;
+                  final name = (bill['name'] ?? 'Bill') as String;
+
+                  final confirmed = await ConfirmationDialog.showMarkAsPaidConfirmation(
+                    context: context,
+                    billName: name,
+                    amount: amount,
+                  );
+
+                  if (!confirmed!) return;
+
                   setState(() {
                     bill['isPaid'] = true;
                   });
