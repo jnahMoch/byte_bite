@@ -391,8 +391,9 @@ class CheckoutPanel extends StatelessWidget {
               GestureDetector(
                 onTap: () {
                   int current = int.tryParse(amountPaidController.text) ?? 0;
-                  if (current > 0)
+                  if (current > 0) {
                     amountPaidController.text = (current - 1).toString();
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
