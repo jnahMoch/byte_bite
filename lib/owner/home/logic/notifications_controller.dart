@@ -16,6 +16,9 @@ class NotificationsController {
 
   String _notificationIdForItem(dynamic item) => 'lowstock:${item.name}';
 
+  String _firebaseDocIdForNotification(String notificationId) =>
+      Uri.encodeComponent(notificationId);
+
   DateTime _tryParseDate(String? raw) {
     if (raw == null || raw.isEmpty) {
       return DateTime.fromMillisecondsSinceEpoch(0);
@@ -45,14 +48,22 @@ class NotificationsController {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    await FirebaseFirestore.instance
-        .collection(_collection)
-        .doc(payload['notification_id'] as String)
-        .set({
-          ...payload,
-          'user_id': user.uid,
-          'updated_at': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    try {
+      final notificationId = (payload['notification_id'] ?? '').toString();
+      if (notificationId.isEmpty) return;
+
+      await FirebaseFirestore.instance
+          .collection(_collection)
+          .doc(_firebaseDocIdForNotification(notificationId))
+          .set({
+            ...payload,
+            'user_id': user.uid,
+            'updated_at': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+    } catch (e) {
+      // Keep local notifications resilient even if cloud sync rejects an ID.
+      debugPrint('Notifications cloud sync skipped: $e');
+    }
   }
 
   Future<void> initialize() async {
@@ -195,7 +206,7 @@ class NotificationsController {
 
   /// Get all low stock alerts
   Future<List<Map<String, dynamic>>> getLowStockAlerts() async {
-    await initialize();
+    await _ensureNotificationsTable();
 
     final db = await DatabaseHelper.instance.database;
     final rows = await db.query(

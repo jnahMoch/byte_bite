@@ -293,6 +293,39 @@ class NotificationDetailView extends StatelessWidget {
   }
 
   Widget _buildLowStockSection() {
+    Widget row(String label, String value) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 140,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF111827),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -305,24 +338,23 @@ class NotificationDetailView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _detailValueCard(
-                label: 'Current Stock',
-                value: '$currentStock $unit',
-                color: const Color(0xFF1E40AF),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _detailValueCard(
-                label: 'Low Stock Threshold',
-                value: '$lowStockThreshold $unit',
-                color: const Color(0xFFDC2626),
-              ),
-            ),
-          ],
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Column(
+            children: [
+              row('Product Name', productName),
+              const Divider(height: 1),
+              row('Current Stock', '$currentStock $unit'),
+              const Divider(height: 1),
+              row('Low Stock Threshold', '$lowStockThreshold $unit'),
+            ],
+          ),
         ),
       ],
     );

@@ -15,6 +15,23 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
   final NotificationsController _controller = const NotificationsController();
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
+  String? _loadError;
+  String _selectedCategory = 'all';
+
+  static const List<Map<String, String>> _categories = [
+    {'key': 'all', 'label': 'All Notifications'},
+    {'key': 'lowstock', 'label': 'Low Stock Alerts'},
+    {'key': 'bill', 'label': 'Bill Reminders'},
+  ];
+
+  List<Map<String, dynamic>> _filterNotifications(
+    List<Map<String, dynamic>> source,
+  ) {
+    if (_selectedCategory == 'all') return source;
+    return source
+        .where((n) => (n['type'] ?? '').toString() == _selectedCategory)
+        .toList();
+  }
 
   @override
   void initState() {
@@ -23,21 +40,36 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
   }
 
   Future<void> _loadPersistedAlerts() async {
-    await _controller.initialize();
-    final alerts = await _controller.getAllNotificationsSorted();
+    try {
+      final alerts = await _controller.getAllNotificationsSorted();
 
-    // Opening the notifications view marks current alerts as read.
-    await _controller.markAllAsRead();
+      if (!mounted) return;
+      setState(() {
+        _notifications = alerts;
+        _loadError = null;
+      });
 
-    if (!mounted) return;
-    setState(() {
-      _notifications = alerts;
-      _isLoading = false;
-    });
+      // Opening the notifications view marks current alerts as read.
+      // Keep it non-blocking so UI still renders cards even if this fails.
+      _controller.markAllAsRead();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = 'Unable to load notifications right now.';
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final filteredNotifications = _filterNotifications(_notifications);
+    final visibleCount = filteredNotifications.length;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
@@ -65,38 +97,99 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                 'Notifications',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
-              ValueListenableBuilder<int>(
-                valueListenable: NotificationsController.unreadCountNotifier,
-                builder: (context, unreadCount, _) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '$unreadCount',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  );
-                },
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$visibleCount',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 20),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: _categories.map((category) {
+                final key = category['key']!;
+                final label = category['label']!;
+                final isSelected = _selectedCategory == key;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(label),
+                    selected: isSelected,
+                    showCheckmark: false,
+                    backgroundColor: Colors.grey.shade100,
+                    selectedColor: Colors.grey.shade200,
+                    side: BorderSide(
+                      color: isSelected
+                          ? Colors.grey.shade500
+                          : Colors.grey.shade300,
+                    ),
+                    labelStyle: TextStyle(
+                      color: isSelected
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    onSelected: (_) {
+                      setState(() {
+                        _selectedCategory = key;
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 16),
           if (_isLoading)
             const Padding(
               padding: EdgeInsets.all(32),
               child: Center(child: CircularProgressIndicator()),
             )
-          else if (_notifications.isEmpty)
+          else if (_loadError != null && _notifications.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                  const SizedBox(height: 16),
+                  Text(
+                    _loadError!,
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: () {
+                      setState(() {
+                        _isLoading = true;
+                        _loadError = null;
+                      });
+                      _loadPersistedAlerts();
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          else if (filteredNotifications.isEmpty)
             Container(
               padding: const EdgeInsets.all(32),
               child: Column(
@@ -117,23 +210,14 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'No alerts at the moment',
+                    'No notifications for this category',
                     style: TextStyle(color: Colors.grey[400], fontSize: 14),
                   ),
                 ],
               ),
             )
           else ...[
-            const Text(
-              'All Notifications',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF333333),
-              ),
-            ),
-            const SizedBox(height: 12),
-            ..._notifications.map((alert) => _alertCard(context, alert)),
+            ...filteredNotifications.map((alert) => _alertCard(context, alert)),
           ],
         ],
       ),

@@ -172,7 +172,8 @@ class _HelperHomePageState extends State<HelperHomePage> {
         minChildSize: 0.4,
         maxChildSize: 0.9,
         expand: false,
-        builder: (context, scrollController) => const HelperNotificationsView(),
+        builder: (context, scrollController) =>
+            HelperNotificationsView(scrollController: scrollController),
       ),
     );
   }
