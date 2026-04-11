@@ -1,6 +1,13 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../../database_helper.dart';
 import '../../model/pos_item_model.dart';
@@ -9,6 +16,113 @@ class InventoryController {
   const InventoryController();
 
   static const String _productsCollection = 'products';
+
+  bool _isNetworkImageRef(String imageRef) {
+    final parsed = Uri.tryParse(imageRef);
+    return parsed != null &&
+        (parsed.scheme == 'http' || parsed.scheme == 'https');
+  }
+
+  Future<String?> _cacheNetworkImageToLocalPath(String imageUrl) async {
+    try {
+      final uri = Uri.parse(imageUrl);
+      final response = await http.get(uri);
+      if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
+        return null;
+      }
+
+      final appDir = await getApplicationDocumentsDirectory();
+      final imagesDir = Directory(p.join(appDir.path, 'product_images'));
+      if (!imagesDir.existsSync()) {
+        imagesDir.createSync(recursive: true);
+      }
+
+      final ext = p.extension(uri.path).toLowerCase();
+      final safeExt = switch (ext) {
+        '.png' || '.gif' || '.webp' => ext,
+        _ => '.jpg',
+      };
+      final digest = sha1.convert(utf8.encode(imageUrl)).toString();
+      final imageFile = File(p.join(imagesDir.path, 'seed_$digest$safeExt'));
+
+      if (!imageFile.existsSync()) {
+        await imageFile.writeAsBytes(response.bodyBytes, flush: true);
+      }
+
+      return imageFile.path;
+    } catch (e) {
+      debugPrint(
+        'inventory_controller._cacheNetworkImageToLocalPath failed for $imageUrl: $e',
+      );
+      return null;
+    }
+  }
+
+  Future<POSItem> _prepareSeedItemForOffline(POSItem item) async {
+    final imageRef = item.image?.trim();
+    if (imageRef == null || imageRef.isEmpty || !_isNetworkImageRef(imageRef)) {
+      return item;
+    }
+
+    final cachedPath = await _cacheNetworkImageToLocalPath(imageRef);
+    if (cachedPath == null) {
+      return item;
+    }
+
+    return POSItem(
+      productId: item.productId,
+      name: item.name,
+      price: item.price,
+      stock: item.stock,
+      unit: item.unit,
+      category: item.category,
+      lowStockAlert: item.lowStockAlert,
+      image: cachedPath,
+    );
+  }
+
+  Future<List<POSItem>> _materializeLocalImageRefs(List<POSItem> items) async {
+    final updated = <POSItem>[];
+    var changed = false;
+
+    for (final item in items) {
+      final imageRef = item.image?.trim();
+      if (imageRef == null ||
+          imageRef.isEmpty ||
+          !_isNetworkImageRef(imageRef)) {
+        updated.add(item);
+        continue;
+      }
+
+      final cachedPath = await _cacheNetworkImageToLocalPath(imageRef);
+      if (cachedPath == null) {
+        updated.add(item);
+        continue;
+      }
+
+      changed = true;
+      if (item.productId != null) {
+        await DatabaseHelper.instance.updateProduct(item.productId!, {
+          'description': cachedPath,
+        });
+      }
+
+      updated.add(
+        POSItem(
+          productId: item.productId,
+          name: item.name,
+          price: item.price,
+          stock: item.stock,
+          unit: item.unit,
+          category: item.category,
+          lowStockAlert: item.lowStockAlert,
+          image: cachedPath,
+        ),
+      );
+    }
+
+    return changed ? updated : items;
+  }
 
   POSItem _mapSqlRowToItem(Map<String, dynamic> row) {
     return POSItem(
@@ -74,12 +188,13 @@ class InventoryController {
       'Products',
       orderBy: 'name COLLATE NOCASE ASC',
     );
-    final localItems = sqlRows
+    var localItems = sqlRows
         .map(_mapSqlRowToItem)
         .where(
           (item) => includeSeed || item.name.toLowerCase() != 'seed product',
         )
         .toList();
+    localItems = await _materializeLocalImageRefs(localItems);
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -180,7 +295,8 @@ class InventoryController {
     // read from SQLite instead of in-memory seed values.
     for (final item in seedItems) {
       if (item.name.toLowerCase() == 'seed product') continue;
-      await _upsertProductToSqlFromItem(item);
+      final preparedItem = await _prepareSeedItemForOffline(item);
+      await _upsertProductToSqlFromItem(preparedItem);
     }
 
     final hydratedRows = await db.query(

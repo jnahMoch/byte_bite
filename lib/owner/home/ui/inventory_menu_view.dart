@@ -63,6 +63,8 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
 
   @override
   Widget build(BuildContext context) {
+    final listBottomPadding = 96.0 + MediaQuery.of(context).padding.bottom;
+
     return Stack(
       children: [
         Column(
@@ -173,7 +175,7 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
 
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.fromLTRB(16, 0, 16, listBottomPadding),
                 itemCount: filteredItems.length,
                 itemBuilder: (context, index) =>
                     _inventoryCard(filteredItems[index]),

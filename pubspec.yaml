@@ -21,6 +21,9 @@ dependencies:
   firebase_auth: ^5.0.0
   cloud_firestore: ^5.0.0
   connectivity_plus: ^7.0.0
+  crypto: ^3.0.3
+  http: ^1.2.2
+  path_provider: ^2.1.4
   # ── Offline + Cloud Sync ──────────────────────────────────────────────────
   # Used by homepage.dart to detect network status and show sync indicator.
 

@@ -58,7 +58,6 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
         _loadError = 'Unable to load notifications right now.';
       });
     } finally {
-      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });

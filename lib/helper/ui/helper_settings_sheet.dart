@@ -23,47 +23,75 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2)),
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
           const SizedBox(height: 20),
-          const Text('Settings',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const Text(
+            'Settings',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 24),
           _sectionTitle('Account'),
-          _settingsTile(context, Icons.person_outline, 'Profile',
-              'Manage your account', onTap: () {
-            Navigator.pop(context);
-            _showProfileDialog(context);
-          }),
-          _settingsTile(context, Icons.lock_outline, 'Change Password',
-              'Update your password', onTap: () {
-            Navigator.pop(context);
-            _showChangePasswordDialog(context);
-          }),
+          _settingsTile(
+            context,
+            Icons.person_outline,
+            'Profile',
+            'Manage your account',
+            onTap: () {
+              Navigator.pop(context);
+              _showProfileDialog(context);
+            },
+          ),
+          _settingsTile(
+            context,
+            Icons.lock_outline,
+            'Change Password',
+            'Update your password',
+            onTap: () {
+              Navigator.pop(context);
+              _showChangePasswordDialog(context);
+            },
+          ),
           const SizedBox(height: 20),
           _sectionTitle('App'),
-          _settingsTile(context, Icons.notifications_outlined, 'Notifications',
-              'Manage alerts', onTap: () {
-            Navigator.pop(context);
-            _showNotificationsDialog(context);
-          }),
+          _settingsTile(
+            context,
+            Icons.notifications_outlined,
+            'Notifications',
+            'Manage alerts',
+            onTap: () {
+              Navigator.pop(context);
+              _showNotificationsDialog(context);
+            },
+          ),
           const SizedBox(height: 20),
           _sectionTitle('Support'),
-          _settingsTile(context, Icons.help_outline, 'Help & Support',
-              'Get help with the app', onTap: () {
-            Navigator.pop(context);
-            _showHelpSupportDialog(context);
-          }),
+          _settingsTile(
+            context,
+            Icons.help_outline,
+            'Help & Support',
+            'Get help with the app',
+            onTap: () {
+              Navigator.pop(context);
+              _showHelpSupportDialog(context);
+            },
+          ),
           const SizedBox(height: 20),
           _sectionTitle('Session'),
-          _settingsTile(context, Icons.logout, 'Logout',
-              'Sign out of your account',
-              isDestructive: true, onTap: () {
-            Navigator.pop(context);
-            _showLogoutConfirmation(context);
-          }),
+          _settingsTile(
+            context,
+            Icons.logout,
+            'Logout',
+            'Sign out of your account',
+            isDestructive: true,
+            onTap: () {
+              Navigator.pop(context);
+              _showLogoutConfirmation(context);
+            },
+          ),
           const SizedBox(height: 30),
         ],
       ),
@@ -73,17 +101,25 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
   Widget _sectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Text(title,
-          style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600])),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey[600],
+        ),
+      ),
     );
   }
 
-  Widget _settingsTile(BuildContext context, IconData icon, String title,
-      String subtitle,
-      {VoidCallback? onTap, bool isDestructive = false}) {
+  Widget _settingsTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle, {
+    VoidCallback? onTap,
+    bool isDestructive = false,
+  }) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Container(
@@ -92,16 +128,23 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
           color: isDestructive ? Colors.red.shade50 : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon,
-            color: isDestructive ? Colors.red : const Color(0xFF009661),
-            size: 22),
+        child: Icon(
+          icon,
+          color: isDestructive ? Colors.red : const Color(0xFF009661),
+          size: 22,
+        ),
       ),
-      title: Text(title,
-          style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: isDestructive ? Colors.red : null)),
-      subtitle: Text(subtitle,
-          style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: isDestructive ? Colors.red : null,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+      ),
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),
       onTap: onTap ?? () {},
     );
@@ -109,11 +152,12 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
 
   void _showProfileDialog(BuildContext context) {
     final nameController = TextEditingController(
-        text: UserStorage.currentUser ?? 'Helper');
+      text: UserStorage.currentUser ?? 'Helper',
+    );
     final emailController = TextEditingController(
-        text: 'helper@byteandbite.com');
-    final phoneController = TextEditingController(
-        text: '+234 812 345 6789');
+      text: 'helper@byteandbite.com',
+    );
+    final phoneController = TextEditingController(text: '+234 812 345 6789');
 
     showDialog(
       context: context,
@@ -131,9 +175,10 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Profile',
-                      style: TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.w800)),
+                  const Text(
+                    'Profile',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+                  ),
                   GestureDetector(
                     onTap: () => Navigator.pop(ctx),
                     child: Container(
@@ -142,7 +187,11 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                         shape: BoxShape.circle,
                       ),
                       padding: const EdgeInsets.all(8),
-                      child: const Icon(Icons.close, size: 20, color: Colors.grey),
+                      child: const Icon(
+                        Icons.close,
+                        size: 20,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                 ],
@@ -168,15 +217,18 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                     Text(
                       UserStorage.currentUser ?? 'Helper',
                       style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.w700),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Helper Account',
                       style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[500],
-                          fontWeight: FontWeight.w500),
+                        fontSize: 13,
+                        color: Colors.grey[500],
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -209,21 +261,27 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content: Text('Profile updated successfully'),
-                          backgroundColor: Color(0xFF009661)),
+                        content: Text('Profile updated successfully'),
+                        backgroundColor: Color(0xFF009661),
+                      ),
                     );
                     Navigator.pop(ctx);
                   },
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF009661),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12))),
-                  child: const Text('Save Changes',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700)),
+                    backgroundColor: const Color(0xFF009661),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Save Changes',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -237,106 +295,226 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
     final oldPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
+    bool isOldPasswordVisible = false;
+    bool isNewPasswordVisible = false;
+    bool isConfirmPasswordVisible = false;
 
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 8,
-        shadowColor: Colors.black26,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-          constraints: const BoxConstraints(maxWidth: 360),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Change Password',
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 8,
+          shadowColor: Colors.black26,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Change Password',
                       style: TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.w800)),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(ctx),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        shape: BoxShape.circle,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
                       ),
-                      padding: const EdgeInsets.all(8),
-                      child: const Icon(Icons.close, size: 20, color: Colors.grey),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(ctx),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(8),
+                        child: const Icon(
+                          Icons.close,
+                          size: 20,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                _buildInputField(
+                  controller: oldPasswordController,
+                  label: 'Current Password',
+                  icon: Icons.lock_outline,
+                  obscureText: !isOldPasswordVisible,
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setDialogState(() {
+                        isOldPasswordVisible = !isOldPasswordVisible;
+                      });
+                    },
+                    icon: Icon(
+                      isOldPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      color: const Color(0xFF009661),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _buildInputField(
-                controller: oldPasswordController,
-                label: 'Current Password',
-                icon: Icons.lock_outline,
-                obscureText: true,
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: newPasswordController,
-                label: 'New Password',
-                icon: Icons.lock_outline,
-                obscureText: true,
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: confirmPasswordController,
-                label: 'Confirm New Password',
-                icon: Icons.lock_outline,
-                obscureText: true,
-              ),
-              const SizedBox(height: 28),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        side: const BorderSide(color: Colors.grey),
-                      ),
-                      child: const Text('Cancel',
-                          style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.grey)),
+                ),
+                const SizedBox(height: 16),
+                _buildInputField(
+                  controller: newPasswordController,
+                  label: 'New Password',
+                  icon: Icons.lock_outline,
+                  obscureText: !isNewPasswordVisible,
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setDialogState(() {
+                        isNewPasswordVisible = !isNewPasswordVisible;
+                      });
+                    },
+                    icon: Icon(
+                      isNewPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      color: const Color(0xFF009661),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Password changed successfully'),
-                              backgroundColor: Color(0xFF009661)),
-                        );
-                        Navigator.pop(ctx);
-                      },
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF009661),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 14),
+                ),
+                const SizedBox(height: 16),
+                _buildInputField(
+                  controller: confirmPasswordController,
+                  label: 'Confirm New Password',
+                  icon: Icons.lock_outline,
+                  obscureText: !isConfirmPasswordVisible,
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setDialogState(() {
+                        isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                      });
+                    },
+                    icon: Icon(
+                      isConfirmPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      color: const Color(0xFF009661),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12))),
-                      child: const Text('Change',
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          side: const BorderSide(color: Colors.grey),
+                        ),
+                        child: const Text(
+                          'Cancel',
                           style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700)),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final oldPassword = oldPasswordController.text.trim();
+                          final newPassword = newPasswordController.text.trim();
+                          final confirmPassword = confirmPasswordController.text
+                              .trim();
+
+                          if (oldPassword.isEmpty ||
+                              newPassword.isEmpty ||
+                              confirmPassword.isEmpty) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please fill in all fields'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (newPassword.length < 6) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Password must be at least 6 characters',
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (newPassword != confirmPassword) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              const SnackBar(
+                                content: Text('Passwords do not match'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          final updateError =
+                              await UserStorage.changeCurrentUserPasswordPersistent(
+                                oldPassword: oldPassword,
+                                newPassword: newPassword,
+                              );
+
+                          if (!ctx.mounted) return;
+
+                          if (updateError != null) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              SnackBar(
+                                content: Text(updateError),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(
+                              content: Text('Password changed successfully'),
+                              backgroundColor: Color(0xFF009661),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF009661),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Change',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -345,10 +523,22 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
 
   void _showNotificationsDialog(BuildContext context) {
     const notificationTypes = [
-      {'icon': Icons.shopping_cart_outlined, 'label': 'Orders', 'desc': 'New order notifications'},
-      {'icon': Icons.payment_outlined, 'label': 'Payments', 'desc': 'Payment confirmations'},
+      {
+        'icon': Icons.shopping_cart_outlined,
+        'label': 'Orders',
+        'desc': 'New order notifications',
+      },
+      {
+        'icon': Icons.payment_outlined,
+        'label': 'Payments',
+        'desc': 'Payment confirmations',
+      },
       {'icon': Icons.info_outlined, 'label': 'System', 'desc': 'System alerts'},
-      {'icon': Icons.local_offer_outlined, 'label': 'Promotions', 'desc': 'Promotional messages'},
+      {
+        'icon': Icons.local_offer_outlined,
+        'label': 'Promotions',
+        'desc': 'Promotional messages',
+      },
     ];
 
     showDialog(
@@ -363,7 +553,9 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
           };
 
           return Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             elevation: 8,
             shadowColor: Colors.black26,
             child: Container(
@@ -376,9 +568,13 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Notifications',
-                          style: TextStyle(
-                              fontSize: 24, fontWeight: FontWeight.w800)),
+                      const Text(
+                        'Notifications',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                       GestureDetector(
                         onTap: () => Navigator.pop(ctx),
                         child: Container(
@@ -387,7 +583,11 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                             shape: BoxShape.circle,
                           ),
                           padding: const EdgeInsets.all(8),
-                          child: const Icon(Icons.close, size: 20, color: Colors.grey),
+                          child: const Icon(
+                            Icons.close,
+                            size: 20,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
                     ],
@@ -402,39 +602,42 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.blue.shade700,
+                          size: 20,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             'Manage which notifications you want to receive',
                             style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.blue.shade700,
-                                fontWeight: FontWeight.w500),
+                              fontSize: 13,
+                              color: Colors.blue.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 24),
-                  ...List.generate(
-                    notificationTypes.length,
-                    (index) {
-                      final item = notificationTypes[index] as Map<String, dynamic>;
-                      final key = item['label'].toString().toLowerCase();
-                      return _buildNotificationToggle(
-                        icon: item['icon'] as IconData,
-                        label: item['label'] as String,
-                        description: item['desc'] as String,
-                        value: notificationPrefs[key] ?? false,
-                        onChanged: (value) {
-                          setState(() {
-                            notificationPrefs[key] = value;
-                          });
-                        },
-                      );
-                    },
-                  ).expand((widget) => [widget, const SizedBox(height: 14)]),
+                  ...List.generate(notificationTypes.length, (index) {
+                    final item =
+                        notificationTypes[index] as Map<String, dynamic>;
+                    final key = item['label'].toString().toLowerCase();
+                    return _buildNotificationToggle(
+                      icon: item['icon'] as IconData,
+                      label: item['label'] as String,
+                      description: item['desc'] as String,
+                      value: notificationPrefs[key] ?? false,
+                      onChanged: (value) {
+                        setState(() {
+                          notificationPrefs[key] = value;
+                        });
+                      },
+                    );
+                  }).expand((widget) => [widget, const SizedBox(height: 14)]),
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
@@ -442,21 +645,27 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                              content: Text('Notification settings saved'),
-                              backgroundColor: Color(0xFF009661)),
+                            content: Text('Notification settings saved'),
+                            backgroundColor: Color(0xFF009661),
+                          ),
                         );
                         Navigator.pop(ctx);
                       },
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF009661),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12))),
-                      child: const Text('Save Settings',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700)),
+                        backgroundColor: const Color(0xFF009661),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Save Settings',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -497,13 +706,18 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 14)),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(description,
-                    style: TextStyle(
-                        fontSize: 12, color: Colors.grey[500])),
+                Text(
+                  description,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
               ],
             ),
           ),
@@ -521,23 +735,27 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
     final faqs = [
       {
         'question': 'How do I change my password?',
-        'answer': 'Go to Settings > Account > Change Password and enter your current and new password.'
+        'answer':
+            'Go to Settings > Account > Change Password and enter your current and new password.',
       },
       {
         'question': 'Can I customize notifications?',
-        'answer': 'Yes! Go to Settings > Notifications to enable or disable different notification types like Orders, Payments, System alerts, and Promotions.'
+        'answer':
+            'Yes! Go to Settings > Notifications to enable or disable different notification types like Orders, Payments, System alerts, and Promotions.',
       },
       {
         'question': 'How do I update my profile information?',
-        'answer': 'Go to Settings > Profile to view your account details. You can update your phone number there.'
+        'answer':
+            'Go to Settings > Profile to view your account details. You can update your phone number there.',
       },
       {
         'question': 'How do I logout?',
-        'answer': 'Go to Settings > Logout to sign out of your account.'
+        'answer': 'Go to Settings > Logout to sign out of your account.',
       },
       {
         'question': 'What do I do if I forget my password?',
-        'answer': 'Contact your manager or administrator to reset your password.'
+        'answer':
+            'Contact your manager or administrator to reset your password.',
       },
     ];
 
@@ -551,12 +769,20 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
             valueListenable: expandedFaqIndex,
             builder: (context, expanded, _) {
               return Dialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 elevation: 8,
                 shadowColor: Colors.black26,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-                  constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 32,
+                  ),
+                  constraints: const BoxConstraints(
+                    maxWidth: 400,
+                    maxHeight: 600,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -564,9 +790,13 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Help & Support',
-                              style: TextStyle(
-                                  fontSize: 24, fontWeight: FontWeight.w800)),
+                          const Text(
+                            'Help & Support',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                           GestureDetector(
                             onTap: () => Navigator.pop(ctx),
                             child: Container(
@@ -575,18 +805,24 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                                 shape: BoxShape.circle,
                               ),
                               padding: const EdgeInsets.all(8),
-                              child: const Icon(Icons.close,
-                                  size: 20, color: Colors.grey),
+                              child: const Icon(
+                                Icons.close,
+                                size: 20,
+                                color: Colors.grey,
+                              ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 24),
-                      Text('Frequently Asked Questions',
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.grey[700])),
+                      Text(
+                        'Frequently Asked Questions',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey[700],
+                        ),
+                      ),
                       const SizedBox(height: 14),
                       Flexible(
                         child: ListView.builder(
@@ -601,21 +837,28 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                                 color: Colors.grey.shade50,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                    color: Colors.grey.shade200, width: 1.5),
+                                  color: Colors.grey.shade200,
+                                  width: 1.5,
+                                ),
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
                                 child: Theme(
-                                  data: Theme.of(context).copyWith(
-                                    dividerColor: Colors.transparent,
-                                  ),
+                                  data: Theme.of(
+                                    context,
+                                  ).copyWith(dividerColor: Colors.transparent),
                                   child: ExpansionTile(
                                     tilePadding: const EdgeInsets.symmetric(
-                                        horizontal: 14, vertical: 8),
-                                    title: Text(faq['question']!,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 13)),
+                                      horizontal: 14,
+                                      vertical: 8,
+                                    ),
+                                    title: Text(
+                                      faq['question']!,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                      ),
+                                    ),
                                     trailing: Icon(
                                       isExpanded
                                           ? Icons.expand_less
@@ -623,18 +866,24 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                                       color: const Color(0xFF009661),
                                     ),
                                     onExpansionChanged: (value) {
-                                      expandedFaqIndex.value =
-                                          value ? index : -1;
+                                      expandedFaqIndex.value = value
+                                          ? index
+                                          : -1;
                                     },
                                     children: [
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 14, vertical: 12),
-                                        child: Text(faq['answer']!,
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[600],
-                                                height: 1.5)),
+                                          horizontal: 14,
+                                          vertical: 12,
+                                        ),
+                                        child: Text(
+                                          faq['answer']!,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                            height: 1.5,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -655,38 +904,53 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Need More Help?',
-                                style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.blue.shade900)),
+                            Text(
+                              'Need More Help?',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blue.shade900,
+                              ),
+                            ),
                             const SizedBox(height: 12),
                             Row(
                               children: [
-                                Icon(Icons.email_outlined,
-                                    size: 18, color: Colors.blue.shade700),
+                                Icon(
+                                  Icons.email_outlined,
+                                  size: 18,
+                                  color: Colors.blue.shade700,
+                                ),
                                 const SizedBox(width: 10),
                                 Expanded(
-                                  child: Text('support@byteandbite.com',
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.blue.shade700,
-                                          fontWeight: FontWeight.w500)),
+                                  child: Text(
+                                    'support@byteandbite.com',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.blue.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 10),
                             Row(
                               children: [
-                                Icon(Icons.phone_outlined,
-                                    size: 18, color: Colors.blue.shade700),
+                                Icon(
+                                  Icons.phone_outlined,
+                                  size: 18,
+                                  color: Colors.blue.shade700,
+                                ),
                                 const SizedBox(width: 10),
                                 Expanded(
-                                  child: Text('+234 800 123 4567',
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.blue.shade700,
-                                          fontWeight: FontWeight.w500)),
+                                  child: Text(
+                                    '+234 800 123 4567',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.blue.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -695,11 +959,14 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                       ),
                       const SizedBox(height: 16),
                       Center(
-                        child: Text('App Version 1.0.0',
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[400],
-                                fontWeight: FontWeight.w500)),
+                        child: Text(
+                          'App Version 1.0.0',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[400],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -715,7 +982,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
   void _showLogoutConfirmation(BuildContext context) {
     // Capture navigator reference before creating dialog
     final rootNavigator = Navigator.of(context, rootNavigator: true);
-    
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -723,35 +990,36 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
         content: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () {
               // Close dialog only
               Navigator.pop(ctx);
-              
+
               // Do logout in background
-              UserStorage.logout().then((_) {
-                // After logout, wait briefly then navigate
-                Future.delayed(const Duration(milliseconds: 600), () {
-                  try {
-                    // Use the saved navigator reference (not context-dependent)
-                    rootNavigator.pushNamedAndRemoveUntil(
-                      '/login',
-                      (Route<dynamic> route) => false,
-                    );
-                  } catch (e) {
-                    // Silently handle navigation errors
-                  }
-                });
-              }).catchError((_) {
-                // Silently handle logout errors
-              });
+              UserStorage.logout()
+                  .then((_) {
+                    // After logout, wait briefly then navigate
+                    Future.delayed(const Duration(milliseconds: 600), () {
+                      try {
+                        // Use the saved navigator reference (not context-dependent)
+                        rootNavigator.pushNamedAndRemoveUntil(
+                          '/login',
+                          (Route<dynamic> route) => false,
+                        );
+                      } catch (e) {
+                        // Silently handle navigation errors
+                      }
+                    });
+                  })
+                  .catchError((_) {
+                    // Silently handle logout errors
+                  });
             },
-            style:
-                ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Logout',
-                style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Logout', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -765,6 +1033,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
     String? hintText,
     bool obscureText = false,
     bool readOnly = false,
+    Widget? suffixIcon,
   }) {
     return TextField(
       controller: controller,
@@ -776,6 +1045,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
         filled: true,
         fillColor: Colors.grey.shade50,
         prefixIcon: Icon(icon, color: const Color(0xFF009661)),
+        suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: Colors.grey.shade300),

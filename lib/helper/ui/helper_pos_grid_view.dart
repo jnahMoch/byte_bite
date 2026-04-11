@@ -509,10 +509,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
           children: [
             pw.Text(
               'Byte & Bite POS',
-              style: pw.TextStyle(
-                fontSize: 16,
-                fontWeight: pw.FontWeight.bold,
-              ),
+              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 10),
             pw.Text('Receipt #$receiptNumber'),
@@ -532,7 +529,10 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('Total:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                pw.Text(
+                  'Total:',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                ),
                 pw.Text('₱$total'),
               ],
             ),
@@ -604,8 +604,9 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                 horizontal: 16,
                                 vertical: 12,
                               ),
-                              color: const Color(0xFF009661)
-                                  .withValues(alpha: 0.05),
+                              color: const Color(
+                                0xFF009661,
+                              ).withValues(alpha: 0.05),
                               child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -633,8 +634,9 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFF009661),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         child: Text(
                                           '₱$cartTotal',
@@ -689,15 +691,15 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                             width: 50,
                                             height: 50,
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFF009661)
-                                                  .withValues(alpha: 0.1),
+                                              color: const Color(
+                                                0xFF009661,
+                                              ).withValues(alpha: 0.1),
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                             ),
                                             child: Icon(
                                               Icons.shopping_bag,
-                                              color:
-                                                  const Color(0xFF009661),
+                                              color: const Color(0xFF009661),
                                               size: 24,
                                             ),
                                           ),
@@ -711,8 +713,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                                 Text(
                                                   _cart[i].item.name,
                                                   style: const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.w600,
+                                                    fontWeight: FontWeight.w600,
                                                     fontSize: 14,
                                                   ),
                                                   overflow:
@@ -723,8 +724,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                                   '₱${_cart[i].item.price} each',
                                                   style: TextStyle(
                                                     fontSize: 12,
-                                                    color:
-                                                        Colors.grey[600],
+                                                    color: Colors.grey[600],
                                                   ),
                                                 ),
                                               ],
@@ -748,12 +748,12 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                               Container(
                                                 decoration: BoxDecoration(
                                                   border: Border.all(
-                                                    color: const Color(0xFF009661),
+                                                    color: const Color(
+                                                      0xFF009661,
+                                                    ),
                                                   ),
                                                   borderRadius:
-                                                      BorderRadius.circular(
-                                                    6,
-                                                  ),
+                                                      BorderRadius.circular(6),
                                                 ),
                                                 child: Row(
                                                   children: [
@@ -764,11 +764,11 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                                             -1,
                                                           ),
                                                       child: Container(
-                                                        padding: const EdgeInsets
-                                                            .symmetric(
-                                                          horizontal: 6,
-                                                          vertical: 3,
-                                                        ),
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 6,
+                                                              vertical: 3,
+                                                            ),
                                                         child: const Icon(
                                                           Icons.remove,
                                                           size: 14,
@@ -779,15 +779,14 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                                       ),
                                                     ),
                                                     Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 3,
-                                                      ),
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 3,
+                                                          ),
                                                       child: Text(
                                                         '${_cart[i].quantity}',
-                                                        style:
-                                                            const TextStyle(
+                                                        style: const TextStyle(
                                                           fontWeight:
                                                               FontWeight.w600,
                                                           fontSize: 12,
@@ -796,16 +795,13 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                                     ),
                                                     GestureDetector(
                                                       onTap: () =>
-                                                          _updateQuantity(
-                                                            i,
-                                                            1,
-                                                          ),
+                                                          _updateQuantity(i, 1),
                                                       child: Container(
-                                                        padding: const EdgeInsets
-                                                            .symmetric(
-                                                          horizontal: 6,
-                                                          vertical: 3,
-                                                        ),
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 6,
+                                                              vertical: 3,
+                                                            ),
                                                         child: const Icon(
                                                           Icons.add,
                                                           size: 14,
@@ -822,8 +818,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                           ),
                                           const SizedBox(width: 8),
                                           GestureDetector(
-                                            onTap: () =>
-                                                _removeFromCart(i),
+                                            onTap: () => _removeFromCart(i),
                                             child: const Icon(
                                               Icons.delete_outline,
                                               size: 20,
@@ -840,26 +835,25 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                   Container(
                                     padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF009661)
-                                          .withValues(alpha: 0.1),
-                                      borderRadius:
-                                          BorderRadius.circular(10),
+                                      color: const Color(
+                                        0xFF009661,
+                                      ).withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
-                                        color: const Color(0xFF009661)
-                                            .withValues(alpha: 0.3),
+                                        color: const Color(
+                                          0xFF009661,
+                                        ).withValues(alpha: 0.3),
                                       ),
                                     ),
                                     child: Row(
                                       mainAxisAlignment:
-                                          MainAxisAlignment
-                                              .spaceBetween,
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         const Text(
                                           'Total Amount Due',
                                           style: TextStyle(
                                             fontSize: 14,
-                                            fontWeight:
-                                                FontWeight.w600,
+                                            fontWeight: FontWeight.w600,
                                             color: Color(0xFF333333),
                                           ),
                                         ),
@@ -867,8 +861,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                           '₱$cartTotal',
                                           style: const TextStyle(
                                             fontSize: 20,
-                                            fontWeight:
-                                                FontWeight.bold,
+                                            fontWeight: FontWeight.bold,
                                             color: Color(0xFF009661),
                                           ),
                                         ),
@@ -889,66 +882,49 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                       Expanded(
                                         child: GestureDetector(
                                           onTap: () => setState(
-                                            () => _selectedPayment =
-                                                'Cash',
+                                            () => _selectedPayment = 'Cash',
                                           ),
                                           child: Container(
-                                            padding:
-                                                const EdgeInsets
-                                                    .symmetric(
+                                            padding: const EdgeInsets.symmetric(
                                               vertical: 12,
                                               horizontal: 16,
                                             ),
-                                            decoration:
-                                                BoxDecoration(
-                                              color: _selectedPayment ==
-                                                      'Cash'
-                                                  ? const Color(
-                                                      0xFF009661,
-                                                    )
+                                            decoration: BoxDecoration(
+                                              color: _selectedPayment == 'Cash'
+                                                  ? const Color(0xFF009661)
                                                   : Colors.grey[100],
                                               borderRadius:
-                                                  BorderRadius
-                                                      .circular(10),
+                                                  BorderRadius.circular(10),
                                               border: Border.all(
-                                                color: _selectedPayment ==
-                                                        'Cash'
-                                                    ? const Color(
-                                                        0xFF009661,
-                                                      )
-                                                    : Colors.grey
-                                                        .shade300,
+                                                color:
+                                                    _selectedPayment == 'Cash'
+                                                    ? const Color(0xFF009661)
+                                                    : Colors.grey.shade300,
                                               ),
                                             ),
                                             child: Row(
                                               mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .center,
+                                                  MainAxisAlignment.center,
                                               children: [
                                                 Icon(
                                                   Icons.wallet,
-                                                  color: _selectedPayment ==
-                                                          'Cash'
+                                                  color:
+                                                      _selectedPayment == 'Cash'
                                                       ? Colors.white
-                                                      : Colors.grey
-                                                          .shade600,
+                                                      : Colors.grey.shade600,
                                                   size: 20,
                                                 ),
-                                                const SizedBox(
-                                                  width: 8,
-                                                ),
+                                                const SizedBox(width: 8),
                                                 Text(
                                                   'Cash',
                                                   style: TextStyle(
                                                     fontSize: 14,
-                                                    fontWeight:
-                                                        FontWeight
-                                                            .w600,
-                                                    color: _selectedPayment ==
+                                                    fontWeight: FontWeight.w600,
+                                                    color:
+                                                        _selectedPayment ==
                                                             'Cash'
                                                         ? Colors.white
-                                                        : Colors.grey
-                                                            .shade600,
+                                                        : Colors.grey.shade600,
                                                   ),
                                                 ),
                                               ],
@@ -960,67 +936,52 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                       Expanded(
                                         child: GestureDetector(
                                           onTap: () => setState(
-                                            () =>
-                                                _selectedPayment =
-                                                    'QR Code',
+                                            () => _selectedPayment = 'QR Code',
                                           ),
                                           child: Container(
-                                            padding:
-                                                const EdgeInsets
-                                                    .symmetric(
+                                            padding: const EdgeInsets.symmetric(
                                               vertical: 12,
                                               horizontal: 16,
                                             ),
-                                            decoration:
-                                                BoxDecoration(
-                                              color: _selectedPayment ==
-                                                      'QR Code'
-                                                  ? const Color(
-                                                      0xFF009661,
-                                                    )
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  _selectedPayment == 'QR Code'
+                                                  ? const Color(0xFF009661)
                                                   : Colors.grey[100],
                                               borderRadius:
-                                                  BorderRadius
-                                                      .circular(10),
+                                                  BorderRadius.circular(10),
                                               border: Border.all(
-                                                color: _selectedPayment ==
+                                                color:
+                                                    _selectedPayment ==
                                                         'QR Code'
-                                                    ? const Color(
-                                                        0xFF009661,
-                                                      )
-                                                    : Colors.grey
-                                                        .shade300,
+                                                    ? const Color(0xFF009661)
+                                                    : Colors.grey.shade300,
                                               ),
                                             ),
                                             child: Row(
                                               mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .center,
+                                                  MainAxisAlignment.center,
                                               children: [
                                                 Icon(
                                                   Icons.qr_code,
-                                                  color: _selectedPayment ==
+                                                  color:
+                                                      _selectedPayment ==
                                                           'QR Code'
                                                       ? Colors.white
-                                                      : Colors.grey
-                                                          .shade600,
+                                                      : Colors.grey.shade600,
                                                   size: 20,
                                                 ),
-                                                const SizedBox(
-                                                  width: 8,
-                                                ),
+                                                const SizedBox(width: 8),
                                                 Text(
                                                   'QR Code',
                                                   style: TextStyle(
                                                     fontSize: 14,
-                                                    fontWeight:
-                                                        FontWeight
-                                                            .w600,
-                                                    color: _selectedPayment ==
+                                                    fontWeight: FontWeight.w600,
+                                                    color:
+                                                        _selectedPayment ==
                                                             'QR Code'
                                                         ? Colors.white
-                                                        : Colors.grey
-                                                            .shade600,
+                                                        : Colors.grey.shade600,
                                                   ),
                                                 ),
                                               ],
@@ -1032,41 +993,27 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                   ),
                                   const SizedBox(height: 12),
                                   TextField(
-                                    controller:
-                                        _amountPaidController,
-                                    keyboardType:
-                                        TextInputType.number,
+                                    controller: _amountPaidController,
+                                    keyboardType: TextInputType.number,
                                     decoration: InputDecoration(
                                       filled: true,
-                                      fillColor:
-                                          Colors.grey.shade50,
-                                      labelText:
-                                          'Amount Paid',
+                                      fillColor: Colors.grey.shade50,
+                                      labelText: 'Amount Paid',
                                       border: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(
-                                          8,
-                                        ),
+                                        borderRadius: BorderRadius.circular(8),
                                         borderSide: BorderSide(
-                                          color: Colors
-                                              .grey.shade200,
+                                          color: Colors.grey.shade200,
                                         ),
                                       ),
-                                      enabledBorder:
-                                          OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(
-                                          8,
-                                        ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
                                         borderSide: BorderSide(
-                                          color: Colors
-                                              .grey.shade200,
+                                          color: Colors.grey.shade200,
                                         ),
                                       ),
                                       isDense: true,
                                       contentPadding:
-                                          const EdgeInsets
-                                              .symmetric(
+                                          const EdgeInsets.symmetric(
                                             horizontal: 12,
                                             vertical: 10,
                                           ),
@@ -1074,8 +1021,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                   ),
                                   const SizedBox(height: 12),
                                   Container(
-                                    padding: const EdgeInsets
-                                        .symmetric(
+                                    padding: const EdgeInsets.symmetric(
                                       horizontal: 12,
                                       vertical: 10,
                                     ),
@@ -1083,32 +1029,24 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                       color: const Color(
                                         0xFF009661,
                                       ).withValues(alpha: 0.1),
-                                      borderRadius:
-                                          BorderRadius.circular(
-                                        8,
-                                      ),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
                                       mainAxisAlignment:
-                                          MainAxisAlignment
-                                              .spaceBetween,
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         const Text(
                                           'Change: ',
                                           style: TextStyle(
-                                            fontWeight:
-                                                FontWeight.w600,
+                                            fontWeight: FontWeight.w600,
                                             fontSize: 13,
                                           ),
                                         ),
                                         Text(
                                           '₱${_change.toStringAsFixed(2)}',
                                           style: const TextStyle(
-                                            color: Color(
-                                              0xFF009661,
-                                            ),
-                                            fontWeight:
-                                                FontWeight.w700,
+                                            color: Color(0xFF009661),
+                                            fontWeight: FontWeight.w700,
                                             fontSize: 14,
                                           ),
                                         ),
@@ -1119,25 +1057,17 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                   SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton(
-                                      onPressed:
-                                          _completeTransaction,
-                                      style: ElevatedButton
-                                          .styleFrom(
-                                        backgroundColor:
-                                            const Color(
+                                      onPressed: _completeTransaction,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(
                                           0xFF009661,
                                         ),
-                                        foregroundColor:
-                                            Colors.white,
-                                        padding: const EdgeInsets
-                                            .symmetric(
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
                                           vertical: 14,
                                         ),
-                                        shape:
-                                            RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius
-                                                  .circular(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
                                             12,
                                           ),
                                         ),
@@ -1146,8 +1076,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                                         'Complete Transaction',
                                         style: TextStyle(
                                           fontSize: 15,
-                                          fontWeight:
-                                              FontWeight.w700,
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
                                     ),
@@ -1172,10 +1101,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
     return GestureDetector(
       onTap: () => setState(() => _selectedCategory = label),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 10,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: _selectedCategory == label
               ? const Color(0xFF009661)
@@ -1190,9 +1116,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
         child: Text(
           label,
           style: TextStyle(
-            color: _selectedCategory == label
-                ? Colors.white
-                : Colors.black,
+            color: _selectedCategory == label ? Colors.white : Colors.black,
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),
@@ -1271,10 +1195,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                   const SizedBox(height: 2),
                   Text(
                     'Stock: ${item.stock} ${item.unit}',
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: Colors.grey[500], fontSize: 11),
                   ),
                 ],
               ),
@@ -1290,32 +1211,49 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
     required IconData iconData,
     required Color iconColor,
   }) {
-    final hasValidImage = imagePathOrUrl != null &&
-        imagePathOrUrl.isNotEmpty &&
-        (imagePathOrUrl.startsWith('http') || File(imagePathOrUrl).existsSync());
+    Widget fallbackIcon() =>
+        Center(child: Icon(iconData, size: 40, color: iconColor));
 
-    if (hasValidImage) {
+    if (imagePathOrUrl == null || imagePathOrUrl.trim().isEmpty) {
+      return fallbackIcon();
+    }
+
+    final imageRef = imagePathOrUrl.trim();
+    final parsed = Uri.tryParse(imageRef);
+    final isNetwork =
+        parsed != null && (parsed.scheme == 'http' || parsed.scheme == 'https');
+
+    if (isNetwork) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Image.network(
-          imagePathOrUrl,
+          imageRef,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Center(
-            child: Icon(
-              iconData,
-              size: 40,
-              color: iconColor,
-            ),
-          ),
+          errorBuilder: (context, error, stackTrace) => fallbackIcon(),
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+              ),
+            );
+          },
         ),
       );
     }
 
-    return Center(
-      child: Icon(
-        iconData,
-        size: 40,
-        color: iconColor,
+    final file = File(imageRef);
+    if (!file.existsSync()) {
+      return fallbackIcon();
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Image.file(
+        file,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => fallbackIcon(),
       ),
     );
   }
@@ -1326,8 +1264,18 @@ class DateFormat {
 
   String format(DateTime date) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     final month = months[date.month - 1];
     final day = date.day.toString().padLeft(2, '0');

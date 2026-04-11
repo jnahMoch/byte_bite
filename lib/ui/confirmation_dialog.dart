@@ -32,9 +32,7 @@ class ConfirmationDialog extends StatelessWidget {
     final finalIconColor = iconColor ?? Colors.orange;
 
     return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
           if (icon != null) ...[
@@ -44,42 +42,32 @@ class ConfirmationDialog extends StatelessWidget {
                 color: finalIconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                icon,
-                color: finalIconColor,
-                size: 24,
-              ),
+              child: Icon(icon, color: finalIconColor, size: 24),
             ),
             const SizedBox(width: 12),
           ],
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
         ],
       ),
       content: Text(
         message,
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.grey[700],
-          height: 1.5,
-        ),
+        style: TextStyle(fontSize: 14, color: Colors.grey[700], height: 1.5),
       ),
       actions: [
         TextButton(
           onPressed: () {
-            onCancel?.call();
-            Navigator.pop(context);
+            if (onCancel != null) {
+              onCancel!.call();
+            } else {
+              Navigator.pop(context, false);
+            }
           },
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.grey[600],
-          ),
+          style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
           child: Text(
             cancelText,
             style: const TextStyle(fontWeight: FontWeight.w600),
@@ -87,17 +75,13 @@ class ConfirmationDialog extends StatelessWidget {
         ),
         ElevatedButton(
           onPressed: () {
-            Navigator.pop(context);
             onConfirm.call();
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: finalConfirmColor,
             foregroundColor: Colors.white,
             elevation: 0,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -124,7 +108,8 @@ class ConfirmationDialog extends StatelessWidget {
       context: context,
       builder: (context) => ConfirmationDialog(
         title: 'Delete $itemName',
-        message: 'Are you sure you want to permanently delete "$itemName"?${additionalMessage != null ? '\n\n$additionalMessage' : ''}',
+        message:
+            'Are you sure you want to permanently delete "$itemName"?${additionalMessage != null ? '\n\n$additionalMessage' : ''}',
         confirmText: 'Delete',
         cancelText: 'Cancel',
         icon: Icons.delete_outline_rounded,
@@ -167,7 +152,8 @@ class ConfirmationDialog extends StatelessWidget {
       context: context,
       builder: (context) => ConfirmationDialog(
         title: 'Confirm Restock',
-        message: 'Add $quantity units to "$itemName"?\n\nThis action will update your inventory.',
+        message:
+            'Add $quantity units to "$itemName"?\n\nThis action will update your inventory.',
         confirmText: 'Restock',
         cancelText: 'Cancel',
         icon: Icons.inventory_2_outlined,
@@ -189,7 +175,8 @@ class ConfirmationDialog extends StatelessWidget {
       context: context,
       builder: (context) => ConfirmationDialog(
         title: 'Mark as Paid',
-        message: 'Mark "$billName" as paid?\n\nAmount: ₱${amount.toStringAsFixed(2)}\n\nThis action cannot be undone.',
+        message:
+            'Mark "$billName" as paid?\n\nAmount: ₱${amount.toStringAsFixed(2)}\n\nThis action cannot be undone.',
         confirmText: 'Mark Paid',
         cancelText: 'Cancel',
         icon: Icons.check_circle_outline_rounded,

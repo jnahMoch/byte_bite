@@ -14,6 +14,7 @@ import 'ui/helper_pos_grid_view.dart';
 import 'ui/helper_settings_sheet.dart';
 import 'ui/helper_bills_reminders_view.dart';
 import '../data/inventory_data.dart';
+import 'logic/inventory_controller.dart';
 
 /// Main Helper Home Page
 ///
@@ -33,6 +34,7 @@ class HelperHomePage extends StatefulWidget {
 
 class _HelperHomePageState extends State<HelperHomePage> {
   int _currentIndex = 0;
+  final InventoryController _inventoryController = const InventoryController();
   late final List<Widget> _pages;
 
   // ── Offline + Cloud Sync ─────────────────────────────────────────────────
@@ -48,6 +50,29 @@ class _HelperHomePageState extends State<HelperHomePage> {
       InventoryData.items.where((i) => i.stock <= i.lowStockAlert).length;
   // ─────────────────────────────────────────────────────────────────────────
 
+  Future<void> _hydrateInventoryFromStorage() async {
+    try {
+      var loadedItems = await _inventoryController.loadProducts();
+      if (loadedItems.isEmpty) {
+        loadedItems = await _inventoryController.bootstrapLocalFromSeedIfEmpty(
+          InventoryData.items,
+        );
+      }
+      if (loadedItems.isEmpty) return;
+
+      InventoryData.items
+        ..clear()
+        ..addAll(loadedItems);
+      InventoryData.notifier.value = List.from(InventoryData.items);
+
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (_) {
+      // Keep existing in-memory defaults if hydration fails.
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +83,8 @@ class _HelperHomePageState extends State<HelperHomePage> {
       const HelperInventoryView(),
       const HelperBillsRemindersView(),
     ];
+
+    _hydrateInventoryFromStorage();
 
     // ── Offline + Cloud Sync ───────────────────────────────────────────────
     // Step 1 — check current status on startup.

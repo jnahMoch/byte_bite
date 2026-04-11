@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'auth/local_auth_service.dart';
 import 'user_storage.dart';
 
 class LoginPage extends StatefulWidget {
@@ -63,6 +64,14 @@ class _LoginPageState extends State<LoginPage> {
 
       UserStorage.setCurrentUserWithRole(username, role);
 
+      await LocalAuthService.instance.upsertLocalCredential(
+        username: username,
+        password: password,
+        role: role,
+        email: email,
+        name: username,
+      );
+
       UserStorage.syncUsersFromFirestore();
 
       if (mounted) setState(() => _isLoading = false);
@@ -73,7 +82,20 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) setState(() => _isLoading = false);
     }
 
-    // Offline fallback authentication
+    // Offline fallback authentication (SQLite-backed)
+    final offlineRole = await LocalAuthService.instance.authenticateOffline(
+      username: username,
+      password: password,
+    );
+
+    if (offlineRole != null) {
+      UserStorage.setCurrentUserWithRole(username, offlineRole);
+      _showSnackBar('Logged in (offline mode)', Colors.orange);
+      _navigateByRole(offlineRole);
+      return;
+    }
+
+    // Legacy fallback for previously in-memory-only accounts.
     if (UserStorage.validateUser(username, password)) {
       UserStorage.setCurrentUser(username);
       final String? role = UserStorage.getUserRole(username);

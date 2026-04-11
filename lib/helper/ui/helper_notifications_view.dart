@@ -55,7 +55,6 @@ class _HelperNotificationsViewState extends State<HelperNotificationsView> {
         _loadError = 'Unable to load notifications right now.';
       });
     } finally {
-      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -288,7 +287,7 @@ class _HelperNotificationsViewState extends State<HelperNotificationsView> {
                   ? (item['lowStockAlert'] as num?)?.toInt() ?? 0
                   : (item.lowStockAlert as int? ?? 0);
 
-              if (!context.mounted) return;
+              if (!mounted) return;
               Navigator.push(
                 context,
                 MaterialPageRoute(
