@@ -341,6 +341,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
                           if (await UserStorage.userExistsPersistent(
                             username,
                           )) {
+                            // ignore: use_build_context_synchronously
                             ScaffoldMessenger.of(ctx).showSnackBar(
                               const SnackBar(
                                 content: Text('Username already exists'),
@@ -398,6 +399,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
     if (!mounted) return;
 
     showDialog(
+      // ignore: use_build_context_synchronously
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
