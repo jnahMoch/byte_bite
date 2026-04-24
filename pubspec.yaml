@@ -5,7 +5,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.10.4
+  sdk: ^3.10.0
 
 dependencies:
   flutter:
@@ -24,6 +24,7 @@ dependencies:
   crypto: ^3.0.3
   http: ^1.2.2
   path_provider: ^2.1.4
+  mobile_scanner: ^7.2.0
   # ── Offline + Cloud Sync ──────────────────────────────────────────────────
   # Used by homepage.dart to detect network status and show sync indicator.
 

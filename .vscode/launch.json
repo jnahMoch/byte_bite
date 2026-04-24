@@ -10,6 +10,12 @@
             "type": "dart"
         },
         {
+            "name": "byte_bite (debug)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug"
+        },
+        {
             "name": "byte_bite (profile mode)",
             "request": "launch",
             "type": "dart",
@@ -20,6 +26,12 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
+        },
+        {
+            "name": "byte_bite (Android Device)",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "android"
         }
     ]
 }
