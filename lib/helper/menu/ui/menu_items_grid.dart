@@ -77,27 +77,7 @@ class _MenuItemCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: imageUrl.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: double.infinity,
-                          errorBuilder: (context, error, stackTrace) => Center(
-                            child: Icon(iconData, size: 40, color: iconColor.withValues(alpha: 0.6)),
-                          ),
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(iconColor),
-                              ),
-                            );
-                          },
-                        ),
-                      )
+                    ? _buildMenuImage(imageUrl, iconData, iconColor)
                     : Center(
                         child: Icon(iconData, size: 40, color: iconColor.withValues(alpha: 0.6)),
                       ),
@@ -125,6 +105,51 @@ class _MenuItemCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMenuImage(String imageUrl, IconData iconData, Color iconColor) {
+    Widget fallbackIcon() => Center(
+      child: Icon(iconData, size: 40, color: iconColor.withValues(alpha: 0.6)),
+    );
+
+    if (imageUrl.isEmpty) {
+      return fallbackIcon();
+    }
+
+    // Check if it's an asset path
+    if (imageUrl.startsWith('assets/')) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.asset(
+          imageUrl,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (context, error, stackTrace) => fallbackIcon(),
+        ),
+      );
+    }
+
+    // Otherwise, treat as network URL
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, error, stackTrace) => fallbackIcon(),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+            ),
+          );
+        },
       ),
     );
   }

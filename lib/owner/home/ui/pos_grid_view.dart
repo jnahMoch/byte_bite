@@ -1630,6 +1630,8 @@ class _POSGridViewState extends State<POSGridView> {
     }
 
     final imageRef = imagePathOrUrl.trim();
+    
+    // Check if it's a network URL
     final parsed = Uri.tryParse(imageRef);
     final isNetwork =
         parsed != null && (parsed.scheme == 'http' || parsed.scheme == 'https');
@@ -1656,6 +1658,21 @@ class _POSGridViewState extends State<POSGridView> {
       );
     }
 
+    // Check if it's an asset path
+    if (imageRef.startsWith('assets/')) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.asset(
+          imageRef,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (context, error, stackTrace) => fallbackIcon(),
+        ),
+      );
+    }
+
+    // Otherwise, treat as file path
     final file = File(imageRef);
     if (!file.existsSync()) {
       return fallbackIcon();

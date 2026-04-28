@@ -15,8 +15,7 @@ class InventoryData {
       unit: "orders",
       category: "Food",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=200&h=200&fit=crop",
+      image: "assets/images/menu/somai_beef.png",
     ),
     POSItem(
       name: "Siomai Beef 6pcs",
@@ -25,8 +24,7 @@ class InventoryData {
       unit: "orders",
       category: "Food",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=200&h=200&fit=crop",
+      image: "assets/images/menu/somai_beef.png",
     ),
     POSItem(
       name: "Siomai Chicken 4pcs",
@@ -35,8 +33,7 @@ class InventoryData {
       unit: "orders",
       category: "Food",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=200&h=200&fit=crop",
+      image: "assets/images/menu/somai_chicken.png",
     ),
     POSItem(
       name: "Siomai Chicken 6pcs",
@@ -45,8 +42,7 @@ class InventoryData {
       unit: "orders",
       category: "Food",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=200&h=200&fit=crop",
+      image: "assets/images/menu/somai_chicken.png",
     ),
     POSItem(
       name: "Siomai Japanese 4pcs",
@@ -55,8 +51,7 @@ class InventoryData {
       unit: "orders",
       category: "Food",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=200&h=200&fit=crop",
+      image: "assets/images/menu/somai_japanese.png",
     ),
     POSItem(
       name: "Siomai Japanese 6pcs",
@@ -65,8 +60,7 @@ class InventoryData {
       unit: "orders",
       category: "Food",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=200&h=200&fit=crop",
+      image: "assets/images/menu/somai_japanese.png",
     ),
     POSItem(
       name: "Empanada Beef",
@@ -75,8 +69,7 @@ class InventoryData {
       unit: "pieces",
       category: "Food",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=200&h=200&fit=crop",
+      image: "assets/images/menu/empanada_beef.png",
     ),
     POSItem(
       name: "Empanada Chicken",
@@ -85,8 +78,7 @@ class InventoryData {
       unit: "pieces",
       category: "Food",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=200&h=200&fit=crop",
+      image: "assets/images/menu/empanada_chicken.png",
     ),
     POSItem(
       name: "Corndog Hotdog w/ Cheese",
@@ -95,8 +87,7 @@ class InventoryData {
       unit: "pieces",
       category: "Food",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1619740455993-9e612b1af08a?w=200&h=200&fit=crop",
+      image: "assets/images/menu/corndog_cheese_hatdog.png",
     ),
     POSItem(
       name: "Corndog Hotdog Only",
@@ -105,8 +96,7 @@ class InventoryData {
       unit: "pieces",
       category: "Food",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1619740455993-9e612b1af08a?w=200&h=200&fit=crop",
+      image: "assets/images/menu/corndog_hatdog.png",
     ),
     POSItem(
       name: "Corndog Cheese Only",
@@ -115,8 +105,7 @@ class InventoryData {
       unit: "pieces",
       category: "Food",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1619740455993-9e612b1af08a?w=200&h=200&fit=crop",
+      image: "assets/images/menu/corndog_cheese.png",
     ),
     POSItem(
       name: "Chicken with Rice",
@@ -125,8 +114,7 @@ class InventoryData {
       unit: "servings",
       category: "Food",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=200&h=200&fit=crop",
+      image: "assets/images/menu/chicken_rice.png",
     ),
     POSItem(
       name: "Chicken Only",
@@ -135,8 +123,7 @@ class InventoryData {
       unit: "servings",
       category: "Food",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=200&h=200&fit=crop",
+      image: "assets/images/menu/chicken.png",
     ),
     POSItem(
       name: "Rice Only",
@@ -145,8 +132,7 @@ class InventoryData {
       unit: "servings",
       category: "Food",
       lowStockAlert: 15,
-      image:
-          "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=200&h=200&fit=crop",
+      image: "assets/images/menu/rice.png",
     ),
     POSItem(
       name: "Mango Shake 12oz",
@@ -155,8 +141,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1546173159-315724a31696?w=200&h=200&fit=crop",
+      image: "assets/images/menu/mango_shake.png",
     ),
     POSItem(
       name: "Mango Shake 16oz",
@@ -165,8 +150,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1546173159-315724a31696?w=200&h=200&fit=crop",
+      image: "assets/images/menu/mango_shake.png",
     ),
     POSItem(
       name: "Mango Shake 22oz",
@@ -175,8 +159,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1546173159-315724a31696?w=200&h=200&fit=crop",
+      image: "assets/images/menu/mango_shake.png",
     ),
     POSItem(
       name: "Avocado Shake 12oz",
@@ -185,8 +168,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1638176066666-ffb2f013c7dd?w=200&h=200&fit=crop",
+      image: "assets/images/menu/avocado_shake.png",
     ),
     POSItem(
       name: "Avocado Shake 16oz",
@@ -195,8 +177,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1638176066666-ffb2f013c7dd?w=200&h=200&fit=crop",
+      image: "assets/images/menu/avocado_shake.png",
     ),
     POSItem(
       name: "Avocado Shake 22oz",
@@ -205,8 +186,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1638176066666-ffb2f013c7dd?w=200&h=200&fit=crop",
+      image: "assets/images/menu/avocado_shake.png",
     ),
     POSItem(
       name: "Chocolate Shake 12oz",
@@ -215,8 +195,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=200&h=200&fit=crop",
+      image: "assets/images/menu/chocolate_shake.png",
     ),
     POSItem(
       name: "Chocolate Shake 16oz",
@@ -225,8 +204,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=200&h=200&fit=crop",
+      image: "assets/images/menu/chocolate_shake.png",
     ),
     POSItem(
       name: "Chocolate Shake 22oz",
@@ -235,8 +213,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=200&h=200&fit=crop",
+      image: "assets/images/menu/chocolate_shake.png",
     ),
     POSItem(
       name: "Cookies & Cream 12oz",
@@ -245,8 +222,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=200&h=200&fit=crop",
+      image: "assets/images/menu/cookiesnCream_shake.png",
     ),
     POSItem(
       name: "Cookies & Cream 16oz",
@@ -255,8 +231,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=200&h=200&fit=crop",
+      image: "assets/images/menu/cookiesnCream_shake.png",
     ),
     POSItem(
       name: "Cookies & Cream 22oz",
@@ -265,8 +240,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=200&h=200&fit=crop",
+      image: "assets/images/menu/cookiesnCream_shake.png",
     ),
     POSItem(
       name: "Ube Shake 12oz",
@@ -275,8 +249,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=200&h=200&fit=crop",
+      image: "assets/images/menu/ube_shake.png",
     ),
     POSItem(
       name: "Ube Shake 16oz",
@@ -285,8 +258,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=200&h=200&fit=crop",
+      image: "assets/images/menu/ube_shake.png",
     ),
     POSItem(
       name: "Ube Shake 22oz",
@@ -295,8 +267,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=200&h=200&fit=crop",
+      image: "assets/images/menu/ube_shake.png",
     ),
     POSItem(
       name: "Strawberry Shake 12oz",
@@ -305,8 +276,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1579954115563-e72bf1381629?w=200&h=200&fit=crop",
+      image: "assets/images/menu/strawberry_shake.png",
     ),
     POSItem(
       name: "Strawberry Shake 16oz",
@@ -315,8 +285,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1579954115563-e72bf1381629?w=200&h=200&fit=crop",
+      image: "assets/images/menu/strawberry_shake.png",
     ),
     POSItem(
       name: "Strawberry Shake 22oz",
@@ -325,8 +294,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1579954115563-e72bf1381629?w=200&h=200&fit=crop",
+      image: "assets/images/menu/strawberry_shake.png",
     ),
     POSItem(
       name: "Lemonade 12oz",
@@ -335,8 +303,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1621263764928-df1444c5e859?w=200&h=200&fit=crop",
+      image: "assets/images/menu/lemonade.png",
     ),
     POSItem(
       name: "Lemonade 16oz",
@@ -345,8 +312,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1621263764928-df1444c5e859?w=200&h=200&fit=crop",
+      image: "assets/images/menu/lemonade.png",
     ),
     POSItem(
       name: "Lemonade 22oz",
@@ -355,8 +321,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1621263764928-df1444c5e859?w=200&h=200&fit=crop",
+      image: "assets/images/menu/lemonade.png",
     ),
     POSItem(
       name: "Lemonade w/ Yakult 22oz",
@@ -365,8 +330,7 @@ class InventoryData {
       unit: "cups",
       category: "Beverage",
       lowStockAlert: 5,
-      image:
-          "https://images.unsplash.com/photo-1621263764928-df1444c5e859?w=200&h=200&fit=crop",
+      image: "assets/images/menu/lemonade_yakult.png",
     ),
     POSItem(
       name: "Bottled Water 500ml",
@@ -375,8 +339,7 @@ class InventoryData {
       unit: "bottles",
       category: "Beverage",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=200&h=200&fit=crop",
+      image: "assets/images/menu/bottle_water.png",
     ),
     POSItem(
       name: "Coke Swakto",
@@ -385,8 +348,7 @@ class InventoryData {
       unit: "bottles",
       category: "Beverage",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1554866585-cd94860890b7?w=200&h=200&fit=crop",
+      image: "assets/images/menu/coke_swakto.png",
     ),
     POSItem(
       name: "Royal Swakto",
@@ -395,8 +357,7 @@ class InventoryData {
       unit: "bottles",
       category: "Beverage",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?w=200&h=200&fit=crop",
+      image: "assets/images/menu/royal_swakto.png",
     ),
     POSItem(
       name: "Sprite Swakto",
@@ -405,8 +366,7 @@ class InventoryData {
       unit: "bottles",
       category: "Beverage",
       lowStockAlert: 10,
-      image:
-          "https://images.unsplash.com/photo-1624517452488-04869289c4ca?w=200&h=200&fit=crop",
+      image: "assets/images/menu/sprite_swakto.png",
     ),
   ];
 }

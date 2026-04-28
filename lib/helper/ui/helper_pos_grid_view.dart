@@ -1219,6 +1219,8 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
     }
 
     final imageRef = imagePathOrUrl.trim();
+    
+    // Check if it's a network URL
     final parsed = Uri.tryParse(imageRef);
     final isNetwork =
         parsed != null && (parsed.scheme == 'http' || parsed.scheme == 'https');
@@ -1243,6 +1245,19 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
       );
     }
 
+    // Check if it's an asset path
+    if (imageRef.startsWith('assets/')) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.asset(
+          imageRef,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => fallbackIcon(),
+        ),
+      );
+    }
+
+    // Otherwise, treat as file path
     final file = File(imageRef);
     if (!file.existsSync()) {
       return fallbackIcon();
