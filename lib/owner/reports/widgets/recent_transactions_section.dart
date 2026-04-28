@@ -93,6 +93,7 @@ class _RecentTransactionsSectionState extends State<RecentTransactionsSection> {
       });
 
       if (context.mounted) {
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Order #${transaction.receiptNumber} deleted'),
@@ -104,6 +105,7 @@ class _RecentTransactionsSectionState extends State<RecentTransactionsSection> {
       }
     } else {
       if (context.mounted) {
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to delete transaction'),
