@@ -6,6 +6,7 @@ import '../../data/inventory_data.dart';
 
 /// Notifications view for Helper showing low stock alerts.
 ///
+/// UI matches the owner's NotificationsDetailView for consistency.
 /// Accepts an optional [scrollController] so it works correctly inside
 /// a DraggableScrollableSheet in homepage.dart.
 ///
@@ -80,6 +81,7 @@ class _HelperNotificationsViewState extends State<HelperNotificationsView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // ── Header ──────────────────────────────────────────────────────────
         Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -93,6 +95,7 @@ class _HelperNotificationsViewState extends State<HelperNotificationsView> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black,
                     ),
                   ),
                   if (lowStockItems.isNotEmpty)
@@ -102,13 +105,13 @@ class _HelperNotificationsViewState extends State<HelperNotificationsView> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(24),
                       ),
                       child: Text(
                         '${lowStockItems.length} alerts',
-                        style: const TextStyle(
-                          color: Colors.red,
+                        style: TextStyle(
+                          color: Colors.orange.shade700,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -116,7 +119,7 @@ class _HelperNotificationsViewState extends State<HelperNotificationsView> {
                 ],
               ),
               const SizedBox(height: 8),
-              // ── Firebase sync status indicator ─────────────────────────
+              // ── Firebase sync status indicator ───────────────────────────
               Row(
                 children: [
                   Icon(
@@ -140,10 +143,47 @@ class _HelperNotificationsViewState extends State<HelperNotificationsView> {
                   ),
                 ],
               ),
-              // ────────────────────────────────────────────────────────────
+              // ── Category chip — matches owner's filter row ───────────────
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: const Text('All'),
+                    selected: true,
+                    selectedColor: const Color(0xFF009661),
+                    backgroundColor: Colors.grey.shade100,
+                    labelStyle: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    onSelected: (_) {},
+                  ),
+                  ChoiceChip(
+                    label: const Text('Low Stock Alerts'),
+                    selected: false,
+                    selectedColor: const Color(0xFF009661),
+                    backgroundColor: Colors.grey.shade100,
+                    labelStyle: const TextStyle(
+                      color: Color(0xFF4B5563),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    onSelected: (_) {},
+                  ),
+                ],
+              ),
             ],
           ),
         ),
+
+        // ── Body ────────────────────────────────────────────────────────────
         Expanded(
           child: _isLoadingFirestore
               ? const Center(
@@ -170,78 +210,347 @@ class _HelperNotificationsViewState extends State<HelperNotificationsView> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            'No low stock alerts at the moment',
-                            style: TextStyle(color: Colors.grey),
+                          Text(
+                            'No notifications in this category.',
+                            style: TextStyle(color: Colors.grey[500]),
                           ),
                         ],
                       ),
                     )
                   : ListView.builder(
-                      // Use scrollController from DraggableScrollableSheet
-                      // so the bottom sheet drags correctly
                       controller: widget.scrollController,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       itemCount: lowStockItems.length,
                       itemBuilder: (context, i) {
                         final item = lowStockItems[i];
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.red.shade100),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.red.shade100,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(
-                                  Icons.warning_amber_rounded,
-                                  color: Colors.red,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Low Stock Alert',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${item.name} - Only ${item.stock} ${item.unit} remaining',
-                                      style: const TextStyle(
-                                          color: Colors.black87),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Contact owner to restock',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                        return _notificationCard(
+                          name: item.name,
+                          message:
+                              'Only ${item.stock} ${item.unit} remaining',
+                          onTap: () => _showDetailSheet(
+                            context,
+                            name: item.name,
+                            stock: item.stock,
+                            unit: item.unit,
+                            lowStockThreshold: item.lowStockAlert,
                           ),
                         );
                       },
                     ),
         ),
       ],
+    );
+  }
+
+  // ── Notification card — matches owner's card style exactly ─────────────
+  Widget _notificationCard({
+    required String name,
+    required String message,
+    required VoidCallback onTap,
+  }) {
+    const accent = Colors.orange;
+    final bg = Colors.orange.shade50;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.warning_amber, color: accent, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  message,
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: onTap,
+            child: const Icon(Icons.chevron_right, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Detail bottom sheet — matches owner's NotificationDetailView style ──
+  void _showDetailSheet(
+    BuildContext context, {
+    required String name,
+    required int stock,
+    required String unit,
+    required int lowStockThreshold,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, ctrl) => SingleChildScrollView(
+          controller: ctrl,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Alert header card — matches owner style
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                      color: Colors.orange.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: const BoxDecoration(
+                        color: Colors.orange,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.warning_amber,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Low Stock Alert',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF333333),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Description — matches owner style
+              const Text(
+                'Description',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF333333),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Text(
+                  'This product is running low on stock. Consider restocking soon to avoid stockouts.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                    height: 1.6,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Stock information — matches owner's detail rows
+              const Text(
+                'Stock Information',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF333333),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Column(
+                  children: [
+                    _detailRow('Product Name', name),
+                    const Divider(height: 1),
+                    _detailRow('Current Stock', '$stock $unit'),
+                    const Divider(height: 1),
+                    _detailRow(
+                        'Low Stock Threshold', '$lowStockThreshold $unit'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Recommendation — matches owner style
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green.shade100),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline,
+                      color: Colors.green.shade700,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Recommendation',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green.shade700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Contact the owner to restock this item and maintain inventory levels.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.green.shade600,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Back button — matches owner style
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back, size: 18),
+                  label: const Text('Back to Notifications'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF009661),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF111827),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
