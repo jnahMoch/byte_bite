@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../model/pos_item_model.dart';
 import '../../../data/inventory_data.dart';
 import '../logic/inventory_controller.dart';
+import '../../inventory/ui/add_stock_dialog.dart';
 
 class InventoryMenuView extends StatefulWidget {
   const InventoryMenuView({super.key});
@@ -397,84 +398,54 @@ class _InventoryMenuViewState extends State<InventoryMenuView> {
   }
 
   void _showAddStockDialog(POSItem item) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Add Stock - ${item.name}'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Quantity to add',
-            border: OutlineInputBorder(),
+    () async {
+      final qty = await showAddStockDialog(context, item);
+      if (qty == null || qty <= 0) return;
+
+      final index = InventoryData.items.indexOf(item);
+      if (index < 0) return;
+
+      final updatedItem = POSItem(
+        productId: item.productId,
+        name: item.name,
+        price: item.price,
+        stock: item.stock + qty,
+        unit: item.unit,
+        category: item.category,
+        lowStockAlert: item.lowStockAlert,
+        image: item.image,
+      );
+
+      setState(() {
+        InventoryData.items[index] = updatedItem;
+      });
+
+      try {
+        await _inventoryController.updateProduct(
+          original: item,
+          updated: updatedItem,
+        );
+      } catch (e) {
+        if (!context.mounted) return;
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_syncErrorMessage(e)),
+            backgroundColor: Colors.orange,
           ),
+        );
+      }
+
+      if (!context.mounted) return;
+      // ignore: use_build_context_synchronously
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Added $qty ${item.unit} to ${updatedItem.name}'),
+          backgroundColor: const Color(0xFF009661),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              int? qty = int.tryParse(controller.text);
-              if (qty != null && qty > 0) {
-                final index = InventoryData.items.indexOf(item);
-                if (index < 0) {
-                  Navigator.pop(context);
-                  return;
-                }
-
-                final updatedItem = POSItem(
-                  productId: item.productId,
-                  name: item.name,
-                  price: item.price,
-                  stock: item.stock + qty,
-                  unit: item.unit,
-                  category: item.category,
-                  lowStockAlert: item.lowStockAlert,
-                  image: item.image,
-                );
-
-                setState(() {
-                  InventoryData.items[index] = updatedItem;
-                });
-                Navigator.pop(context);
-
-                try {
-                  await _inventoryController.updateProduct(
-                    original: item,
-                    updated: updatedItem,
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(_syncErrorMessage(e)),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                }
-
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Added $qty ${item.unit} to ${updatedItem.name}',
-                    ),
-                    backgroundColor: const Color(0xFF009661),
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF009661),
-            ),
-            child: const Text('Add', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+      );
+    }();
   }
 
   void _showEditItemDialog(POSItem item) {

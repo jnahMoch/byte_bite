@@ -208,6 +208,90 @@ class AnalyticsController {
     final escaped = value.replaceAll('"', '""');
     return '"$escaped"';
   }
+
+  Future<void> deleteSaleByProduct(String productName) async {
+    final db = await DatabaseHelper.instance.database;
+    
+    // Find the product ID
+    final products = await db.query(
+      'Products',
+      where: 'name = ?',
+      whereArgs: [productName],
+    );
+    
+    if (products.isEmpty) return;
+    
+    final productId = (products.first['product_id'] as num?)?.toInt();
+    if (productId == null) return;
+    
+    // Find all sales that contain this product
+    final saleItems = await db.query(
+      'SaleItems',
+      where: 'product_id = ?',
+      whereArgs: [productId],
+    );
+    
+    if (saleItems.isEmpty) return;
+    
+    // Get the first sale ID to delete
+    final saleId = (saleItems.first['sale_id'] as num?)?.toInt();
+    if (saleId == null) return;
+    
+    // Delete in order: SaleItems, Payments, Sales
+    await db.delete(
+      'SaleItems',
+      where: 'sale_id = ?',
+      whereArgs: [saleId],
+    );
+    
+    await db.delete(
+      'Payments',
+      where: 'sale_id = ?',
+      whereArgs: [saleId],
+    );
+    
+    await db.delete(
+      'Sales',
+      where: 'sale_id = ?',
+      whereArgs: [saleId],
+    );
+  }
+
+  Future<void> deleteSaleByPaymentMethod(String paymentMethod) async {
+    final db = await DatabaseHelper.instance.database;
+    
+    // Find the first payment using this method
+    final payments = await db.query(
+      'Payments',
+      where: 'method = ?',
+      whereArgs: [paymentMethod],
+      limit: 1,
+    );
+    
+    if (payments.isEmpty) return;
+    
+    final saleId = (payments.first['sale_id'] as num?)?.toInt();
+    if (saleId == null) return;
+    
+    // Delete in order: SaleItems, Payments, Sales
+    await db.delete(
+      'SaleItems',
+      where: 'sale_id = ?',
+      whereArgs: [saleId],
+    );
+    
+    await db.delete(
+      'Payments',
+      where: 'sale_id = ?',
+      whereArgs: [saleId],
+    );
+    
+    await db.delete(
+      'Sales',
+      where: 'sale_id = ?',
+      whereArgs: [saleId],
+    );
+  }
 }
 
 class _SqlFilter {

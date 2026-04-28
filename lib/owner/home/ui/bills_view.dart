@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../model/bill_model.dart';
 import '../logic/bills_controller.dart';
 import '../../bills/logic/bills_helper.dart';
-import '../../../ui/confirmation_dialog.dart';
 
 class BillsView extends StatefulWidget {
   const BillsView({super.key});
@@ -15,6 +14,8 @@ class BillsView extends StatefulWidget {
 class _BillsViewState extends State<BillsView> {
   final BillsController _billsController = const BillsController();
   List<Bill> _bills = [];
+  Set<String> _selectedBillIds = {};
+  bool _isSelectionMode = false;
 
   @override
   void initState() {
@@ -549,6 +550,170 @@ class _BillsViewState extends State<BillsView> {
     );
   }
 
+  Widget _buildBillWithDismissible(Bill bill) {
+    if (!bill.isPaid) {
+      return _billCard(bill);
+    }
+
+    // Wrap paid bills with Dismissible for slide-to-delete
+    return Dismissible(
+      key: Key(bill.id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (direction) {
+        // Remove from UI immediately (required by Dismissible)
+        setState(() {
+          _bills.removeWhere((b) => b.id == bill.id);
+        });
+        
+        // Delete from database in background (non-blocking)
+        _billsController.deleteBill(bill.id);
+        
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.delete, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('${bill.title} deleted'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      },
+      background: Container(
+        decoration: BoxDecoration(
+          color: Colors.red,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: const Icon(
+          Icons.delete_outline,
+          color: Colors.white,
+          size: 24,
+        ),
+      ),
+      child: _billCard(bill),
+    );
+  }
+
+  Widget _buildBillWithCheckbox(Bill bill) {
+    final isSelected = _selectedBillIds.contains(bill.id);
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (isSelected) {
+            _selectedBillIds.remove(bill.id);
+          } else {
+            _selectedBillIds.add(bill.id);
+          }
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isSelected ? const Color(0xFF009661) : Colors.grey.shade200,
+            width: isSelected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? const Color(0xFFECFDF3) : Colors.white,
+        ),
+        child: Stack(
+          children: [
+            _billCard(bill),
+            Positioned(
+              top: 14,
+              left: 14,
+              child: Checkbox(
+                value: isSelected,
+                onChanged: (checked) {
+                  setState(() {
+                    if (checked == true) {
+                      _selectedBillIds.add(bill.id);
+                    } else {
+                      _selectedBillIds.remove(bill.id);
+                    }
+                  });
+                },
+                activeColor: const Color(0xFF009661),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteSelectedBills() async {
+    if (_selectedBillIds.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Bills?'),
+        content: Text(
+          'Are you sure you want to delete ${_selectedBillIds.length} bill(s)?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final billsToDelete = _selectedBillIds.toList();
+
+    setState(() {
+      // Remove from UI immediately
+      _bills.removeWhere((b) => billsToDelete.contains(b.id));
+      _selectedBillIds.clear();
+      _isSelectionMode = false;
+    });
+
+    // Delete from database in background
+    for (final billId in billsToDelete) {
+      _billsController.deleteBill(billId);
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.delete, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text('${billsToDelete.length} bill(s) deleted'),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
+
   Widget _billCard(Bill bill) {
     final isPaid = bill.isPaid;
     final isOverdue = bill.isOverdue;
@@ -715,17 +880,26 @@ class _BillsViewState extends State<BillsView> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () async {
-                  final confirmed = await ConfirmationDialog.showMarkAsPaidConfirmation(
-                    context: context,
-                    billName: bill.title,
-                    amount: bill.amount,
-                  );
+                  // Optimistic update - mark as paid immediately in UI
+                  final billIndex = _bills.indexWhere((b) => b.id == bill.id);
+                  if (billIndex >= 0) {
+                    setState(() {
+                      final updatedBill = Bill(
+                        id: bill.id,
+                        title: bill.title,
+                        category: bill.category,
+                        amount: bill.amount,
+                        dueDate: bill.dueDate,
+                        isPaid: true,
+                      );
+                      _bills[billIndex] = updatedBill;
+                    });
+                  }
 
-                  if (!confirmed!) return;
-
+                  // Perform async operation in background
                   await _billsController.markBillAsPaid(bill.id);
-                  await _loadBills();
 
+                  // Show success feedback
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -740,6 +914,7 @@ class _BillsViewState extends State<BillsView> {
                       ),
                       backgroundColor: const Color(0xFF009661),
                       behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 3),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -826,16 +1001,97 @@ class _BillsViewState extends State<BillsView> {
                   ),
                 )
               else ...[
-                const Text(
-                  'All Bills',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF333333),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'All Bills',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF333333),
+                      ),
+                    ),
+                    if (_bills.isNotEmpty)
+                      Row(
+                        children: [
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _isSelectionMode = !_isSelectionMode;
+                                if (!_isSelectionMode) {
+                                  _selectedBillIds.clear();
+                                }
+                              });
+                            },
+                            icon: Icon(
+                              _isSelectionMode ? Icons.close : Icons.check_box_outline_blank,
+                              size: 20,
+                            ),
+                            label: Text(
+                              _isSelectionMode ? 'Cancel' : 'Select',
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFF009661),
+                            ),
+                          ),
+                          if (_selectedBillIds.isNotEmpty)
+                            TextButton.icon(
+                              onPressed: _deleteSelectedBills,
+                              icon: const Icon(Icons.delete_outline, size: 20),
+                              label: const Text('Delete'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
+                            ),
+                        ],
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 12),
-                ..._bills.map(_billCard),
+                if (_isSelectionMode && _bills.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFECFDF3),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF009661)),
+                    ),
+                    child: Row(
+                      children: [
+                        Checkbox(
+                          value: _selectedBillIds.length == _bills.length,
+                          onChanged: (checked) {
+                            setState(() {
+                              if (checked == true) {
+                                _selectedBillIds = _bills.map((b) => b.id).toSet();
+                              } else {
+                                _selectedBillIds.clear();
+                              }
+                            });
+                          },
+                          activeColor: const Color(0xFF009661),
+                        ),
+                        Expanded(
+                          child: Text(
+                            _selectedBillIds.length == _bills.length
+                                ? 'All bills selected (${_bills.length})'
+                                : 'Select all bills',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF009661),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ..._bills.map((bill) => _isSelectionMode
+                    ? _buildBillWithCheckbox(bill)
+                    : _buildBillWithDismissible(bill)),
               ],
               const SizedBox(height: 80),
             ],

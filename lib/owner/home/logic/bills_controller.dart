@@ -206,4 +206,23 @@ class BillsController {
     if (idx <= 0 || idx >= rawDescription.length - 1) return rawDescription;
     return rawDescription.substring(idx + 1);
   }
+
+  Future<void> deleteBill(String billId) async {
+    final expenseId = int.tryParse(billId);
+    if (expenseId == null) return;
+
+    final db = await DatabaseHelper.instance.database;
+    await db.delete(
+      'Expenses',
+      where: 'expense_id = ?',
+      whereArgs: [expenseId],
+    );
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('bills')
+          .doc(billId)
+          .delete();
+    } catch (_) {}
+  }
 }

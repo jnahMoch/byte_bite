@@ -6,6 +6,7 @@ import '../../../data/inventory_data.dart';
 import '../../../model/pos_item_model.dart';
 import '../logic/inventory_controller.dart';
 import '../logic/notifications_controller.dart';
+import '../../inventory/ui/add_stock_dialog.dart';
 import '../../../ui/confirmation_dialog.dart';
 
 class InventoryView extends StatefulWidget {
@@ -80,68 +81,44 @@ class _InventoryViewState extends State<InventoryView> {
   }
 
   void _showAddStockDialog(POSItem item) {
-    final TextEditingController stockController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Add Stock - ${item.name}'),
-        content: TextField(
-          controller: stockController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Quantity to add',
-            border: OutlineInputBorder(),
+    () async {
+      final qty = await showAddStockDialog(context, item);
+      if (qty == null || qty <= 0) return;
+
+      final confirmed = await ConfirmationDialog.showRestockConfirmation(
+        // ignore: use_build_context_synchronously
+        context: context,
+        itemName: item.name,
+        quantity: qty,
+      );
+
+      if (confirmed != true) return;
+
+      final updated = POSItem(
+        productId: item.productId,
+        name: item.name,
+        price: item.price,
+        stock: item.stock + qty,
+        unit: item.unit,
+        category: item.category,
+        lowStockAlert: item.lowStockAlert,
+        image: item.image,
+      );
+
+      await _persistItemUpdate(original: item, updated: updated);
+      if (!context.mounted) return;
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Added $qty ${item.unit} to ${item.name}'),
+          backgroundColor: const Color(0xFF009661),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              int? qty = int.tryParse(stockController.text);
-              if (qty != null && qty > 0) {
-                final confirmed = await ConfirmationDialog.showRestockConfirmation(
-                  context: context,
-                  itemName: item.name,
-                  quantity: qty,
-                );
-
-                if (!confirmed!) return;
-
-                final updated = POSItem(
-                  productId: item.productId,
-                  name: item.name,
-                  price: item.price,
-                  stock: item.stock + qty,
-                  unit: item.unit,
-                  category: item.category,
-                  lowStockAlert: item.lowStockAlert,
-                  image: item.image,
-                );
-
-                await _persistItemUpdate(original: item, updated: updated);
-                if (!context.mounted) return;
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Added $qty ${item.unit} to ${item.name}'),
-                    backgroundColor: const Color(0xFF009661),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF009661),
-            ),
-            child: const Text('Add', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+      );
+    }();
   }
 
   void _showEditItemDialog(POSItem item) {
@@ -229,7 +206,9 @@ class _InventoryViewState extends State<InventoryView> {
                   content: Text('${item.name} updated successfully'),
                   backgroundColor: const Color(0xFF009661),
                   behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               );
             },
