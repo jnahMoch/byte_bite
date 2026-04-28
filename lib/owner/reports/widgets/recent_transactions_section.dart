@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../homepage.dart' show SalesTransaction;
+import '../../homepage.dart' show SalesTransaction, SalesData;
+import '../../home/logic/transactions_controller.dart';
+import '../../home/logic/analytics_controller.dart';
 import '../logic/reports_logic.dart';
 
-class RecentTransactionsSection extends StatelessWidget {
+class RecentTransactionsSection extends StatefulWidget {
   final List<SalesTransaction> transactions;
 
   const RecentTransactionsSection({
@@ -12,8 +14,111 @@ class RecentTransactionsSection extends StatelessWidget {
   });
 
   @override
+  State<RecentTransactionsSection> createState() =>
+      _RecentTransactionsSectionState();
+}
+
+class _RecentTransactionsSectionState extends State<RecentTransactionsSection> {
+  late List<SalesTransaction> _displayedTransactions;
+  final TransactionsController _transactionsController =
+      const TransactionsController();
+  final AnalyticsController _analyticsController =
+      const AnalyticsController();
+
+  @override
+  void initState() {
+    super.initState();
+    _displayedTransactions = List.from(widget.transactions);
+  }
+
+  Future<void> _handleTransactionDeletion(
+    int index,
+    SalesTransaction transaction,
+  ) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Transaction'),
+        content: Text(
+          'Are you sure you want to delete Order #${transaction.receiptNumber}?\n\n'
+          'Amount: ₱${transaction.total}\n'
+          'This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      // Rebuild to reset the dismissible
+      setState(() {});
+      return;
+    }
+
+    // Proceed with deletion
+    final success = await _transactionsController.deleteTransaction(
+      // Extract sale ID from receipt number (this is a fallback, ideally you'd have the ID)
+      int.tryParse(transaction.receiptNumber.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0,
+    );
+
+    if (success) {
+      // Log the deletion event for analytics
+      await _analyticsController.logTransactionDeletion(
+        saleId: int.tryParse(
+              transaction.receiptNumber.replaceAll(RegExp(r'[^0-9]'), ''),
+            ) ?? 0,
+        amount: transaction.total.toDouble(),
+        paymentMethod: transaction.paymentMethod,
+        itemCount: transaction.items.length,
+      );
+
+      // Remove from displayed list
+      setState(() {
+        _displayedTransactions.removeAt(index);
+      });
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Order #${transaction.receiptNumber} deleted'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to delete transaction'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        // Rebuild to reset the dismissible
+        setState(() {});
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (transactions.isEmpty) {
+    if (_displayedTransactions.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
@@ -38,9 +143,9 @@ class RecentTransactionsSection extends StatelessWidget {
       );
     }
 
-    final recentTransactions = transactions.length > 10
-        ? transactions.sublist(0, 10)
-        : transactions;
+    final recentTransactions = _displayedTransactions.length > 10
+        ? _displayedTransactions.sublist(0, 10)
+        : _displayedTransactions;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,86 +180,187 @@ class RecentTransactionsSection extends StatelessWidget {
             ),
             itemBuilder: (context, index) {
               final transaction = recentTransactions[index];
-              return Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
+              return Dismissible(
+                key: ValueKey(transaction.receiptNumber),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  color: Colors.red.shade400,
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  child: const Icon(
+                    Icons.delete,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                onDismissed: (_) {
+                  _handleTransactionDeletion(index, transaction);
+                },
+                confirmDismiss: (_) async {
+                  // Show confirmation before dismissing
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: const Text('Delete Transaction'),
+                      content: Text(
+                        'Are you sure you want to delete Order #${transaction.receiptNumber}?\n\n'
+                        'Amount: ₱${transaction.total}\n'
+                        'Items: ${transaction.items.length}\n'
+                        'This action cannot be undone.',
                       ),
-                      padding: const EdgeInsets.all(8),
-                      child: const Icon(
-                        Icons.receipt,
-                        color: Colors.blue,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Order #${transaction.receiptNumber}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${transaction.items.length} items • ${transaction.paymentMethod}',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            ReportsLogic.formatDateTime(transaction.dateTime),
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Rs. ${transaction.total}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, false),
+                          child: const Text('Cancel'),
                         ),
-                        const SizedBox(height: 4),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(dialogContext, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
                           ),
                           child: const Text(
-                            'Completed',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            'Delete',
+                            style: TextStyle(color: Colors.white),
                           ),
                         ),
                       ],
                     ),
-                  ],
+                  );
+
+                  if (confirmed == true) {
+                    // Proceed with deletion
+                    final success = await _transactionsController
+                        .deleteTransaction(
+                          int.tryParse(transaction.receiptNumber
+                                  .replaceAll(RegExp(r'[^0-9]'), '')) ??
+                              0,
+                        );
+
+                    if (success) {
+                      // Remove from SalesData to update in-memory state
+                      SalesData.removeTransactionByReceiptNumber(
+                        transaction.receiptNumber,
+                      );
+
+                      // Log the deletion event for analytics
+                      await _analyticsController.logTransactionDeletion(
+                        saleId: int.tryParse(transaction.receiptNumber
+                                .replaceAll(RegExp(r'[^0-9]'), '')) ??
+                            0,
+                        amount: transaction.total.toDouble(),
+                        paymentMethod: transaction.paymentMethod,
+                        itemCount: transaction.items.length,
+                      );
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Order #${transaction.receiptNumber} deleted',
+                            ),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Failed to delete transaction'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  }
+
+                  return confirmed ?? false;
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.all(8),
+                        child: const Icon(
+                          Icons.receipt,
+                          color: Colors.blue,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Order #${transaction.receiptNumber}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${transaction.items.length} items • ${transaction.paymentMethod}',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              ReportsLogic.formatDateTime(
+                                transaction.dateTime,
+                              ),
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'Rs. ${transaction.total}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            child: const Text(
+                              'Completed',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               );
             },

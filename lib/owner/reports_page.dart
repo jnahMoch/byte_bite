@@ -12,6 +12,25 @@ class _ReportsPageState extends State<ReportsPage> {
   String selectedReportType = "Sales Report";
   String selectedTimeFilter = "Today";
 
+  @override
+  void initState() {
+    super.initState();
+    // Listen to changes in SalesData to refresh analytics
+    SalesData.notifier.addListener(_onSalesDataChanged);
+  }
+
+  @override
+  void dispose() {
+    SalesData.notifier.removeListener(_onSalesDataChanged);
+    super.dispose();
+  }
+
+  void _onSalesDataChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   List<SalesTransaction> get _filteredTransactions {
     switch (selectedTimeFilter) {
       case 'Today':

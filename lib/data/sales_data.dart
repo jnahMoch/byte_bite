@@ -10,6 +10,16 @@ class SalesData {
     notifier.value++; // signal change
   }
 
+  static void removeTransaction(SalesTransaction transaction) {
+    transactions.remove(transaction);
+    notifier.value++; // signal change
+  }
+
+  static void removeTransactionByReceiptNumber(String receiptNumber) {
+    transactions.removeWhere((t) => t.receiptNumber == receiptNumber);
+    notifier.value++; // signal change
+  }
+
   static List<SalesTransaction> getTransactionsForToday() {
     final now = DateTime.now();
     return transactions

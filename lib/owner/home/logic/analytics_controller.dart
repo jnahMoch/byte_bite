@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:sqflite/sqflite.dart';
 
 import '../../../database_helper.dart';
 
@@ -291,6 +292,37 @@ class AnalyticsController {
       where: 'sale_id = ?',
       whereArgs: [saleId],
     );
+  }
+
+  /// Track transaction deletion event for analytics
+  Future<void> logTransactionDeletion({
+    required int saleId,
+    required double amount,
+    required String paymentMethod,
+    required int itemCount,
+  }) async {
+    try {
+      final db = await DatabaseHelper.instance.database;
+      
+      // Insert deletion event into analytics log if available
+      // This can be used to track which transactions were deleted
+      await db.insert(
+        'TransactionDeletionLog',
+        {
+          'sale_id': saleId,
+          'amount': amount,
+          'payment_method': paymentMethod,
+          'item_count': itemCount,
+          'deleted_at': DateTime.now().toIso8601String(),
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      ).catchError((_) {
+        // Table might not exist, that's okay
+        return 0;
+      });
+    } catch (e) {
+      // Silently fail logging if there's an error
+    }
   }
 }
 

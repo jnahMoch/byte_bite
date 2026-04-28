@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/sales_data.dart';
 import 'logic/reports_logic.dart';
 import 'widgets/exports.dart';
 
@@ -12,6 +13,25 @@ class ReportsPage extends StatefulWidget {
 
 class _ReportsPageState extends State<ReportsPage> {
   String selectedTimeFilter = 'Today';
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen to changes in SalesData to refresh analytics
+    SalesData.notifier.addListener(_onSalesDataChanged);
+  }
+
+  @override
+  void dispose() {
+    SalesData.notifier.removeListener(_onSalesDataChanged);
+    super.dispose();
+  }
+
+  void _onSalesDataChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

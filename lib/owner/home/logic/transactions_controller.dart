@@ -7,6 +7,37 @@ import '../../../database_helper.dart';
 class TransactionsController {
   const TransactionsController();
 
+  Future<bool> deleteTransaction(int saleId) async {
+    try {
+      final db = await DatabaseHelper.instance.database;
+      
+      // Delete related sale items first
+      await db.delete(
+        'SaleItems',
+        where: 'sale_id = ?',
+        whereArgs: [saleId],
+      );
+      
+      // Delete related payments
+      await db.delete(
+        'Payments',
+        where: 'sale_id = ?',
+        whereArgs: [saleId],
+      );
+      
+      // Delete the sale
+      await db.delete(
+        'Sales',
+        where: 'sale_id = ?',
+        whereArgs: [saleId],
+      );
+      
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   DateTime _todayStart() {
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day);
