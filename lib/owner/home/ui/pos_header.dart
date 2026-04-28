@@ -37,7 +37,7 @@ class POSHeader extends StatelessWidget {
                 ),
                 child: ClipOval(
                   child: Image.asset(
-                    'assets/images/byte and bite logo.png',
+                    'assets/images/byte_and_bite_logo.png',
                     fit: BoxFit.cover,
                   ),
                 ),

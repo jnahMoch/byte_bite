@@ -100,7 +100,7 @@ class _EnhancedPOSHeaderState extends State<EnhancedPOSHeader> {
                 ),
                 child: ClipOval(
                   child: Image.asset(
-                    'assets/images/byte and bite logo.png',
+                    'assets/images/byte_and_bite_logo.png',
                     fit: BoxFit.cover,
                   ),
                 ),

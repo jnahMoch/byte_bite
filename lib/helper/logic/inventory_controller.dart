@@ -16,6 +16,48 @@ class InventoryController {
   const InventoryController();
 
   static const String _productsCollection = 'products';
+  static const Map<String, String> _seedImagePaths = {
+    'siomai beef 4pcs': 'assets/images/menu/somai_beef.png',
+    'siomai beef 6pcs': 'assets/images/menu/somai_beef.png',
+    'siomai chicken 4pcs': 'assets/images/menu/somai_chicken.png',
+    'siomai chicken 6pcs': 'assets/images/menu/somai_chicken.png',
+    'siomai japanese 4pcs': 'assets/images/menu/somai_japanese.png',
+    'siomai japanese 6pcs': 'assets/images/menu/somai_japanese.png',
+    'empanada beef': 'assets/images/menu/empanada_beef.png',
+    'empanada chicken': 'assets/images/menu/empanada_chicken.png',
+    'corndog hotdog w/ cheese': 'assets/images/menu/corndog_cheese_hatdog.png',
+    'corndog hotdog only': 'assets/images/menu/corndog_hatdog.png',
+    'corndog cheese only': 'assets/images/menu/corndog_cheese.png',
+    'chicken with rice': 'assets/images/menu/chicken_rice.png',
+    'chicken only': 'assets/images/menu/chicken.png',
+    'rice only': 'assets/images/menu/rice.png',
+    'mango shake 12oz': 'assets/images/menu/mango_shake.png',
+    'mango shake 16oz': 'assets/images/menu/mango_shake.png',
+    'mango shake 22oz': 'assets/images/menu/mango_shake.png',
+    'avocado shake 12oz': 'assets/images/menu/avocado_shake.png',
+    'avocado shake 16oz': 'assets/images/menu/avocado_shake.png',
+    'avocado shake 22oz': 'assets/images/menu/avocado_shake.png',
+    'chocolate shake 12oz': 'assets/images/menu/chocolate_shake.png',
+    'chocolate shake 16oz': 'assets/images/menu/chocolate_shake.png',
+    'chocolate shake 22oz': 'assets/images/menu/chocolate_shake.png',
+    'cookies & cream 12oz': 'assets/images/menu/cookiesnCream_shake.png',
+    'cookies & cream 16oz': 'assets/images/menu/cookiesnCream_shake.png',
+    'cookies & cream 22oz': 'assets/images/menu/cookiesnCream_shake.png',
+    'ube shake 12oz': 'assets/images/menu/ube_shake.png',
+    'ube shake 16oz': 'assets/images/menu/ube_shake.png',
+    'ube shake 22oz': 'assets/images/menu/ube_shake.png',
+    'strawberry shake 12oz': 'assets/images/menu/strawberry_shake.png',
+    'strawberry shake 16oz': 'assets/images/menu/strawberry_shake.png',
+    'strawberry shake 22oz': 'assets/images/menu/strawberry_shake.png',
+    'lemonade 12oz': 'assets/images/menu/lemonade.png',
+    'lemonade 16oz': 'assets/images/menu/lemonade.png',
+    'lemonade 22oz': 'assets/images/menu/lemonade.png',
+    'lemonade w/ yakult 22oz': 'assets/images/menu/lemonade_yakult.png',
+    'bottled water 500ml': 'assets/images/menu/bottle_water.png',
+    'coke swakto': 'assets/images/menu/coke_swakto.png',
+    'royal swakto': 'assets/images/menu/royal_swakto.png',
+    'sprite swakto': 'assets/images/menu/sprite_swakto.png',
+  };
 
   bool _isNetworkImageRef(String imageRef) {
     final parsed = Uri.tryParse(imageRef);
@@ -125,18 +167,37 @@ class InventoryController {
   }
 
   POSItem _mapSqlRowToItem(Map<String, dynamic> row) {
+    final name = (row['name'] ?? '').toString().trim();
+    final expectedSeedImage = _seedImagePaths[name.toLowerCase()];
+    final description = (row['description'] as String?)?.trim();
+
     return POSItem(
       productId: (row['product_id'] as num?)?.toInt(),
-      name: (row['name'] ?? '').toString(),
+      name: name,
       category: (row['category'] ?? '').toString(),
       price: ((row['price'] as num?) ?? 0).toInt(),
       stock: (row['stock_quantity'] as num?)?.toInt() ?? 0,
       unit: 'pcs',
       lowStockAlert: (row['min_threshold'] as num?)?.toInt() ?? 0,
-      image: (row['description'] as String?)?.trim().isEmpty == true
-          ? null
-          : row['description'] as String?,
+      image: expectedSeedImage ??
+          (description == null || description.isEmpty ? null : description),
     );
+  }
+
+  Future<void> _syncSeedImageReferences(List<Map<String, dynamic>> rows) async {
+    for (final row in rows) {
+      final name = (row['name'] ?? '').toString().trim().toLowerCase();
+      final expected = _seedImagePaths[name];
+      final productId = (row['product_id'] as num?)?.toInt();
+      if (expected == null || productId == null) continue;
+
+      final current = (row['description'] as String?)?.trim();
+      if (current == expected) continue;
+
+      await DatabaseHelper.instance.updateProduct(productId, {
+        'description': expected,
+      });
+    }
   }
 
   Future<void> _upsertProductToSqlFromItem(POSItem item) async {
@@ -188,6 +249,7 @@ class InventoryController {
       'Products',
       orderBy: 'name COLLATE NOCASE ASC',
     );
+    await _syncSeedImageReferences(sqlRows);
     var localItems = sqlRows
         .map(_mapSqlRowToItem)
         .where(

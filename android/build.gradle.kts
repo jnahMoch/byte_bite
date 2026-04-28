@@ -7,6 +7,10 @@ allprojects {
         google()
         mavenCentral()
     }
+    
+    tasks.withType<JavaCompile> {
+        options.compilerArgs.addAll(listOf("-Xlint:-options", "-Xlint:deprecation"))
+    }
 }
 
 val newBuildDir: Directory =
