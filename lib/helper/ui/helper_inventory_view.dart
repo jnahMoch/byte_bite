@@ -1,4 +1,5 @@
-import 'package:byte_bite/shared/inventory/inventory_page.dart' as SharedInventory;
+import 'package:byte_bite/shared/inventory/inventory_page.dart'
+    as shared_inventory;
 import 'package:flutter/material.dart';
 
 class HelperInventoryView extends StatelessWidget {
@@ -6,6 +7,6 @@ class HelperInventoryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SharedInventory.InventoryPage(userRole: 'helper');
+    return const shared_inventory.InventoryPage(userRole: 'helper');
   }
 }
