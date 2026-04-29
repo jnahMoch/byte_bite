@@ -31,18 +31,16 @@ class _RecentTransactionsSectionState extends State<RecentTransactionsSection> {
     _displayedTransactions = List.from(widget.transactions);
   }
 
-  Future<void> _handleTransactionDeletion(
-    int index,
-    SalesTransaction transaction,
-  ) async {
-    // Show confirmation dialog
+  Future<bool> _showDeleteConfirmation(SalesTransaction transaction) async {
     final confirmed = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Transaction'),
         content: Text(
           'Are you sure you want to delete Order #${transaction.receiptNumber}?\n\n'
           'Amount: ₱${transaction.total}\n'
+          'Items: ${transaction.items.length}\n'
           'This action cannot be undone.',
         ),
         actions: [
@@ -62,57 +60,83 @@ class _RecentTransactionsSectionState extends State<RecentTransactionsSection> {
           ),
         ],
       ),
-    );
+    ) ?? false;
+    return confirmed;
+  }
 
-    if (confirmed != true) {
+  Future<void> _handleTransactionDeletion(
+    int index,
+    SalesTransaction transaction,
+  ) async {
+    // Show confirmation dialog
+    final confirmed = await _showDeleteConfirmation(transaction);
+
+    if (!confirmed) {
       // Rebuild to reset the dismissible
-      setState(() {});
+      if (mounted) setState(() {});
       return;
     }
 
+    // Extract sale ID from receipt number
+    final saleId = int.tryParse(
+          transaction.receiptNumber.replaceAll(RegExp(r'[^0-9]'), ''),
+        ) ?? 0;
+
     // Proceed with deletion
-    final success = await _transactionsController.deleteTransaction(
-      // Extract sale ID from receipt number (this is a fallback, ideally you'd have the ID)
-      int.tryParse(transaction.receiptNumber.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0,
-    );
+    try {
+      final success = await _transactionsController.deleteTransaction(saleId);
 
-    if (success) {
-      // Log the deletion event for analytics
-      await _analyticsController.logTransactionDeletion(
-        saleId: int.tryParse(
-              transaction.receiptNumber.replaceAll(RegExp(r'[^0-9]'), ''),
-            ) ?? 0,
-        amount: transaction.total.toDouble(),
-        paymentMethod: transaction.paymentMethod,
-        itemCount: transaction.items.length,
-      );
+      if (success) {
+        // Log the deletion event for analytics
+        await _analyticsController.logTransactionDeletion(
+          saleId: saleId,
+          amount: transaction.total.toDouble(),
+          paymentMethod: transaction.paymentMethod,
+          itemCount: transaction.items.length,
+        );
 
-      // Remove from displayed list
-      setState(() {
-        _displayedTransactions.removeAt(index);
-      });
+        // Remove from SalesData to update in-memory state
+        SalesData.removeTransactionByReceiptNumber(
+          transaction.receiptNumber,
+        );
 
-      if (context.mounted) {
-        // ignore: use_build_context_synchronously
+        // Remove from displayed list
+        if (mounted) {
+          setState(() {
+            if (index < _displayedTransactions.length) {
+              _displayedTransactions.removeAt(index);
+            }
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Order #${transaction.receiptNumber} deleted'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to delete transaction'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          // Rebuild to reset the dismissible
+          setState(() {});
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Order #${transaction.receiptNumber} deleted'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    } else {
-      if (context.mounted) {
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to delete transaction'),
+            content: Text('Error deleting transaction: $e'),
             backgroundColor: Colors.red,
           ),
         );
-        // Rebuild to reset the dismissible
         setState(() {});
       }
     }
@@ -199,86 +223,7 @@ class _RecentTransactionsSectionState extends State<RecentTransactionsSection> {
                   _handleTransactionDeletion(index, transaction);
                 },
                 confirmDismiss: (_) async {
-                  // Show confirmation before dismissing
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (dialogContext) => AlertDialog(
-                      title: const Text('Delete Transaction'),
-                      content: Text(
-                        'Are you sure you want to delete Order #${transaction.receiptNumber}?\n\n'
-                        'Amount: ₱${transaction.total}\n'
-                        'Items: ${transaction.items.length}\n'
-                        'This action cannot be undone.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(dialogContext, false),
-                          child: const Text('Cancel'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () => Navigator.pop(dialogContext, true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                          ),
-                          child: const Text(
-                            'Delete',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (confirmed == true) {
-                    // Proceed with deletion
-                    final success = await _transactionsController
-                        .deleteTransaction(
-                          int.tryParse(transaction.receiptNumber
-                                  .replaceAll(RegExp(r'[^0-9]'), '')) ??
-                              0,
-                        );
-
-                    if (success) {
-                      // Remove from SalesData to update in-memory state
-                      SalesData.removeTransactionByReceiptNumber(
-                        transaction.receiptNumber,
-                      );
-
-                      // Log the deletion event for analytics
-                      await _analyticsController.logTransactionDeletion(
-                        saleId: int.tryParse(transaction.receiptNumber
-                                .replaceAll(RegExp(r'[^0-9]'), '')) ??
-                            0,
-                        amount: transaction.total.toDouble(),
-                        paymentMethod: transaction.paymentMethod,
-                        itemCount: transaction.items.length,
-                      );
-
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Order #${transaction.receiptNumber} deleted',
-                            ),
-                            backgroundColor: Colors.red,
-                            behavior: SnackBarBehavior.floating,
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      }
-                    } else {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Failed to delete transaction'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
-                  }
-
-                  return confirmed ?? false;
+                  return await _showDeleteConfirmation(transaction);
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -334,27 +279,32 @@ class _RecentTransactionsSectionState extends State<RecentTransactionsSection> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            'Rs. ${transaction.total}',
+                            '₱${transaction.total}',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
+                              color: Color(0xFF009661),
                             ),
                           ),
                           const SizedBox(height: 4),
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
+                              color: Colors.green.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: Colors.green.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
                             ),
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
+                              horizontal: 10,
+                              vertical: 4,
                             ),
                             child: const Text(
                               'Completed',
                               style: TextStyle(
                                 color: Colors.green,
-                                fontSize: 10,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
