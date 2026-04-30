@@ -564,10 +564,10 @@ class _BillsViewState extends State<BillsView> {
         setState(() {
           _bills.removeWhere((b) => b.id == bill.id);
         });
-        
+
         // Delete from database in background (non-blocking)
         _billsController.deleteBill(bill.id);
-        
+
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -575,9 +575,7 @@ class _BillsViewState extends State<BillsView> {
               children: [
                 const Icon(Icons.delete, color: Colors.white),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: Text('${bill.title} deleted'),
-                ),
+                Expanded(child: Text('${bill.title} deleted')),
               ],
             ),
             backgroundColor: Colors.red,
@@ -595,11 +593,7 @@ class _BillsViewState extends State<BillsView> {
         ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        child: const Icon(
-          Icons.delete_outline,
-          color: Colors.white,
-          size: 24,
-        ),
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 24),
       ),
       child: _billCard(bill),
     );
@@ -700,16 +694,12 @@ class _BillsViewState extends State<BillsView> {
           children: [
             const Icon(Icons.delete, color: Colors.white),
             const SizedBox(width: 8),
-            Expanded(
-              child: Text('${billsToDelete.length} bill(s) deleted'),
-            ),
+            Expanded(child: Text('${billsToDelete.length} bill(s) deleted')),
           ],
         ),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
@@ -786,7 +776,10 @@ class _BillsViewState extends State<BillsView> {
                   const SizedBox(height: 4),
                   if (isOverdue)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.red.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(4),
@@ -802,7 +795,10 @@ class _BillsViewState extends State<BillsView> {
                     )
                   else if (isPaid)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.green.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(4),
@@ -827,7 +823,10 @@ class _BillsViewState extends State<BillsView> {
             decoration: BoxDecoration(
               color: categoryLightColor,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: categoryColor.withValues(alpha: 0.3), width: 1),
+              border: Border.all(
+                color: categoryColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -907,9 +906,7 @@ class _BillsViewState extends State<BillsView> {
                         children: [
                           const Icon(Icons.check_circle, color: Colors.white),
                           const SizedBox(width: 8),
-                          Expanded(
-                            child: Text('${bill.title} marked as paid'),
-                          ),
+                          Expanded(child: Text('${bill.title} marked as paid')),
                         ],
                       ),
                       backgroundColor: const Color(0xFF009661),
@@ -1025,7 +1022,9 @@ class _BillsViewState extends State<BillsView> {
                               });
                             },
                             icon: Icon(
-                              _isSelectionMode ? Icons.close : Icons.check_box_outline_blank,
+                              _isSelectionMode
+                                  ? Icons.close
+                                  : Icons.check_box_outline_blank,
                               size: 20,
                             ),
                             label: Text(
@@ -1053,7 +1052,10 @@ class _BillsViewState extends State<BillsView> {
                 if (_isSelectionMode && _bills.isNotEmpty)
                   Container(
                     margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFECFDF3),
                       borderRadius: BorderRadius.circular(8),
@@ -1066,7 +1068,9 @@ class _BillsViewState extends State<BillsView> {
                           onChanged: (checked) {
                             setState(() {
                               if (checked == true) {
-                                _selectedBillIds = _bills.map((b) => b.id).toSet();
+                                _selectedBillIds = _bills
+                                    .map((b) => b.id)
+                                    .toSet();
                               } else {
                                 _selectedBillIds.clear();
                               }
@@ -1089,9 +1093,11 @@ class _BillsViewState extends State<BillsView> {
                       ],
                     ),
                   ),
-                ..._bills.map((bill) => _isSelectionMode
-                    ? _buildBillWithCheckbox(bill)
-                    : _buildBillWithDismissible(bill)),
+                ..._bills.map(
+                  (bill) => _isSelectionMode
+                      ? _buildBillWithCheckbox(bill)
+                      : _buildBillWithDismissible(bill),
+                ),
               ],
               const SizedBox(height: 80),
             ],

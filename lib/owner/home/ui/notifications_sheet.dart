@@ -286,7 +286,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                   ? (item['lowStockAlert'] as num?)?.toInt() ?? 0
                   : (item.lowStockAlert as int? ?? 0);
               if (!context.mounted) return;
-              Navigator.push(
+              final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => NotificationDetailView(
@@ -313,6 +313,9 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                   ),
                 ),
               );
+              if (result != null && mounted) {
+                Navigator.pop(context, result);
+              }
             },
             child: const Icon(Icons.chevron_right, color: Colors.grey),
           ),
