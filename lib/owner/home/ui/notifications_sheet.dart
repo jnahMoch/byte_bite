@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../logic/notifications_controller.dart';
@@ -18,6 +21,15 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
   String? _loadError;
   String _selectedCategory = 'all';
 
+  // ── Firestore real-time stream ───────────────────────────────────────────
+  // Listens to the 'inventory' collection so the sheet auto-refreshes
+  // when stock changes from ANY device (owner or helper).
+  // The controller already writes TO Firestore on every sync — this closes
+  // the loop by reading back from Firestore in real-time.
+  StreamSubscription<QuerySnapshot>? _firestoreSub;
+  bool _isFirestoreSynced = false;
+  // ─────────────────────────────────────────────────────────────────────────
+
   static const List<Map<String, String>> _categories = [
     {'key': 'all', 'label': 'All Notifications'},
     {'key': 'lowstock', 'label': 'Low Stock Alerts'},
@@ -37,7 +49,38 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
   void initState() {
     super.initState();
     _loadPersistedAlerts();
+    _subscribeToFirestore();
   }
+
+  @override
+  void dispose() {
+    _firestoreSub?.cancel();
+    super.dispose();
+  }
+
+  // ── Firestore stream subscription ────────────────────────────────────────
+  // Watches the 'inventory' collection for real-time stock changes.
+  // When Firestore fires (any device updated stock), we re-sync the
+  // controller and reload so the sheet reflects the latest state.
+  // If offline, Firestore serves the cached snapshot automatically.
+  void _subscribeToFirestore() {
+    _firestoreSub = FirebaseFirestore.instance
+        .collection('inventory')
+        .snapshots()
+        .listen((snapshot) async {
+      if (!mounted) return;
+
+      // Let the controller re-evaluate low stock alerts against fresh data
+      await _controller.syncLowStockAlertsWithInventory();
+      await _loadPersistedAlerts();
+
+      if (mounted) setState(() => _isFirestoreSynced = true);
+    }, onError: (_) {
+      // Offline or error — keep showing local data silently
+      if (mounted) setState(() => _isFirestoreSynced = false);
+    });
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   Future<void> _loadPersistedAlerts() async {
     try {
@@ -58,9 +101,11 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
         _loadError = 'Unable to load notifications right now.';
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -116,7 +161,34 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
+
+          // ── Firebase sync status indicator ─────────────────────────────
+          Row(
+            children: [
+              Icon(
+                _isFirestoreSynced
+                    ? Icons.cloud_done_outlined
+                    : Icons.cloud_sync_outlined,
+                size: 14,
+                color: _isFirestoreSynced ? Colors.green : Colors.orange,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                _isFirestoreSynced
+                    ? 'Live from Firebase'
+                    : 'Syncing with Firebase...',
+                style: TextStyle(
+                  color: _isFirestoreSynced ? Colors.green : Colors.orange,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          // ────────────────────────────────────────────────────────────────
+
+          const SizedBox(height: 16),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -216,7 +288,9 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
               ),
             )
           else ...[
-            ...filteredNotifications.map((alert) => _alertCard(context, alert)),
+            ...filteredNotifications.map(
+              (alert) => _alertCard(context, alert),
+            ),
           ],
         ],
       ),
