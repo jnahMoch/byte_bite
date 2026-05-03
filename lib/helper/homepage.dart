@@ -184,8 +184,8 @@ class _HelperHomePageState extends State<HelperHomePage> {
     );
   }
 
-  void _showNotificationsSheet() {
-    showModalBottomSheet(
+  Future<void> _showNotificationsSheet() async {
+    final result = await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -203,6 +203,12 @@ class _HelperHomePageState extends State<HelperHomePage> {
             HelperNotificationsView(scrollController: scrollController),
       ),
     );
+
+    if (result == 'go_inventory') {
+      _navigateToPage(3);
+    } else if (result == 'go_bills') {
+      _navigateToPage(4);
+    }
   }
 }
 

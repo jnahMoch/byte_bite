@@ -234,8 +234,8 @@ class _POSHomePageState extends State<POSHomePage> {
     );
   }
 
-  void _showNotificationsSheet() {
-    showModalBottomSheet(
+  Future<void> _showNotificationsSheet() async {
+    final result = await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -253,6 +253,12 @@ class _POSHomePageState extends State<POSHomePage> {
             NotificationsSheet(scrollController: scrollController),
       ),
     );
+
+    if (result == 'go_inventory') {
+      _onPageNavigate(3);
+    } else if (result == 'go_bills') {
+      _onPageNavigate(4);
+    }
   }
 }
 

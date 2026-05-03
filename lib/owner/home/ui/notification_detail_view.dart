@@ -525,6 +525,20 @@ class NotificationDetailView extends StatelessWidget {
   Widget build(BuildContext context) {
     final alertColor = _getAlertColor();
 
+    // Determine dynamic label and navigation intent based on alert type
+    final String actionLabel;
+    VoidCallback actionCallback;
+    if (_isLowStock) {
+      actionLabel = 'Go to Inventory';
+      actionCallback = () => Navigator.pop(context, 'go_inventory');
+    } else if (_isBill || _isReminder) {
+      actionLabel = 'Go to Bills';
+      actionCallback = () => Navigator.pop(context, 'go_bills');
+    } else {
+      actionLabel = 'Back to Notifications';
+      actionCallback = () => Navigator.pop(context);
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -674,13 +688,13 @@ class NotificationDetailView extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // Action Button
+            // Action Button (dynamic label + routing)
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
+                onPressed: actionCallback,
                 icon: const Icon(Icons.arrow_back, size: 18),
-                label: const Text('Back to Notifications'),
+                label: Text(actionLabel),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF009661),
                   foregroundColor: Colors.white,
