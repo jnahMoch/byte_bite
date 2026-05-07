@@ -540,17 +540,18 @@ class _InventoryPageState extends State<InventoryPage> {
               ),
             ],
           ),
-          Positioned(
-            right: 16,
-            bottom: 16 + MediaQuery.of(context).padding.bottom,
-            child: FloatingActionButton.extended(
-              onPressed: _showAddItemDialog,
-              backgroundColor: _green,
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add),
-              label: const Text('Add Item'),
+          if (widget.userRole != 'helper')
+            Positioned(
+              right: 16,
+              bottom: 16 + MediaQuery.of(context).padding.bottom,
+              child: FloatingActionButton.extended(
+                onPressed: _showAddItemDialog,
+                backgroundColor: _green,
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.add),
+                label: const Text('Add Item'),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -603,7 +604,8 @@ class _InventoryPageState extends State<InventoryPage> {
               _statBox('Items', '$_totalItems', Icons.widgets_outlined),
               _statBox('Stock', '$_totalStock', Icons.inventory_2_outlined),
               _statBox('Low', '$_lowStockCount', Icons.warning_amber_outlined),
-              _statBox('Value', 'P$_inventoryValue', Icons.payments_outlined),
+              if (widget.userRole != 'helper')
+                _statBox('Value', 'P$_inventoryValue', Icons.payments_outlined),
             ],
           ),
         ],
@@ -816,12 +818,13 @@ class _InventoryPageState extends State<InventoryPage> {
                 ),
               ),
               const SizedBox(width: 8),
-              _cardAction(
-                icon: Icons.edit_outlined,
-                color: const Color(0xFF2563EB),
-                onTap: () => _showEditItemDialog(item),
-              ),
-              const SizedBox(width: 6),
+              if (widget.userRole != 'helper')
+                _cardAction(
+                  icon: Icons.edit_outlined,
+                  color: const Color(0xFF2563EB),
+                  onTap: () => _showEditItemDialog(item),
+                ),
+              if (widget.userRole != 'helper') const SizedBox(width: 6),
               _cardAction(
                 icon: Icons.add_circle_outline,
                 color: _green,

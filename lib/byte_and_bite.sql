@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS Users (
   role     TEXT    NOT NULL CHECK(role IN ('Owner','Helper')),
   username TEXT    NOT NULL UNIQUE,
   email    TEXT    UNIQUE,
+  phone    TEXT,
   password TEXT    NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_users_username ON Users(username);

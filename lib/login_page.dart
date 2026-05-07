@@ -63,13 +63,14 @@ class _LoginPageState extends State<LoginPage> {
       final String role = data['role'] ?? 'Helper';
 
       UserStorage.setCurrentUserWithRole(username, role);
+      final profile = await UserStorage.getCurrentUserProfilePersistent();
 
       await LocalAuthService.instance.upsertLocalCredential(
         username: username,
         password: password,
         role: role,
-        email: email,
-        name: username,
+        email: profile['email'] ?? email,
+        name: profile['name'] ?? username,
       );
 
       UserStorage.syncUsersFromFirestore();
@@ -90,6 +91,14 @@ class _LoginPageState extends State<LoginPage> {
 
     if (offlineRole != null) {
       UserStorage.setCurrentUserWithRole(username, offlineRole);
+      final profile = await UserStorage.getCurrentUserProfilePersistent();
+      await LocalAuthService.instance.upsertLocalCredential(
+        username: username,
+        password: password,
+        role: offlineRole,
+        email: profile['email'] ?? UserStorage.toFirebaseEmail(username),
+        name: profile['name'] ?? username,
+      );
       _showSnackBar('Logged in (offline mode)', Colors.orange);
       _navigateByRole(offlineRole);
       return;

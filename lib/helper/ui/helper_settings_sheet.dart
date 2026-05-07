@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../user_storage.dart';
+import '../../shared/settings/profile_panel.dart';
 
 class HelperSettingsSheet extends StatefulWidget {
   final ScrollController scrollController;
@@ -53,18 +54,6 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
             onTap: () {
               Navigator.pop(context);
               _showChangePasswordDialog(context);
-            },
-          ),
-          const SizedBox(height: 20),
-          _sectionTitle('App'),
-          _settingsTile(
-            context,
-            Icons.notifications_outlined,
-            'Notifications',
-            'Manage alerts',
-            onTap: () {
-              Navigator.pop(context);
-              _showNotificationsDialog(context);
             },
           ),
           const SizedBox(height: 20),
@@ -151,144 +140,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
   }
 
   void _showProfileDialog(BuildContext context) {
-    final nameController = TextEditingController(
-      text: UserStorage.currentUser ?? 'Helper',
-    );
-    final emailController = TextEditingController(
-      text: 'helper@byteandbite.com',
-    );
-    final phoneController = TextEditingController(text: '+234 812 345 6789');
-
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 8,
-        shadowColor: Colors.black26,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-          constraints: const BoxConstraints(maxWidth: 360),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Profile',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-                  ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(ctx),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        shape: BoxShape.circle,
-                      ),
-                      padding: const EdgeInsets.all(8),
-                      child: const Icon(
-                        Icons.close,
-                        size: 20,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 28),
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF009661).withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        size: 48,
-                        color: Color(0xFF009661),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      UserStorage.currentUser ?? 'Helper',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Helper Account',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[500],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              _buildInputField(
-                controller: nameController,
-                label: 'Username',
-                icon: Icons.person_outline,
-                readOnly: true,
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: emailController,
-                label: 'Email',
-                icon: Icons.email_outlined,
-                readOnly: true,
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: phoneController,
-                label: 'Phone Number',
-                icon: Icons.phone_outlined,
-                readOnly: false,
-              ),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Profile updated successfully'),
-                        backgroundColor: Color(0xFF009661),
-                      ),
-                    );
-                    Navigator.pop(ctx);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF009661),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Save Changes',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    showProfileDialog(context, role: 'Helper');
   }
 
   void _showChangePasswordDialog(BuildContext context) {
@@ -429,9 +281,12 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () async {
-                          final oldPassword = oldPasswordController.text.trim();
-                          final newPassword = newPasswordController.text.trim();
-                          final confirmPassword = confirmPasswordController.text
+                          String oldPassword = oldPasswordController.text
+                              .trim();
+                          String newPassword = newPasswordController.text
+                              .trim();
+                          String confirmPassword = confirmPasswordController
+                              .text
                               .trim();
 
                           if (oldPassword.isEmpty ||
@@ -517,216 +372,6 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  void _showNotificationsDialog(BuildContext context) {
-    const notificationTypes = [
-      {
-        'icon': Icons.shopping_cart_outlined,
-        'label': 'Orders',
-        'desc': 'New order notifications',
-      },
-      {
-        'icon': Icons.payment_outlined,
-        'label': 'Payments',
-        'desc': 'Payment confirmations',
-      },
-      {'icon': Icons.info_outlined, 'label': 'System', 'desc': 'System alerts'},
-      {
-        'icon': Icons.local_offer_outlined,
-        'label': 'Promotions',
-        'desc': 'Promotional messages',
-      },
-    ];
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
-          final notificationPrefs = {
-            'orders': true,
-            'payments': true,
-            'system': false,
-            'promotions': false,
-          };
-
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            elevation: 8,
-            shadowColor: Colors.black26,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-              constraints: const BoxConstraints(maxWidth: 360),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Notifications',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => Navigator.pop(ctx),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            shape: BoxShape.circle,
-                          ),
-                          padding: const EdgeInsets.all(8),
-                          child: const Icon(
-                            Icons.close,
-                            size: 20,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: Colors.blue.shade700,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Manage which notifications you want to receive',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.blue.shade700,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ...List.generate(notificationTypes.length, (index) {
-                    final item =
-                        notificationTypes[index] as Map<String, dynamic>;
-                    final key = item['label'].toString().toLowerCase();
-                    return _buildNotificationToggle(
-                      icon: item['icon'] as IconData,
-                      label: item['label'] as String,
-                      description: item['desc'] as String,
-                      value: notificationPrefs[key] ?? false,
-                      onChanged: (value) {
-                        setState(() {
-                          notificationPrefs[key] = value;
-                        });
-                      },
-                    );
-                  }).expand((widget) => [widget, const SizedBox(height: 14)]),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Notification settings saved'),
-                            backgroundColor: Color(0xFF009661),
-                          ),
-                        );
-                        Navigator.pop(ctx);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF009661),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Save Settings',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildNotificationToggle({
-    required IconData icon,
-    required String label,
-    required String description,
-    required bool value,
-    required Function(bool) onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF009661).withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: const Color(0xFF009661), size: 20),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  description,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: const Color(0xFF009661),
-          ),
-        ],
       ),
     );
   }
@@ -980,7 +625,6 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
   }
 
   void _showLogoutConfirmation(BuildContext context) {
-    // Capture navigator reference before creating dialog
     final rootNavigator = Navigator.of(context, rootNavigator: true);
 
     showDialog(
@@ -995,27 +639,23 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
           ),
           ElevatedButton(
             onPressed: () {
-              // Close dialog only
               Navigator.pop(ctx);
 
-              // Do logout in background
               UserStorage.logout()
                   .then((_) {
-                    // After logout, wait briefly then navigate
                     Future.delayed(const Duration(milliseconds: 600), () {
                       try {
-                        // Use the saved navigator reference (not context-dependent)
                         rootNavigator.pushNamedAndRemoveUntil(
                           '/login',
                           (Route<dynamic> route) => false,
                         );
-                      } catch (e) {
-                        // Silently handle navigation errors
+                      } catch (e, st) {
+                        debugPrint('Logout navigation error: $e\n$st');
                       }
                     });
                   })
-                  .catchError((_) {
-                    // Silently handle logout errors
+                  .catchError((e) {
+                    debugPrint('Logout error: $e');
                   });
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
