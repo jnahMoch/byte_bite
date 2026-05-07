@@ -135,7 +135,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
     return insertedId;
   }
 
-  Future<void> _completeTransaction() async {
+  Future<void> _completeTransaction(BuildContext modalContext) async {
     if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -157,17 +157,75 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
       return;
     }
 
-    double change = amountPaid - cartTotal;
+    final change = amountPaid - cartTotal;
     final now = DateTime.now();
     final receiptNumber = now.millisecondsSinceEpoch.toString();
     final savedCart = List<CartItem>.from(_cart);
     final savedTotal = cartTotal;
 
-    for (var cartItem in _cart) {
+    // Build DB items and validate stock before committing
+    final itemsForDB = <Map<String, dynamic>>[];
+    final db = await DatabaseHelper.instance.database;
+    for (final cartItem in savedCart) {
+      final productId = await _resolveProductId(cartItem.item);
+
+      final rows = await db.query(
+        'Products',
+        columns: ['stock_quantity'],
+        where: 'product_id = ?',
+        whereArgs: [productId],
+        limit: 1,
+      );
+      final available = rows.isNotEmpty
+          ? (rows.first['stock_quantity'] as num).toInt()
+          : 0;
+
+      if (available < cartItem.quantity) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Insufficient stock for ${cartItem.item.name} (available: $available)'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      itemsForDB.add({
+        'product_id': productId,
+        'quantity': cartItem.quantity,
+        'subtotal': (cartItem.item.price * cartItem.quantity).toDouble(),
+      });
+    }
+
+    try {
+      await DatabaseHelper.instance.recordSale(
+        userId: 1,
+        totalAmount: savedTotal.toDouble(),
+        items: itemsForDB,
+        paymentMethod: _selectedPayment,
+        paymentStatus: 'Success',
+      );
+    } catch (e) {
+      debugPrint('helper_pos_grid_view recordSale failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Transaction failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    // DB commit succeeded — update in-memory stock and app state
+    for (final cartItem in savedCart) {
       cartItem.item.stock -= cartItem.quantity;
     }
 
-    // add to in‑memory list as before
     SalesData.addTransaction(
       SalesTransaction(
         receiptNumber: receiptNumber,
@@ -188,30 +246,8 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
       ),
     );
 
-    // persist the sale to the SQLite database with cart items
-    try {
-      // Build items list with resolved product IDs to avoid seed-product fallback.
-      final itemsForDB = <Map<String, dynamic>>[];
-      for (final cartItem in savedCart) {
-        final productId = await _resolveProductId(cartItem.item);
-        itemsForDB.add({
-          'product_id': productId,
-          'quantity': cartItem.quantity,
-          'subtotal': (cartItem.item.price * cartItem.quantity).toDouble(),
-        });
-      }
-
-      await DatabaseHelper.instance.recordSale(
-        userId: 1,
-        totalAmount: savedTotal.toDouble(),
-        items: itemsForDB,
-        paymentMethod: _selectedPayment,
-        paymentStatus: 'Success',
-      );
-    } catch (e) {
-      debugPrint('helper_pos_grid_view recordSale failed: $e');
-    }
-
+    if (!mounted) return;
+    Navigator.pop(context);
     _showSaleSuccessDialog(
       savedCart,
       savedTotal,
@@ -397,17 +433,17 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                             const Text(
                               'Change',
                               style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF009661),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey,
                               ),
                             ),
                             Text(
                               '₱${change.toStringAsFixed(2)}',
                               style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF009661),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
                               ),
                             ),
                           ],
@@ -886,6 +922,23 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
       children: [
         Column(
           children: [
+            // Logo Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey.shade200),
+                ),
+              ),
+              child: Image.asset(
+                'assets/images/byte_and_bite_logo.png',
+                height: 50,
+                fit: BoxFit.contain,
+              ),
+            ),
+            // Category Tabs
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
@@ -1181,9 +1234,9 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF009661).withValues(alpha: 0.08),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -1191,11 +1244,11 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                     children: [
                       const Text(
                         'Change:',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                        style: TextStyle(fontWeight: FontWeight.w500, fontSize: 12, color: Colors.grey),
                       ),
                       Text(
                         '₱${_change.toStringAsFixed(2)}',
-                        style: const TextStyle(color: Color(0xFF009661), fontWeight: FontWeight.w700, fontSize: 15),
+                        style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                     ],
                   ),
@@ -1204,13 +1257,13 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _completeTransaction,
+                    onPressed: () => _completeTransaction(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF009661),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Complete Transaction', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                    child: const Text('Complete Transaction', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
                   ),
                 ),
                 const SizedBox(height: 24),

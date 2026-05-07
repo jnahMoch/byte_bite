@@ -125,27 +125,25 @@ class _POSGridViewState extends State<POSGridView> {
 
     final insertedId = await DatabaseHelper.instance.insertProduct({
       'name': item.name,
-      'category': item.category,
       'price': item.price.toDouble(),
-      'stock_quantity': item.stock,
       'min_threshold': item.lowStockAlert,
       'description': null,
     });
+
     return insertedId;
   }
 
-  Future<void> _completeTransaction() async {
+  Future<void> _completeTransaction(BuildContext modalContext) async {
     if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Cart is empty'),
-          backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    double? amountPaid = double.tryParse(_amountPaidController.text);
+    final amountPaid = double.tryParse(_amountPaidController.text);
     if (amountPaid == null || amountPaid < cartTotal) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -156,17 +154,75 @@ class _POSGridViewState extends State<POSGridView> {
       return;
     }
 
-    double change = amountPaid - cartTotal;
+    final change = amountPaid - cartTotal;
     final now = DateTime.now();
     final receiptNumber = now.millisecondsSinceEpoch.toString();
     final savedCart = List<CartItem>.from(_cart);
     final savedTotal = cartTotal;
 
-    for (var cartItem in _cart) {
+    // Build DB items and validate stock before committing
+    final itemsForDB = <Map<String, dynamic>>[];
+    final db = await DatabaseHelper.instance.database;
+    for (final cartItem in savedCart) {
+      final productId = await _resolveProductId(cartItem.item);
+
+      final rows = await db.query(
+        'Products',
+        columns: ['stock_quantity'],
+        where: 'product_id = ?',
+        whereArgs: [productId],
+        limit: 1,
+      );
+      final available = rows.isNotEmpty
+          ? (rows.first['stock_quantity'] as num).toInt()
+          : 0;
+
+      if (available < cartItem.quantity) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Insufficient stock for ${cartItem.item.name} (available: $available)'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      itemsForDB.add({
+        'product_id': productId,
+        'quantity': cartItem.quantity,
+        'subtotal': (cartItem.item.price * cartItem.quantity).toDouble(),
+      });
+    }
+
+    try {
+      await DatabaseHelper.instance.recordSale(
+        userId: 1,
+        totalAmount: savedTotal.toDouble(),
+        items: itemsForDB,
+        paymentMethod: _selectedPayment,
+        paymentStatus: 'Success',
+      );
+    } catch (e) {
+      debugPrint('pos_grid_view recordSale failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Transaction failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    // DB commit succeeded — update in-memory stock and app state
+    for (final cartItem in savedCart) {
       cartItem.item.stock -= cartItem.quantity;
     }
 
-    // add to in‑memory list as before
     SalesData.addTransaction(
       SalesTransaction(
         receiptNumber: receiptNumber,
@@ -187,30 +243,9 @@ class _POSGridViewState extends State<POSGridView> {
       ),
     );
 
-    // persist the sale to the SQLite database with cart items
-    try {
-      // Build items list with resolved product IDs to avoid seed-product fallback.
-      final itemsForDB = <Map<String, dynamic>>[];
-      for (final cartItem in savedCart) {
-        final productId = await _resolveProductId(cartItem.item);
-        itemsForDB.add({
-          'product_id': productId,
-          'quantity': cartItem.quantity,
-          'subtotal': (cartItem.item.price * cartItem.quantity).toDouble(),
-        });
-      }
-
-      await DatabaseHelper.instance.recordSale(
-        userId: 1, // replace with actual current user id if available
-        totalAmount: savedTotal.toDouble(),
-        items: itemsForDB,
-        paymentMethod: _selectedPayment,
-        paymentStatus: 'Success',
-      );
-    } catch (e) {
-      debugPrint('pos_grid_view recordSale failed: $e');
-    }
-
+    // close payment modal and show success
+    if (!mounted) return;
+    Navigator.pop(context);
     _showSaleSuccessDialog(
       savedCart,
       savedTotal,
@@ -565,18 +600,17 @@ class _POSGridViewState extends State<POSGridView> {
                                     const Text(
                                       'CHANGE',
                                       style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF00A86B),
-                                        letterSpacing: 0.3,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.grey,
                                       ),
                                     ),
                                     Text(
                                       'P${change.toStringAsFixed(2)}',
                                       style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w800,
-                                        color: Color(0xFF00A86B),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
                                       ),
                                     ),
                                   ],
@@ -878,29 +912,23 @@ class _POSGridViewState extends State<POSGridView> {
                 style: const pw.TextStyle(fontSize: 10),
               ),
               pw.SizedBox(height: 16),
-                  const Text(
-                    'Payment Summary',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1A1A2E)),
-                  ),
-                  const SizedBox(height: 10),
             ],
           );
         },
-                      color: const Color(0xFF009661).withValues(alpha: 0.10),
+      ),
     );
-                      border: Border.all(color: const Color(0xFF009661).withValues(alpha: 0.12)),
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
     );
   }
 
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1A1A2E)),
+  String _formatDate(DateTime dt) {
     const months = [
       'Jan',
       'Feb',
       'Mar',
-                            fontSize: 23,
+      'Apr',
       'May',
       'Jun',
       'Jul',
@@ -927,6 +955,23 @@ class _POSGridViewState extends State<POSGridView> {
       children: [
         Column(
           children: [
+            // Logo Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey.shade200),
+                ),
+              ),
+              child: Image.asset(
+                'assets/images/byte_and_bite_logo.png',
+                height: 50,
+                fit: BoxFit.contain,
+              ),
+            ),
+            // Category Tabs
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
@@ -1072,7 +1117,7 @@ class _POSGridViewState extends State<POSGridView> {
                   ),
                   const Text(
                     'Items',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 12),
                   for (int i = 0; i < _cart.length; i++)
@@ -1093,12 +1138,12 @@ class _POSGridViewState extends State<POSGridView> {
                       children: [
                         const Text(
                           'Total Amount Due',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                         ),
                         Text(
                           '₱$cartTotal',
                           style: const TextStyle(
-                            fontSize: 21,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF009661),
                           ),
@@ -1109,7 +1154,7 @@ class _POSGridViewState extends State<POSGridView> {
                   const SizedBox(height: 12),
                   const Text(
                     'Payment Method',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1A1A2E)),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -1121,24 +1166,17 @@ class _POSGridViewState extends State<POSGridView> {
                             setModalState(() {});
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: _selectedPayment == 'Cash'
                                   ? const Color(0xFF009661)
                                   : Colors.grey[100],
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: _selectedPayment == 'Cash'
-                                    ? const Color(0xFF009661)
-                                    : Colors.grey.shade300,
-                              ),
                             ),
                             child: Center(
                               child: Text(
                                 'Cash',
                                 style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
                                   color: _selectedPayment == 'Cash'
                                       ? Colors.white
                                       : Colors.grey[800],
@@ -1157,24 +1195,17 @@ class _POSGridViewState extends State<POSGridView> {
                             _openQRScanner();
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: _selectedPayment == 'QR'
                                   ? const Color(0xFF009661)
                                   : Colors.grey[100],
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: _selectedPayment == 'QR'
-                                    ? const Color(0xFF009661)
-                                    : Colors.grey.shade300,
-                              ),
                             ),
                             child: Center(
                               child: Text(
                                 'QR',
                                 style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
                                   color: _selectedPayment == 'QR'
                                       ? Colors.white
                                       : Colors.grey[800],
@@ -1194,8 +1225,6 @@ class _POSGridViewState extends State<POSGridView> {
                       filled: true,
                       fillColor: Colors.grey.shade50,
                       labelText: 'Amount Paid',
-                      labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -1206,26 +1235,25 @@ class _POSGridViewState extends State<POSGridView> {
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
-                      vertical: 10,
+                      vertical: 16,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF009661).withValues(alpha: 0.12),
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF009661).withValues(alpha: 0.10)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
                           'Change:',
-                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF1A1A2E)),
+                          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 12, color: Colors.grey),
                         ),
                         Text(
                           '₱${_change.toStringAsFixed(2)}',
                           style: const TextStyle(
-                            color: Color(0xFF009661),
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
                           ),
                         ),
                       ],
@@ -1235,18 +1263,12 @@ class _POSGridViewState extends State<POSGridView> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _completeTransaction,
+                      onPressed: () => _completeTransaction(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF009661),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 18),
                       ),
-                      child: const Text(
-                        'Complete Transaction',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                      ),
+                      child: const Text('Complete Transaction', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
                     ),
                   ),
                   const SizedBox(height: 24),

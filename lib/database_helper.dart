@@ -226,6 +226,55 @@ class DatabaseHelper {
     });
   }
 
+  /// Undo a completed sale by `saleId`.
+  /// This will increment product stock quantities by the sold amounts,
+  /// insert inventory log entries for the restock, and remove the
+  /// corresponding Payments, SaleItems and Sales rows.
+  /// Use cautiously — this permanently removes the sale record.
+  Future<void> undoSale(int saleId) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final items = await txn.query(
+        'SaleItems',
+        where: 'sale_id = ?',
+        whereArgs: [saleId],
+      );
+
+      for (final item in items) {
+        final productId = (item['product_id'] as num).toInt();
+        final qty = (item['quantity'] as num).toInt();
+
+        await txn.rawUpdate(
+          'UPDATE Products SET stock_quantity = stock_quantity + ? WHERE product_id = ?',
+          [qty, productId],
+        );
+
+        await txn.insert('InventoryLogs', {
+          'product_id': productId,
+          'change_type': 'restock',
+          'quantity_changed': qty,
+          'date_time': DateTime.now().toIso8601String(),
+        });
+      }
+
+      // Delete dependent rows in the correct order to satisfy FK constraints
+      await txn.delete('Payments', where: 'sale_id = ?', whereArgs: [saleId]);
+      await txn.delete('SaleItems', where: 'sale_id = ?', whereArgs: [saleId]);
+      await txn.delete('Sales', where: 'sale_id = ?', whereArgs: [saleId]);
+    });
+  }
+
+  /// Undo the most recent sale. Returns the undone `sale_id` or null
+  /// if there are no sales to undo.
+  Future<int?> undoLastSale() async {
+    final db = await database;
+    final rows = await db.rawQuery('SELECT sale_id FROM Sales ORDER BY sale_id DESC LIMIT 1');
+    if (rows.isEmpty) return null;
+    final saleId = (rows.first['sale_id'] as num).toInt();
+    await undoSale(saleId);
+    return saleId;
+  }
+
   Future<List<Map<String, dynamic>>> getSaleItems(int saleId) async =>
       (await database).rawQuery(
         '''
