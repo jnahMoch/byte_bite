@@ -87,15 +87,23 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
 
   void _updateQuantity(int index, int delta) {
     setState(() {
+      if (index < 0 || index >= _cart.length) {
+        return;
+      }
       _cart[index].quantity += delta;
       if (_cart[index].quantity <= 0) {
-        _cart.removeAt(index);
+        if (index >= 0 && index < _cart.length) {
+          _cart.removeAt(index);
+        }
       }
     });
   }
 
   void _removeFromCart(int index) {
     setState(() {
+      if (index < 0 || index >= _cart.length) {
+        return;
+      }
       _cart.removeAt(index);
     });
   }
@@ -1010,8 +1018,8 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
               children: [
                 Center(
                   child: Container(
-                    width: 40,
-                    height: 4,
+                    width: 48,
+                    height: 5,
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
                       color: Colors.grey[300],
@@ -1021,48 +1029,123 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                 ),
                 const Text(
                   'Items',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 for (int i = 0; i < _cart.length; i++)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                          color: const Color(0xFF009661).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                          child: const Icon(Icons.shopping_bag, color: Color(0xFF009661)),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
                             children: [
-                              Text(_cart[i].item.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                              const SizedBox(height: 6),
-                              Text('₱${_cart[i].item.price} × ${_cart[i].quantity}', style: TextStyle(color: Colors.grey[600])),
+                              Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF009661).withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.shopping_bag, color: Color(0xFF009661), size: 26),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _cart[i].item.name,
+                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF1A1A2E)),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '₱${_cart[i].item.price} × ${_cart[i].quantity}',
+                                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '₱${_cart[i].total}',
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF009661)),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Total',
+                                    style: TextStyle(fontSize: 11, color: Colors.grey[500], fontWeight: FontWeight.w500),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
-                        ),
-                        Text('₱${_cart[i].total}', style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF009661))),
-                        const SizedBox(width: 8),
-                        Row(
-                          children: [
-                            GestureDetector(onTap: () => _updateQuantity(i, -1), child: const Icon(Icons.remove, color: Color(0xFF009661))),
-                            const SizedBox(width: 8),
-                            Text('${_cart[i].quantity}'),
-                            const SizedBox(width: 8),
-                            GestureDetector(onTap: () => _updateQuantity(i, 1), child: const Icon(Icons.add, color: Color(0xFF009661))),
-                          ],
-                        ),
-                        const SizedBox(width: 8),
-                        GestureDetector(onTap: () => _removeFromCart(i), child: const Icon(Icons.delete_outline, color: Colors.red)),
-                      ],
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => _updateQuantity(i, -1),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFFEBEE),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(Icons.remove, color: Color(0xFFDC2626), size: 18),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text('${_cart[i].quantity}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () => _updateQuantity(i, 1),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFECFDF3),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(Icons.add, color: Color(0xFF009661), size: 18),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              GestureDetector(
+                                onTap: () => _removeFromCart(i),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 const SizedBox(height: 8),
@@ -1075,26 +1158,26 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total Amount Due', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                      Text('₱$cartTotal', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF009661))),
+                      const Text('Total Amount Due', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                      Text('₱$cartTotal', style: const TextStyle(fontSize: 21, fontWeight: FontWeight.bold, color: Color(0xFF009661))),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text('Payment Method', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                const Text('Payment Method', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: GestureDetector(onTap: () => setState(() => _selectedPayment = 'Cash'), child: Container(padding: const EdgeInsets.symmetric(vertical: 12), decoration: BoxDecoration(color: _selectedPayment == 'Cash' ? const Color(0xFF009661) : Colors.grey[100], borderRadius: BorderRadius.circular(10)), child: Center(child: Text('Cash', style: TextStyle(color: _selectedPayment == 'Cash' ? Colors.white : Colors.grey[800])))))),
+                    Expanded(child: GestureDetector(onTap: () => setState(() => _selectedPayment = 'Cash'), child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: _selectedPayment == 'Cash' ? const Color(0xFF009661) : Colors.grey[100], borderRadius: BorderRadius.circular(10)), child: Center(child: Text('Cash', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _selectedPayment == 'Cash' ? Colors.white : Colors.grey[800])))))),
                     const SizedBox(width: 12),
-                    Expanded(child: GestureDetector(onTap: () { setState(() => _selectedPayment = 'QR Code'); _openQRScanner(); }, child: Container(padding: const EdgeInsets.symmetric(vertical: 12), decoration: BoxDecoration(color: _selectedPayment == 'QR Code' ? const Color(0xFF009661) : Colors.grey[100], borderRadius: BorderRadius.circular(10)), child: Center(child: Text('QR Code', style: TextStyle(color: _selectedPayment == 'QR Code' ? Colors.white : Colors.grey[800])))))),
+                    Expanded(child: GestureDetector(onTap: () { setState(() => _selectedPayment = 'QR Code'); _openQRScanner(); }, child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: _selectedPayment == 'QR Code' ? const Color(0xFF009661) : Colors.grey[100], borderRadius: BorderRadius.circular(10)), child: Center(child: Text('QR Code', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _selectedPayment == 'QR Code' ? Colors.white : Colors.grey[800])))))),
                   ],
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _amountPaidController,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(filled: true, fillColor: Colors.grey.shade50, labelText: 'Amount Paid', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), isDense: true),
+                  decoration: InputDecoration(filled: true, fillColor: Colors.grey.shade50, labelText: 'Amount Paid', labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600), contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16), border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), isDense: true),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -1108,17 +1191,28 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                     children: [
                       const Text(
                         'Change:',
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                       ),
                       Text(
                         '₱${_change.toStringAsFixed(2)}',
-                        style: const TextStyle(color: Color(0xFF009661), fontWeight: FontWeight.w700, fontSize: 14),
+                        style: const TextStyle(color: Color(0xFF009661), fontWeight: FontWeight.w700, fontSize: 15),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
-                SizedBox(width: double.infinity, child: ElevatedButton(onPressed: _completeTransaction, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF009661)), child: const Text('Complete Transaction'))),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _completeTransaction,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF009661),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Complete Transaction', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                  ),
+                ),
                 const SizedBox(height: 24),
               ],
             ),

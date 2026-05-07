@@ -533,50 +533,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
               ),
             );
 
-            return Dismissible(
-              key: Key('best_selling_${rank}_${item.name}'),
-              direction: DismissDirection.endToStart,
-              onDismissed: (direction) {
-                // Remove from UI immediately (required by Dismissible)
-                setState(() {
-                  _bestSellingItems.removeWhere((i) => i.name == item.name);
-                });
-                
-                // Delete from database in background (non-blocking)
-                _analyticsController.deleteSaleByProduct(item.name);
-
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: [
-                        const Icon(Icons.delete, color: Colors.white),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text('${item.name} transaction deleted'),
-                        ),
-                      ],
-                    ),
-                    backgroundColor: Colors.red,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-              },
-              background: Container(
-                color: Colors.red,
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 20),
-                child: const Icon(
-                  Icons.delete_outline,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              child: itemRow,
-            );
+            return itemRow;
           }),
         ],
       ),
@@ -932,50 +889,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
               ),
             );
 
-            return Dismissible(
-              key: Key('payment_method_${rank}_${item.method}'),
-              direction: DismissDirection.endToStart,
-              onDismissed: (direction) {
-                // Remove from UI immediately (required by Dismissible)
-                setState(() {
-                  _paymentMethods.removeWhere((i) => i.method == item.method);
-                });
-                
-                // Delete from database in background (non-blocking)
-                _analyticsController.deleteSaleByPaymentMethod(item.method);
-
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: [
-                        const Icon(Icons.delete, color: Colors.white),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text('${item.method} transaction deleted'),
-                        ),
-                      ],
-                    ),
-                    backgroundColor: Colors.red,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-              },
-              background: Container(
-                color: Colors.red,
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 20),
-                child: const Icon(
-                  Icons.delete_outline,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              child: methodRow,
-            );
+            return methodRow;
           }),
         ],
       ),

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart' as cf;
+import 'package:image_picker/image_picker.dart';
 import 'package:byte_bite/data/inventory_data.dart';
 import 'package:byte_bite/model/pos_item_model.dart';
 import 'package:byte_bite/owner/home/logic/inventory_controller.dart';
@@ -134,24 +135,8 @@ class _InventoryPageState extends State<InventoryPage> {
         _notifyInventoryChanged();
       }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_syncErrorMessage(e)),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      debugPrint('inventory add sync failed: $e');
     }
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${item.name} added successfully.'),
-        backgroundColor: _green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   void _showAddItemDialog() {
@@ -161,6 +146,8 @@ class _InventoryPageState extends State<InventoryPage> {
     final unitController = TextEditingController(text: 'pcs');
     final alertController = TextEditingController(text: '10');
     var category = 'Food';
+    String? pickedImage;
+    String? formError;
 
     showDialog(
       context: context,
@@ -177,6 +164,41 @@ class _InventoryPageState extends State<InventoryPage> {
             stockController: stockController,
             unitController: unitController,
             alertController: alertController,
+            image: pickedImage,
+            errorText: formError,
+            onImageTap: () async {
+              final choice = await showModalBottomSheet<String?>(
+                context: dialogContext,
+                builder: (_) => SafeArea(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    ListTile(
+                      leading: const Icon(Icons.camera_alt_outlined),
+                      title: const Text('Camera'),
+                      onTap: () => Navigator.of(dialogContext).pop('camera'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.photo_library_outlined),
+                      title: const Text('Gallery'),
+                      onTap: () => Navigator.of(dialogContext).pop('gallery'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.close),
+                      title: const Text('Cancel'),
+                      onTap: () => Navigator.of(dialogContext).pop(null),
+                    ),
+                  ]),
+                ),
+              );
+
+              if (choice == 'camera') {
+                final XFile? file = await ImagePicker().pickImage(source: ImageSource.camera, maxWidth: 1200);
+                if (file != null) setDialogState(() => pickedImage = file.path);
+              }
+              if (choice == 'gallery') {
+                final XFile? file = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1200);
+                if (file != null) setDialogState(() => pickedImage = file.path);
+              }
+            },
             onCategoryChanged: (value) {
               setDialogState(() => category = value);
             },
@@ -192,12 +214,13 @@ class _InventoryPageState extends State<InventoryPage> {
                   parsedPrice == null ||
                   parsedStock == null ||
                   parsedAlert == null) {
-                _showValidationSnackBar(
-                  dialogContext,
-                  'Please fill in valid name, price, stock, and alert values.',
-                );
+                setDialogState(() {
+                  formError = 'Please fill in valid name, price, stock, and alert values.';
+                });
                 return;
               }
+
+              setDialogState(() => formError = null);
 
               final item = POSItem(
                 name: name,
@@ -206,6 +229,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 unit: unit.isEmpty ? 'pcs' : unit,
                 category: category,
                 lowStockAlert: parsedAlert,
+                image: pickedImage,
               );
               _addItem(item);
             },
@@ -225,11 +249,17 @@ class _InventoryPageState extends State<InventoryPage> {
     );
     var category = item.category == 'Beverages' ? 'Beverage' : item.category;
     if (!_categories.contains(category)) category = 'Food';
+    String? pickedImage = item.image;
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
+          Future<void> pickImage(ImageSource src) async {
+            final XFile? file = await ImagePicker().pickImage(source: src, maxWidth: 1200);
+            if (file != null) setDialogState(() => pickedImage = file.path);
+          }
+
           return _InventoryFormDialog(
             title: 'Edit Item',
             subtitle: item.name,
@@ -241,10 +271,87 @@ class _InventoryPageState extends State<InventoryPage> {
             stockController: stockController,
             unitController: unitController,
             alertController: alertController,
+            image: pickedImage,
+            errorText: null,
+            showDeleteButton: true,
+            onImageTap: () async {
+              // show options
+              final choice = await showModalBottomSheet<String?>(
+                context: dialogContext,
+                builder: (_) => SafeArea(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    ListTile(
+                      leading: const Icon(Icons.camera_alt_outlined),
+                      title: const Text('Camera'),
+                      onTap: () => Navigator.of(dialogContext).pop('camera'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.photo_library_outlined),
+                      title: const Text('Gallery'),
+                      onTap: () => Navigator.of(dialogContext).pop('gallery'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.close),
+                      title: const Text('Cancel'),
+                      onTap: () => Navigator.of(dialogContext).pop(null),
+                    ),
+                  ]),
+                ),
+              );
+
+              if (choice == 'camera') await pickImage(ImageSource.camera);
+              if (choice == 'gallery') await pickImage(ImageSource.gallery);
+            },
             onCategoryChanged: (value) {
               setDialogState(() => category = value);
             },
             onCancel: () => Navigator.pop(dialogContext),
+            onDelete: () async {
+              Navigator.pop(dialogContext);
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (confirmContext) => AlertDialog(
+                  title: const Text('Delete Item?'),
+                  content: const Text('Are you sure you want to delete it?'),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(confirmContext, false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(confirmContext, true),
+                      child: const Text(
+                        'Delete',
+                        style: TextStyle(color: Color(0xFFDC2626)),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true) {
+                final index = InventoryData.items.indexOf(item);
+                if (index >= 0) {
+                  setState(() {
+                    InventoryData.items.removeAt(index);
+                  });
+                  _notifyInventoryChanged();
+                  try {
+                    await _inventoryController.deleteProduct(item.productId?.toString() ?? '');
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(_syncErrorMessage(e)),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    }
+                  }
+                }
+              }
+            },
             onPrimary: () async {
               final parsedPrice = int.tryParse(priceController.text.trim());
               final parsedStock = int.tryParse(stockController.text.trim());
@@ -271,7 +378,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 unit: unit.isEmpty ? 'pcs' : unit,
                 category: category,
                 lowStockAlert: parsedAlert,
-                image: item.image,
+                image: pickedImage ?? item.image,
               );
 
               Navigator.pop(dialogContext);
@@ -842,6 +949,11 @@ class _InventoryFormDialog extends StatelessWidget {
   final IconData icon;
   final String primaryLabel;
   final String category;
+  final String? image;
+  final String? errorText;
+  final bool showDeleteButton;
+  final VoidCallback? onImageTap;
+  final VoidCallback? onDelete;
   final TextEditingController nameController;
   final TextEditingController priceController;
   final TextEditingController stockController;
@@ -857,6 +969,11 @@ class _InventoryFormDialog extends StatelessWidget {
     required this.icon,
     required this.primaryLabel,
     required this.category,
+    this.image,
+    this.errorText,
+    this.showDeleteButton = false,
+    this.onImageTap,
+    this.onDelete,
     required this.nameController,
     required this.priceController,
     required this.stockController,
@@ -882,11 +999,69 @@ class _InventoryFormDialog extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _DialogHeader(icon: icon, title: title, subtitle: subtitle),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: onImageTap,
+                  child: Container(
+                    width: double.infinity,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F7F5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Center(
+                      child: image == null
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.add_a_photo_outlined, size: 28, color: Color(0xFF9CA3AF)),
+                                SizedBox(height: 8),
+                                Text('Tap to add product image', style: TextStyle(color: Color(0xFF9CA3AF), fontWeight: FontWeight.w700)),
+                                SizedBox(height: 4),
+                                Text('Camera or Gallery', style: TextStyle(color: Color(0xFFB7C0C7), fontSize: 12)),
+                              ],
+                            )
+                          : Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [Icon(Icons.image, size: 28, color: Color(0xFF009661)), SizedBox(height: 6), Text('Image selected')],
+                            ),
+                    ),
+                  ),
+                ),
+                if (errorText != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF1F2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFECACA)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, color: Color(0xFFDC2626), size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            errorText!,
+                            style: const TextStyle(
+                              color: Color(0xFF991B1B),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
                 _InventoryTextField(
                   controller: nameController,
                   label: 'Product Name',
-                  hint: 'e.g. Mango Shake 16oz',
+                  hint: 'e.g., Fried Chicken',
                   icon: Icons.fastfood_outlined,
                 ),
                 const SizedBox(height: 14),
@@ -895,8 +1070,8 @@ class _InventoryFormDialog extends StatelessWidget {
                     Expanded(
                       child: _InventoryTextField(
                         controller: priceController,
-                        label: 'Price',
-                        hint: '0',
+                        label: 'Price (₱)',
+                        hint: '0.00',
                         icon: Icons.payments_outlined,
                         keyboardType: TextInputType.number,
                       ),
@@ -920,7 +1095,7 @@ class _InventoryFormDialog extends StatelessWidget {
                       child: _InventoryTextField(
                         controller: unitController,
                         label: 'Unit',
-                        hint: 'pcs',
+                        hint: 'pcs, cup...',
                         icon: Icons.straighten_outlined,
                       ),
                     ),
@@ -964,6 +1139,22 @@ class _InventoryFormDialog extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 24),
+                if (showDeleteButton)
+                  ElevatedButton.icon(
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Delete Item'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFDC2626),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                if (showDeleteButton) const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(

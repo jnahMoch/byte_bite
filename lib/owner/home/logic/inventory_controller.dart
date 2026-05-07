@@ -479,4 +479,28 @@ class InventoryController {
     await _syncProductToFirebase(productId: productId, item: created);
     return created;
   }
+
+  Future<void> deleteProduct(String productIdStr) async {
+    final productId = int.tryParse(productIdStr);
+    if (productId == null || productId <= 0) {
+      throw ArgumentError('Invalid product ID: $productIdStr');
+    }
+
+    // Delete from local SQLite database
+    await DatabaseHelper.instance.deleteProduct(productId);
+
+    // Delete from Firebase if user is authenticated
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        await FirebaseFirestore.instance
+            .collection(_productsCollection)
+            .doc(productId.toString())
+            .delete();
+      } catch (e) {
+        debugPrint('inventory_controller.deleteProduct: Firebase delete failed: $e');
+        // Continue even if Firebase delete fails; local delete is the priority
+      }
+    }
+  }
 }
