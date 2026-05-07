@@ -11,10 +11,17 @@ class DatabaseHelper {
 
   Future<Database> _initDB(String file) async => await openDatabase(
     join(await getDatabasesPath(), file),
-    version: 1,
+    version: 2,
     onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
     onCreate: _createDB,
+    onUpgrade: _upgradeDB,
   );
+
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE Users ADD COLUMN phone TEXT');
+    }
+  }
 
   Future<void> _createDB(Database db, int version) async {
     await db.execute('''CREATE TABLE Users (
@@ -23,6 +30,7 @@ class DatabaseHelper {
       role     TEXT NOT NULL CHECK(role IN ('Owner','Helper')),
       username TEXT NOT NULL UNIQUE,
       email    TEXT UNIQUE,
+      phone    TEXT,
       password TEXT NOT NULL)''');
 
     // Insert a default owner user (required for foreign key constraints)
@@ -31,6 +39,7 @@ class DatabaseHelper {
       'role': 'Owner',
       'username': 'owner',
       'email': 'owner@bytebite.com',
+      'phone': null,
       'password': 'password123',
     });
 
@@ -103,6 +112,20 @@ class DatabaseHelper {
       limit: 1,
     );
     return res.isNotEmpty ? res.first : null;
+  }
+
+  Future<int> updateUserProfileByUsername({
+    required String username,
+    required String name,
+    required String email,
+    required String phone,
+  }) async {
+    return (await database).update(
+      'Users',
+      {'name': name, 'email': email, 'phone': phone},
+      where: 'username = ?',
+      whereArgs: [username],
+    );
   }
 
   Future<int> insertProduct(Map<String, dynamic> data) async =>

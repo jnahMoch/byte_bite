@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../user_storage.dart';
+import '../../../shared/settings/profile_panel.dart';
 
 class SettingsSheet extends StatefulWidget {
   final ScrollController scrollController;
@@ -986,144 +987,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
   }
 
   void _showProfileDialog(BuildContext context) {
-    final nameController = TextEditingController(
-      text: UserStorage.currentUser ?? 'User',
-    );
-    final emailController = TextEditingController(
-      text: 'owner@byteandbite.com',
-    );
-    final phoneController = TextEditingController(text: '+234 812 345 6789');
-
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 8,
-        shadowColor: Colors.black26,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-          constraints: const BoxConstraints(maxWidth: 360),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Profile',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-                  ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(ctx),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        shape: BoxShape.circle,
-                      ),
-                      padding: const EdgeInsets.all(8),
-                      child: const Icon(
-                        Icons.close,
-                        size: 20,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 28),
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF009661).withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        size: 48,
-                        color: Color(0xFF009661),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      UserStorage.currentUser ?? 'User',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Owner Account',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[500],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              _buildInputField(
-                controller: nameController,
-                label: 'Full Name',
-                icon: Icons.person_outline,
-                readOnly: true,
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: emailController,
-                label: 'Email',
-                icon: Icons.email_outlined,
-                readOnly: true,
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: phoneController,
-                label: 'Phone Number',
-                icon: Icons.phone_outlined,
-                readOnly: false,
-              ),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Profile updated successfully'),
-                        backgroundColor: Color(0xFF009661),
-                      ),
-                    );
-                    Navigator.pop(ctx);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF009661),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Save Changes',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    showProfileDialog(context, role: 'Owner');
   }
 
   void _showLogoutConfirmation(BuildContext context) {

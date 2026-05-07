@@ -69,6 +69,20 @@ class UserStorage {
     return true;
   }
 
+  static Future<Map<String, String>> getCurrentUserProfilePersistent() async {
+    final username = _currentUser?.trim() ?? '';
+    if (username.isEmpty) {
+      return {'name': 'User', 'email': '', 'phone': ''};
+    }
+
+    final existing = await DatabaseHelper.instance.getUserByUsername(username);
+    return {
+      'name': (existing?['name'] ?? username).toString(),
+      'email': (existing?['email'] ?? toFirebaseEmail(username)).toString(),
+      'phone': (existing?['phone'] ?? '').toString(),
+    };
+  }
+
   static void setCurrentUser(String username) {
     _currentUser = username;
     _currentUserRole = _users[username]?['role'];
@@ -228,6 +242,39 @@ class UserStorage {
       return null;
     } catch (_) {
       return 'Failed to update password. Please try again';
+    }
+  }
+
+  static Future<String?> updateCurrentUserProfilePersistent({
+    required String name,
+    required String email,
+    required String phone,
+  }) async {
+    final username = _currentUser?.trim() ?? '';
+    if (username.isEmpty) return 'No active user session';
+
+    final cleanName = name.trim();
+    final cleanEmail = email.trim().toLowerCase();
+    final cleanPhone = phone.trim();
+
+    if (cleanName.isEmpty) return 'Name cannot be empty';
+
+    try {
+      final updatedCount = await DatabaseHelper.instance
+          .updateUserProfileByUsername(
+            username: username,
+            name: cleanName,
+            email: cleanEmail,
+            phone: cleanPhone,
+          );
+
+      if (updatedCount == 0) {
+        return 'Unable to update profile';
+      }
+
+      return null;
+    } catch (_) {
+      return 'Unable to update profile. Please check the email address and try again';
     }
   }
 
