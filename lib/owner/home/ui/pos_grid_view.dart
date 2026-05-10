@@ -30,7 +30,9 @@ class _POSGridViewState extends State<POSGridView> {
   String _selectedCategory = 'All';
   String _selectedPayment = 'Cash';
   final List<CartItem> _cart = [];
+  final TextEditingController _searchController = TextEditingController();
   final TextEditingController _amountPaidController = TextEditingController();
+  String _searchQuery = '';
   double _change = 0;
   bool _cartBumped = false;
 
@@ -42,6 +44,7 @@ class _POSGridViewState extends State<POSGridView> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _amountPaidController.removeListener(_calculateChange);
     _amountPaidController.dispose();
     super.dispose();
@@ -59,10 +62,24 @@ class _POSGridViewState extends State<POSGridView> {
   }
 
   List<POSItem> get filteredItems {
-    if (_selectedCategory == 'All') return InventoryData.items;
-    return InventoryData.items
-        .where((item) => item.category == _selectedCategory)
-        .toList();
+    var items = InventoryData.items.toList();
+
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      items = items.where((item) {
+        return item.name.toLowerCase().contains(query) ||
+            item.category.toLowerCase().contains(query);
+      }).toList();
+    }
+
+    if (_selectedCategory != 'All') {
+      items = items.where((item) {
+        return item.category == _selectedCategory ||
+            (_selectedCategory == 'Beverage' && item.category == 'Beverages');
+      }).toList();
+    }
+
+    return items;
   }
 
   int get cartTotal => _cart.fold(0, (sum, item) => sum + item.total);
@@ -815,9 +832,36 @@ class _POSGridViewState extends State<POSGridView> {
       children: [
         Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) =>
+                    setState(() => _searchQuery = value.trim()),
+                decoration: InputDecoration(
+                  hintText: 'Search products...',
+                  hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: Color(0xFF7C8794),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 13),
+                ),
+              ),
+            ),
             // Category Tabs
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Row(
                 children: [
                   _tab("All"),
