@@ -359,10 +359,18 @@ void showAddProductDialog(
                           onPressed: () => Navigator.pop(context),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: const BorderSide(color: Color(0xFFD0D5DD)),
+                            side: const BorderSide(color: Colors.red, width: 1.5),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            foregroundColor: Colors.red,
                           ),
-                          child: const Text('Cancel', style: TextStyle(color: Color(0xFF667085), fontWeight: FontWeight.w700)),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -399,11 +407,18 @@ void showAddProductDialog(
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF009661),
-                            elevation: 0,
+                            elevation: 2,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
-                          child: const Text('Add Product', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                          child: const Text(
+                            'Add Product',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                            ),
+                          ),
                         ),
                       ),
                     ],

@@ -199,8 +199,17 @@ Future<void> showProfileDialog(
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
+                                foregroundColor: Colors.red,
+                                side: const BorderSide(color: Colors.red),
                               ),
-                              child: const Text('Cancel'),
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),

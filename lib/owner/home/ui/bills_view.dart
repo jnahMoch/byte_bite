@@ -105,7 +105,7 @@ class _BillsViewState extends State<BillsView> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFFB71C1C), Color(0xFFE53935)],
+                      colors: [Color(0xFF007A4E), Color(0xFF009661)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -349,15 +349,16 @@ class _BillsViewState extends State<BillsView> {
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 16,
                                 ),
-                                side: const BorderSide(color: Colors.grey),
+                                side: const BorderSide(color: Colors.red),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
+                                foregroundColor: Colors.red,
                               ),
                               child: const Text(
                                 'Cancel',
                                 style: TextStyle(
-                                  color: Colors.grey,
+                                  color: Colors.red,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -412,7 +413,7 @@ class _BillsViewState extends State<BillsView> {
                                 }
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFB71C1C),
+                                backgroundColor: const Color(0xFF009661),
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 16,
                                 ),
@@ -660,7 +661,15 @@ class _BillsViewState extends State<BillsView> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),

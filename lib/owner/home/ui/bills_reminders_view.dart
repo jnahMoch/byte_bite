@@ -292,7 +292,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFFB71C1C), Color(0xFFE53935)],
+                      colors: [Color(0xFF007A4E), Color(0xFF009661)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -440,12 +440,13 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                               onPressed: () => Navigator.pop(context),
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
-                                side: const BorderSide(color: Colors.grey),
+                                side: const BorderSide(color: Colors.red),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                foregroundColor: Colors.red,
                               ),
                               child: const Text(
                                 'Cancel',
-                                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600),
+                                style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
                               ),
                             ),
                           ),
@@ -481,7 +482,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                                 }
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFB71C1C),
+                                backgroundColor: const Color(0xFF009661),
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 elevation: 0,

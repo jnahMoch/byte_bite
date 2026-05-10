@@ -549,7 +549,15 @@ class _DataManagementPageState extends State<DataManagementPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),

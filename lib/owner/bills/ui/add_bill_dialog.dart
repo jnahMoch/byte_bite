@@ -81,7 +81,7 @@ class _AddBillDialogState extends State<AddBillDialog> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Container(
           padding: const EdgeInsets.all(20),
-          constraints: const BoxConstraints(maxWidth: 340),
+          constraints: const BoxConstraints(maxWidth: 420),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,7 +110,11 @@ class _AddBillDialogState extends State<AddBillDialog> {
       children: [
         const Text(
           'Add New Bill',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF009661),
+          ),
         ),
         GestureDetector(
           onTap: () => Navigator.pop(context),
@@ -290,13 +294,21 @@ class _AddBillDialogState extends State<AddBillDialog> {
           child: OutlinedButton(
             onPressed: () => Navigator.pop(context),
             style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              side: BorderSide(color: Colors.grey.shade300),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: const BorderSide(color: Colors.red, width: 1.5),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              foregroundColor: Colors.red,
+            ),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
               ),
             ),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
         ),
         const SizedBox(width: 12),
@@ -305,14 +317,19 @@ class _AddBillDialogState extends State<AddBillDialog> {
             onPressed: _handleAddBill,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF009661),
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              elevation: 2,
+              padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
             child: const Text(
               'Add Bill',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
             ),
           ),
         ),

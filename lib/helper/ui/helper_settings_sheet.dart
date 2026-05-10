@@ -265,14 +265,15 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          side: const BorderSide(color: Colors.grey),
+                          side: const BorderSide(color: Colors.red),
+                          foregroundColor: Colors.red,
                         ),
                         child: const Text(
                           'Cancel',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: Colors.grey,
+                            color: Colors.red,
                           ),
                         ),
                       ),
@@ -629,39 +630,127 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Logout?'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 8,
+        shadowColor: Colors.black.withValues(alpha: 0.15),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 420),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title with Icon
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.logout_rounded, color: Colors.red, size: 24),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Text(
+                      'Logout?',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black87,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Message
+              Text(
+                'Are you sure you want to logout?',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey[600],
+                  height: 1.6,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 32),
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        foregroundColor: Colors.red,
+                        overlayColor: Colors.red.withValues(alpha: 0.08),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
 
-              UserStorage.logout()
-                  .then((_) {
-                    Future.delayed(const Duration(milliseconds: 600), () {
-                      try {
-                        rootNavigator.pushNamedAndRemoveUntil(
-                          '/login',
-                          (Route<dynamic> route) => false,
-                        );
-                      } catch (e, st) {
-                        debugPrint('Logout navigation error: $e\n$st');
-                      }
-                    });
-                  })
-                  .catchError((e) {
-                    debugPrint('Logout error: $e');
-                  });
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Logout', style: TextStyle(color: Colors.white)),
+                        UserStorage.logout()
+                            .then((_) {
+                              Future.delayed(const Duration(milliseconds: 600), () {
+                                try {
+                                  rootNavigator.pushNamedAndRemoveUntil(
+                                    '/login',
+                                    (Route<dynamic> route) => false,
+                                  );
+                                } catch (e, st) {
+                                  debugPrint('Logout navigation error: $e\n$st');
+                                }
+                              });
+                            })
+                            .catchError((e) {
+                              debugPrint('Logout error: $e');
+                            });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        overlayColor: Colors.white.withValues(alpha: 0.1),
+                      ),
+                      child: const Text(
+                        'Logout',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -30,71 +30,122 @@ class ConfirmationDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final finalConfirmColor = confirmColor ?? const Color(0xFF009661);
     final finalIconColor = iconColor ?? Colors.orange;
+    const cancelRedColor = Colors.red;
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Row(
-        children: [
-          if (icon != null) ...[
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: finalIconColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: 0.15),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 420),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title with Icon
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (icon != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: finalIconColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, color: finalIconColor, size: 24),
+                    ),
+                    const SizedBox(width: 16),
+                  ],
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black87,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: Icon(icon, color: finalIconColor, size: 24),
-            ),
-            const SizedBox(width: 12),
-          ],
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-      content: Text(
-        message,
-        style: TextStyle(fontSize: 14, color: Colors.grey[700], height: 1.5),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            if (onCancel != null) {
-              onCancel!.call();
-            } else {
-              Navigator.pop(context, false);
-            }
-          },
-          style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
-          child: Text(
-            cancelText,
-            style: const TextStyle(fontWeight: FontWeight.w600),
+              const SizedBox(height: 20),
+              // Message
+              Text(
+                message,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey[600],
+                  height: 1.6,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 32),
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () {
+                        if (onCancel != null) {
+                          onCancel!.call();
+                        } else {
+                          Navigator.pop(context, false);
+                        }
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        foregroundColor: cancelRedColor,
+                        overlayColor: cancelRedColor.withValues(alpha: 0.08),
+                      ),
+                      child: Text(
+                        cancelText,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: cancelRedColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        onConfirm.call();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: finalConfirmColor,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        overlayColor: Colors.white.withValues(alpha: 0.1),
+                      ),
+                      child: Text(
+                        confirmText,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        ElevatedButton(
-          onPressed: () {
-            onConfirm.call();
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: finalConfirmColor,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          child: Text(
-            confirmText,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
-      ],
-      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
-      titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+      ),
     );
   }
 
