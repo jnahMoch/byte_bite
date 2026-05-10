@@ -260,21 +260,25 @@ class _SignUpPageState extends State<SignUpPage> {
                               color: Colors.white,
                               strokeWidth: 2,
                             )
-                          : const Row(
+                          : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
+                              children: const [
                                 Icon(
                                   Icons.how_to_reg_rounded,
                                   color: Colors.white,
                                   size: 20,
                                 ),
                                 SizedBox(width: 10),
-                                Text(
-                                  'Create Owner Account',
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
+                                Flexible(
+                                  child: Text(
+                                    'Create Owner Account',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ],

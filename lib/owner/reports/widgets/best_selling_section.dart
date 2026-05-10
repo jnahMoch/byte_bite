@@ -6,15 +6,12 @@ import '../logic/reports_logic.dart';
 class BestSellingSection extends StatelessWidget {
   final List<SalesTransaction> transactions;
 
-  const BestSellingSection({
-    super.key,
-    required this.transactions,
-  });
+  const BestSellingSection({super.key, required this.transactions});
 
   @override
   Widget build(BuildContext context) {
     final bestSellingItems = ReportsLogic.getBestSellingItems(transactions);
-    
+
     if (bestSellingItems.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -27,10 +24,7 @@ class BestSellingSection extends StatelessWidget {
       children: [
         const Text(
           'Best Selling Items',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Container(
@@ -40,7 +34,7 @@ class BestSellingSection extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 // ignore: deprecated_member_use
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -53,12 +47,14 @@ class BestSellingSection extends StatelessWidget {
             separatorBuilder: (context, index) => Divider(
               height: 1,
               // ignore: deprecated_member_use
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withValues(alpha: 0.2),
             ),
             itemBuilder: (context, index) {
               final item = sortedItems[index];
-              final quantity =
-                  ReportsLogic.getItemQuantityForBestSelling(item.key, transactions);
+              final quantity = ReportsLogic.getItemQuantityForBestSelling(
+                item.key,
+                transactions,
+              );
 
               return Padding(
                 padding: const EdgeInsets.all(16),

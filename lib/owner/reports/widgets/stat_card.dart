@@ -25,7 +25,7 @@ class StatCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             // ignore: deprecated_member_use
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -64,15 +64,11 @@ class StatCard extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                   // ignore: deprecated_member_use
-                  color: (iconColor ?? Colors.blue).withOpacity(0.1),
+                  color: (iconColor ?? Colors.blue).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 padding: const EdgeInsets.all(12),
-                child: Icon(
-                  icon,
-                  color: iconColor ?? Colors.blue,
-                  size: 24,
-                ),
+                child: Icon(icon, color: iconColor ?? Colors.blue, size: 24),
               ),
             ],
           ),
@@ -80,10 +76,7 @@ class StatCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               subtext!,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
             ),
           ],
         ],

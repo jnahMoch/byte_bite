@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../user_storage.dart';
 import '../../shared/settings/profile_panel.dart';
@@ -75,7 +75,8 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
             Icons.logout,
             'Logout',
             'Sign out of your account',
-            isDestructive: true,
+            isDestructive: false,
+            color: const Color(0xFF009661),
             onTap: () {
               Navigator.pop(context);
               _showLogoutConfirmation(context);
@@ -108,27 +109,28 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
     String subtitle, {
     VoidCallback? onTap,
     bool isDestructive = false,
+    Color? color,
   }) {
+    final Color iconColor =
+        color ?? (isDestructive ? Colors.red : const Color(0xFF009661));
+    final Color? titleColor = color ?? (isDestructive ? Colors.red : null);
+    final Color leadingBg = color != null
+        ? color.withValues(alpha: 0.12)
+        : (isDestructive ? Colors.red.shade50 : Colors.grey.shade100);
+
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: isDestructive ? Colors.red.shade50 : Colors.grey.shade100,
+          color: leadingBg,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(
-          icon,
-          color: isDestructive ? Colors.red : const Color(0xFF009661),
-          size: 22,
-        ),
+        child: Icon(icon, color: iconColor, size: 22),
       ),
       title: Text(
         title,
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          color: isDestructive ? Colors.red : null,
-        ),
+        style: TextStyle(fontWeight: FontWeight.w600, color: titleColor),
       ),
       subtitle: Text(
         subtitle,
@@ -163,213 +165,219 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
             constraints: const BoxConstraints(maxWidth: 360),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Change Password',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(ctx),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          shape: BoxShape.circle,
-                        ),
-                        padding: const EdgeInsets.all(8),
-                        child: const Icon(
-                          Icons.close,
-                          size: 20,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                _buildInputField(
-                  controller: oldPasswordController,
-                  label: 'Current Password',
-                  icon: Icons.lock_outline,
-                  obscureText: !isOldPasswordVisible,
-                  suffixIcon: IconButton(
-                    onPressed: () {
-                      setDialogState(() {
-                        isOldPasswordVisible = !isOldPasswordVisible;
-                      });
-                    },
-                    icon: Icon(
-                      isOldPasswordVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                      color: const Color(0xFF009661),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _buildInputField(
-                  controller: newPasswordController,
-                  label: 'New Password',
-                  icon: Icons.lock_outline,
-                  obscureText: !isNewPasswordVisible,
-                  suffixIcon: IconButton(
-                    onPressed: () {
-                      setDialogState(() {
-                        isNewPasswordVisible = !isNewPasswordVisible;
-                      });
-                    },
-                    icon: Icon(
-                      isNewPasswordVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                      color: const Color(0xFF009661),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _buildInputField(
-                  controller: confirmPasswordController,
-                  label: 'Confirm New Password',
-                  icon: Icons.lock_outline,
-                  obscureText: !isConfirmPasswordVisible,
-                  suffixIcon: IconButton(
-                    onPressed: () {
-                      setDialogState(() {
-                        isConfirmPasswordVisible = !isConfirmPasswordVisible;
-                      });
-                    },
-                    icon: Icon(
-                      isConfirmPasswordVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                      color: const Color(0xFF009661),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 28),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          side: const BorderSide(color: Colors.red),
-                          foregroundColor: Colors.red,
-                        ),
-                        child: const Text(
-                          'Cancel',
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Change Password',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.red,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(ctx),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          padding: const EdgeInsets.all(8),
+                          child: const Icon(
+                            Icons.close,
+                            size: 20,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _buildInputField(
+                    controller: oldPasswordController,
+                    label: 'Current Password',
+                    icon: Icons.lock_outline,
+                    obscureText: !isOldPasswordVisible,
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setDialogState(() {
+                          isOldPasswordVisible = !isOldPasswordVisible;
+                        });
+                      },
+                      icon: Icon(
+                        isOldPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: const Color(0xFF009661),
+                      ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          String oldPassword = oldPasswordController.text
-                              .trim();
-                          String newPassword = newPasswordController.text
-                              .trim();
-                          String confirmPassword = confirmPasswordController
-                              .text
-                              .trim();
-
-                          if (oldPassword.isEmpty ||
-                              newPassword.isEmpty ||
-                              confirmPassword.isEmpty) {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please fill in all fields'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          if (newPassword.length < 6) {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Password must be at least 6 characters',
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          if (newPassword != confirmPassword) {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              const SnackBar(
-                                content: Text('Passwords do not match'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          final updateError =
-                              await UserStorage.changeCurrentUserPasswordPersistent(
-                                oldPassword: oldPassword,
-                                newPassword: newPassword,
-                              );
-
-                          if (!ctx.mounted) return;
-
-                          if (updateError != null) {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              SnackBar(
-                                content: Text(updateError),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          Navigator.pop(ctx);
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            const SnackBar(
-                              content: Text('Password changed successfully'),
-                              backgroundColor: Color(0xFF009661),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildInputField(
+                    controller: newPasswordController,
+                    label: 'New Password',
+                    icon: Icons.lock_outline,
+                    obscureText: !isNewPasswordVisible,
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setDialogState(() {
+                          isNewPasswordVisible = !isNewPasswordVisible;
+                        });
+                      },
+                      icon: Icon(
+                        isNewPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: const Color(0xFF009661),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildInputField(
+                    controller: confirmPasswordController,
+                    label: 'Confirm New Password',
+                    icon: Icons.lock_outline,
+                    obscureText: !isConfirmPasswordVisible,
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setDialogState(() {
+                          isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                        });
+                      },
+                      icon: Icon(
+                        isConfirmPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: const Color(0xFF009661),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF009661),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            side: const BorderSide(color: Colors.red),
+                            foregroundColor: Colors.red,
                           ),
-                        ),
-                        child: const Text(
-                          'Change',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.red,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            String oldPassword = oldPasswordController.text
+                                .trim();
+                            String newPassword = newPasswordController.text
+                                .trim();
+                            String confirmPassword = confirmPasswordController
+                                .text
+                                .trim();
+
+                            if (oldPassword.isEmpty ||
+                                newPassword.isEmpty ||
+                                confirmPassword.isEmpty) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please fill in all fields'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            if (newPassword.length < 6) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Password must be at least 6 characters',
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            if (newPassword != confirmPassword) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Passwords do not match'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            final updateError =
+                                await UserStorage.changeCurrentUserPasswordPersistent(
+                                  oldPassword: oldPassword,
+                                  newPassword: newPassword,
+                                );
+
+                            if (!ctx.mounted) return;
+
+                            if (updateError != null) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                SnackBar(
+                                  content: Text(updateError),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              const SnackBar(
+                                content: Text('Password changed successfully'),
+                                backgroundColor: Color(0xFF009661),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF009661),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Change',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -651,7 +659,11 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                       color: Colors.red.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.logout_rounded, color: Colors.red, size: 24),
+                    child: const Icon(
+                      Icons.logout_rounded,
+                      color: Colors.red,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   const Expanded(
@@ -711,16 +723,21 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
 
                         UserStorage.logout()
                             .then((_) {
-                              Future.delayed(const Duration(milliseconds: 600), () {
-                                try {
-                                  rootNavigator.pushNamedAndRemoveUntil(
-                                    '/login',
-                                    (Route<dynamic> route) => false,
-                                  );
-                                } catch (e, st) {
-                                  debugPrint('Logout navigation error: $e\n$st');
-                                }
-                              });
+                              Future.delayed(
+                                const Duration(milliseconds: 600),
+                                () {
+                                  try {
+                                    rootNavigator.pushNamedAndRemoveUntil(
+                                      '/login',
+                                      (Route<dynamic> route) => false,
+                                    );
+                                  } catch (e, st) {
+                                    debugPrint(
+                                      'Logout navigation error: $e\n$st',
+                                    );
+                                  }
+                                },
+                              );
                             })
                             .catchError((e) {
                               debugPrint('Logout error: $e');

@@ -6,15 +6,12 @@ import '../logic/reports_logic.dart';
 class PaymentMethodsSection extends StatelessWidget {
   final List<SalesTransaction> transactions;
 
-  const PaymentMethodsSection({
-    super.key,
-    required this.transactions,
-  });
+  const PaymentMethodsSection({super.key, required this.transactions});
 
   @override
   Widget build(BuildContext context) {
     final paymentMethods = ReportsLogic.getPaymentMethodBreakdown(transactions);
-    
+
     if (paymentMethods.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -26,10 +23,7 @@ class PaymentMethodsSection extends StatelessWidget {
       children: [
         const Text(
           'Payment Methods',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Container(
@@ -39,7 +33,7 @@ class PaymentMethodsSection extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 // ignore: deprecated_member_use
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -48,7 +42,8 @@ class PaymentMethodsSection extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: paymentMethods.entries.map((entry) {
-              final percentage = (entry.value / totalSales * 100).toStringAsFixed(1);
+              final percentage = (entry.value / totalSales * 100)
+                  .toStringAsFixed(1);
               final colors = {
                 'Cash': Colors.green,
                 'Card': Colors.blue,

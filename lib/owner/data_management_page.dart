@@ -1,5 +1,5 @@
 // ============================================================================
-// Refactored to follow SOLID principles 
+// Refactored to follow SOLID principles
 // ============================================================================
 import 'package:byte_bite/data/bills_data.dart';
 import 'package:byte_bite/data/inventory_data.dart';
@@ -43,7 +43,7 @@ class InventoryRepositoryAdapter implements IInventoryRepository {
   void clear() => InventoryData.items.clear();
 }
 
-/// Adapter for SalesData - wraps the static class  
+/// Adapter for SalesData - wraps the static class
 class SalesRepositoryAdapter implements ISalesRepository {
   @override
   List<SalesTransaction> getAll() => SalesData.transactions;
@@ -76,9 +76,9 @@ class DataService {
     required IInventoryRepository inventoryRepo,
     required ISalesRepository salesRepo,
     required IBillsRepository billsRepo,
-  })  : _inventoryRepo = inventoryRepo,
-        _salesRepo = salesRepo,
-        _billsRepo = billsRepo;
+  }) : _inventoryRepo = inventoryRepo,
+       _salesRepo = salesRepo,
+       _billsRepo = billsRepo;
 
   /// Export all data (simulated)
   Future<void> exportData() async {
@@ -102,16 +102,26 @@ class DataService {
   /// Get all data as JSON map for export
   Map<String, dynamic> getAllDataAsJson() {
     return {
-      'inventory': _inventoryRepo.getAll().map((item) => {
-        'name': item.name,
-        'price': item.price,
-        'stock': item.stock,
-        'unit': item.unit,
-        'category': item.category,
-      }).toList(),
-      'sales': _salesRepo.getAll().map((t) => {
-        // Add sales serialization based on SalesTransaction model
-      }).toList(),
+      'inventory': _inventoryRepo
+          .getAll()
+          .map(
+            (item) => {
+              'name': item.name,
+              'price': item.price,
+              'stock': item.stock,
+              'unit': item.unit,
+              'category': item.category,
+            },
+          )
+          .toList(),
+      'sales': _salesRepo
+          .getAll()
+          .map(
+            (t) => {
+              // Add sales serialization based on SalesTransaction model
+            },
+          )
+          .toList(),
       'exportDate': DateTime.now().toIso8601String(),
     };
   }
@@ -140,11 +150,7 @@ class DataManagementHeader extends StatelessWidget {
         ],
       ),
       child: const Row(
-        children: [
-          _HeaderIcon(),
-          SizedBox(width: 16),
-          _HeaderText(),
-        ],
+        children: [_HeaderIcon(), SizedBox(width: 16), _HeaderText()],
       ),
     );
   }
@@ -159,7 +165,7 @@ class _HeaderIcon extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         // ignore: deprecated_member_use
-        color: const Color(0xFF009661).withOpacity(0.1),
+        color: const Color(0xFF009661).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Icon(
@@ -190,10 +196,7 @@ class _HeaderText extends StatelessWidget {
         SizedBox(height: 4),
         Text(
           "Backup and restore your data",
-          style: TextStyle(
-            fontSize: 14,
-            color: Color(0xFF6B7280),
-          ),
+          style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
         ),
       ],
     );
@@ -217,7 +220,11 @@ class ExportSection extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: const Icon(Icons.download_rounded, color: Colors.white, size: 22),
+        child: const Icon(
+          Icons.download_rounded,
+          color: Colors.white,
+          size: 22,
+        ),
       ),
       title: "Export Backup",
       description:
@@ -240,12 +247,20 @@ class _ExportButton extends StatelessWidget {
       child: ElevatedButton.icon(
         onPressed: onExport,
         icon: const Icon(Icons.download_rounded, color: Colors.white, size: 20),
-        label: const Text("Export Data",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+        label: const Text(
+          "Export Data",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF009661),
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );
@@ -265,10 +280,14 @@ class ImportSection extends StatelessWidget {
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           // ignore: deprecated_member_use
-          color: const Color(0xFF3B82F6).withOpacity(0.1),
+          color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: const Icon(Icons.upload_rounded, color: Color(0xFF3B82F6), size: 22),
+        child: const Icon(
+          Icons.upload_rounded,
+          color: Color(0xFF3B82F6),
+          size: 22,
+        ),
       ),
       title: "Import Backup",
       description:
@@ -290,12 +309,24 @@ class _ImportButton extends StatelessWidget {
       height: 50,
       child: OutlinedButton.icon(
         onPressed: onImport,
-        icon: const Icon(Icons.upload_rounded, color: Color(0xFF3B82F6), size: 20),
-        label: const Text("Import Data",
-            style: TextStyle(color: Color(0xFF3B82F6), fontWeight: FontWeight.w600, fontSize: 15)),
+        icon: const Icon(
+          Icons.upload_rounded,
+          color: Color(0xFF3B82F6),
+          size: 20,
+        ),
+        label: const Text(
+          "Import Data",
+          style: TextStyle(
+            color: Color(0xFF3B82F6),
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
+        ),
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );
@@ -329,17 +360,31 @@ class DangerZoneSection extends StatelessWidget {
                   color: Colors.red.shade100,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 22),
+                child: Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.red.shade700,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 14),
-              Text("Danger Zone",
-                  style: TextStyle(color: Colors.red.shade800, fontWeight: FontWeight.bold, fontSize: 18)),
+              Text(
+                "Danger Zone",
+                style: TextStyle(
+                  color: Colors.red.shade800,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 14),
           Text(
             "Permanently delete all data including products, transactions, and bills. This cannot be undone!",
-            style: TextStyle(color: Colors.grey[700], fontSize: 14, height: 1.5),
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontSize: 14,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 18),
           _ClearAllButton(onClearAll: onClearAll),
@@ -361,13 +406,25 @@ class _ClearAllButton extends StatelessWidget {
       height: 50,
       child: ElevatedButton.icon(
         onPressed: onClearAll,
-        icon: const Icon(Icons.delete_forever_rounded, color: Colors.white, size: 20),
-        label: const Text("Clear All Data",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+        icon: const Icon(
+          Icons.delete_forever_rounded,
+          color: Colors.white,
+          size: 20,
+        ),
+        label: const Text(
+          "Clear All Data",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.red.shade600,
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );
@@ -399,7 +456,11 @@ class TipSection extends StatelessWidget {
               color: Colors.amber.shade100,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.lightbulb_rounded, color: Colors.amber, size: 20),
+            child: const Icon(
+              Icons.lightbulb_rounded,
+              color: Colors.amber,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -408,12 +469,20 @@ class TipSection extends StatelessWidget {
               children: [
                 Text(
                   "Pro Tip",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF92400E)),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Color(0xFF92400E),
+                  ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   "Export your data regularly to keep backups. Data is stored locally on your device.",
-                  style: TextStyle(color: Color(0xFF92400E), fontSize: 13, height: 1.4),
+                  style: TextStyle(
+                    color: Color(0xFF92400E),
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
                 ),
               ],
             ),
@@ -448,7 +517,7 @@ class _SectionCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             // ignore: deprecated_member_use
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -461,15 +530,24 @@ class _SectionCard extends StatelessWidget {
             children: [
               icon,
               const SizedBox(width: 14),
-              Text(title,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1F2937))),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color(0xFF1F2937),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 14),
           Text(
             description,
-            style: const TextStyle(color: Color(0xFF6B7280), fontSize: 14, height: 1.5),
+            style: const TextStyle(
+              color: Color(0xFF6B7280),
+              fontSize: 14,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 18),
           button,
@@ -499,7 +577,8 @@ class _DataManagementPageState extends State<DataManagementPage> {
   void initState() {
     super.initState();
     // Use injected service or create with default adapters
-    _dataService = widget.dataService ??
+    _dataService =
+        widget.dataService ??
         DataService(
           inventoryRepo: InventoryRepositoryAdapter(),
           salesRepo: SalesRepositoryAdapter(),
@@ -510,10 +589,7 @@ class _DataManagementPageState extends State<DataManagementPage> {
   void _showSnackBar(String message, Color backgroundColor) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-      ),
+      SnackBar(content: Text(message), backgroundColor: backgroundColor),
     );
   }
 
@@ -562,7 +638,10 @@ class _DataManagementPageState extends State<DataManagementPage> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Clear All', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Clear All',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -611,4 +690,3 @@ class _DataManagementPageState extends State<DataManagementPage> {
     );
   }
 }
-

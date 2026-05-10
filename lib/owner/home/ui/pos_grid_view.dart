@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import '../../../shared/receipt_printer.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../model/pos_item_model.dart';
 import '../../../model/sales_transaction_model.dart';
@@ -30,9 +32,7 @@ class _POSGridViewState extends State<POSGridView> {
   String _selectedCategory = 'All';
   String _selectedPayment = 'Cash';
   final List<CartItem> _cart = [];
-  final TextEditingController _searchController = TextEditingController();
   final TextEditingController _amountPaidController = TextEditingController();
-  String _searchQuery = '';
   double _change = 0;
   bool _cartBumped = false;
 
@@ -44,7 +44,6 @@ class _POSGridViewState extends State<POSGridView> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     _amountPaidController.removeListener(_calculateChange);
     _amountPaidController.dispose();
     super.dispose();
@@ -62,24 +61,10 @@ class _POSGridViewState extends State<POSGridView> {
   }
 
   List<POSItem> get filteredItems {
-    var items = InventoryData.items.toList();
-
-    if (_searchQuery.isNotEmpty) {
-      final query = _searchQuery.toLowerCase();
-      items = items.where((item) {
-        return item.name.toLowerCase().contains(query) ||
-            item.category.toLowerCase().contains(query);
-      }).toList();
-    }
-
-    if (_selectedCategory != 'All') {
-      items = items.where((item) {
-        return item.category == _selectedCategory ||
-            (_selectedCategory == 'Beverage' && item.category == 'Beverages');
-      }).toList();
-    }
-
-    return items;
+    if (_selectedCategory == 'All') return InventoryData.items;
+    return InventoryData.items
+        .where((item) => item.category == _selectedCategory)
+        .toList();
   }
 
   int get cartTotal => _cart.fold(0, (sum, item) => sum + item.total);
@@ -775,29 +760,166 @@ class _POSGridViewState extends State<POSGridView> {
     required String paymentMethod,
     required DateTime date,
   }) async {
-    // Build a shared items map and use the shared receipt builder
-    final itemsForPdf = cartItems
-        .map(
-          (c) => {
-            'name': c.item.name,
-            'price': c.item.price,
-            'quantity': c.quantity,
-            'total': c.total,
-          },
-        )
-        .toList();
+    final pdf = pw.Document();
 
-    final pdf = buildReceiptDocument(
-      receiptNumber: receiptNumber,
-      date: date,
-      items: itemsForPdf,
-      total: total,
-      paid: paid,
-      change: change,
-      paymentMethod: paymentMethod,
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.roll80,
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Text(
+                'BYTE & BITE',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.Text(
+                'Smart POS Solution',
+                style: const pw.TextStyle(fontSize: 10),
+              ),
+              pw.Text(
+                'Visayan Village, Tagum City',
+                style: const pw.TextStyle(fontSize: 10),
+              ),
+              pw.SizedBox(height: 12),
+              pw.Container(
+                alignment: pw.Alignment.centerLeft,
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'Date: ${_formatDate(date)}',
+                      style: const pw.TextStyle(fontSize: 10),
+                    ),
+                    pw.Text(
+                      'Time: ${_formatTime(date)}',
+                      style: const pw.TextStyle(fontSize: 10),
+                    ),
+                    pw.Text(
+                      'Receipt #: $receiptNumber',
+                      style: const pw.TextStyle(fontSize: 10),
+                    ),
+                    pw.Text(
+                      'Payment: $paymentMethod',
+                      style: const pw.TextStyle(fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 8),
+              pw.Divider(thickness: 0.5),
+              pw.SizedBox(height: 8),
+              // Items
+              ...cartItems.map(
+                (item) => pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text(
+                          item.item.name,
+                          style: const pw.TextStyle(fontSize: 10),
+                        ),
+                        pw.Text(
+                          'P${item.item.price}.00',
+                          style: const pw.TextStyle(fontSize: 10),
+                        ),
+                      ],
+                    ),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text(
+                          'x${item.quantity}',
+                          style: const pw.TextStyle(
+                            fontSize: 9,
+                            color: PdfColors.grey,
+                          ),
+                        ),
+                        pw.Text(
+                          'P${item.total}.00',
+                          style: const pw.TextStyle(
+                            fontSize: 9,
+                            color: PdfColors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                    pw.SizedBox(height: 4),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Divider(thickness: 0.5),
+              pw.SizedBox(height: 8),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    'TOTAL:',
+                    style: pw.TextStyle(
+                      fontSize: 12,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.Text(
+                    'P$total.00',
+                    style: pw.TextStyle(
+                      fontSize: 12,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 4),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    'Amount Paid:',
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
+                  pw.Text(
+                    'P${paid.toStringAsFixed(2)}',
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
+                ],
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Change:', style: const pw.TextStyle(fontSize: 10)),
+                  pw.Text(
+                    'P${change.toStringAsFixed(2)}',
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 8),
+              pw.Divider(thickness: 0.5),
+              pw.SizedBox(height: 12),
+              pw.Text(
+                'Thank you for your purchase!',
+                style: const pw.TextStyle(fontSize: 10),
+              ),
+              pw.Text(
+                'Come again soon!',
+                style: const pw.TextStyle(fontSize: 10),
+              ),
+              pw.SizedBox(height: 16),
+            ],
+          );
+        },
+      ),
     );
 
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+    );
   }
 
   String _formatDate(DateTime dt) {
@@ -833,35 +955,7 @@ class _POSGridViewState extends State<POSGridView> {
         Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) =>
-                    setState(() => _searchQuery = value.trim()),
-                decoration: InputDecoration(
-                  hintText: 'Search products...',
-                  hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
-                  prefixIcon: const Icon(
-                    Icons.search,
-                    color: Color(0xFF7C8794),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade200),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade200),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 13),
-                ),
-              ),
-            ),
-            // Category Tabs
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
                   _tab("All"),
@@ -879,7 +973,7 @@ class _POSGridViewState extends State<POSGridView> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 0.75,
+                  childAspectRatio: 0.68,
                 ),
                 itemCount: filteredItems.length,
                 itemBuilder: (context, index) =>
@@ -1083,6 +1177,7 @@ class _POSGridViewState extends State<POSGridView> {
                           onTap: () {
                             setState(() => _selectedPayment = 'QR');
                             setModalState(() {});
+                            _openQRScanner();
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1305,10 +1400,10 @@ class _POSGridViewState extends State<POSGridView> {
                       fontSize: 13,
                       color: Color(0xFF1A1A2E),
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const Spacer(),
+                  const SizedBox(height: 6),
 
                   Text(
                     '₱${item.price}',
@@ -1322,6 +1417,8 @@ class _POSGridViewState extends State<POSGridView> {
 
                   Text(
                     'Stock: ${item.stock} ${item.unit}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: Colors.grey[500], fontSize: 11),
                   ),
                 ],
@@ -1574,5 +1671,82 @@ class _POSGridViewState extends State<POSGridView> {
         ],
       ),
     );
+  }
+
+  Future<void> _openQRScanner() async {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Scan QR Code',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      padding: const EdgeInsets.all(8),
+                      child: const Icon(Icons.close, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: MobileScanner(
+                onDetect: (capture) {
+                  final List<Barcode> barcodes = capture.barcodes;
+                  if (barcodes.isNotEmpty) {
+                    final qrCode = barcodes.first.rawValue;
+                    if (qrCode != null) {
+                      _handleQRCode(qrCode);
+                      Navigator.pop(context);
+                    }
+                  }
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Position the QR code in the scanner area',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleQRCode(String qrCode) {
+    // Process QR code - could be payment gateway URL, amount, etc.
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('QR Code Scanned: $qrCode'),
+        backgroundColor: const Color(0xFF009661),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+    // You can implement actual payment processing here
   }
 }
