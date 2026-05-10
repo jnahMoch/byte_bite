@@ -1,10 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import '../../../shared/receipt_printer.dart';
 
 import '../../../model/pos_item_model.dart';
 import '../../../model/sales_transaction_model.dart';
@@ -135,11 +133,9 @@ class _POSGridViewState extends State<POSGridView> {
 
   Future<void> _completeTransaction(BuildContext modalContext) async {
     if (_cart.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cart is empty'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Cart is empty')));
       return;
     }
 
@@ -182,7 +178,8 @@ class _POSGridViewState extends State<POSGridView> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                  'Insufficient stock for ${cartItem.item.name} (available: $available)'),
+                'Insufficient stock for ${cartItem.item.name} (available: $available)',
+              ),
               backgroundColor: Colors.red,
             ),
           );
@@ -761,166 +758,29 @@ class _POSGridViewState extends State<POSGridView> {
     required String paymentMethod,
     required DateTime date,
   }) async {
-    final pdf = pw.Document();
+    // Build a shared items map and use the shared receipt builder
+    final itemsForPdf = cartItems
+        .map(
+          (c) => {
+            'name': c.item.name,
+            'price': c.item.price,
+            'quantity': c.quantity,
+            'total': c.total,
+          },
+        )
+        .toList();
 
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.roll80,
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.center,
-            children: [
-              pw.Text(
-                'BYTE & BITE',
-                style: pw.TextStyle(
-                  fontSize: 18,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-              pw.Text(
-                'Smart POS Solution',
-                style: const pw.TextStyle(fontSize: 10),
-              ),
-              pw.Text(
-                'Visayan Village, Tagum City',
-                style: const pw.TextStyle(fontSize: 10),
-              ),
-              pw.SizedBox(height: 12),
-              pw.Container(
-                alignment: pw.Alignment.centerLeft,
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text(
-                      'Date: ${_formatDate(date)}',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                    pw.Text(
-                      'Time: ${_formatTime(date)}',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                    pw.Text(
-                      'Receipt #: $receiptNumber',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                    pw.Text(
-                      'Payment: $paymentMethod',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 8),
-              pw.Divider(thickness: 0.5),
-              pw.SizedBox(height: 8),
-              // Items
-              ...cartItems.map(
-                (item) => pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        pw.Text(
-                          item.item.name,
-                          style: const pw.TextStyle(fontSize: 10),
-                        ),
-                        pw.Text(
-                          'P${item.item.price}.00',
-                          style: const pw.TextStyle(fontSize: 10),
-                        ),
-                      ],
-                    ),
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        pw.Text(
-                          'x${item.quantity}',
-                          style: const pw.TextStyle(
-                            fontSize: 9,
-                            color: PdfColors.grey,
-                          ),
-                        ),
-                        pw.Text(
-                          'P${item.total}.00',
-                          style: const pw.TextStyle(
-                            fontSize: 9,
-                            color: PdfColors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                    pw.SizedBox(height: 4),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 4),
-              pw.Divider(thickness: 0.5),
-              pw.SizedBox(height: 8),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'TOTAL:',
-                    style: pw.TextStyle(
-                      fontSize: 12,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                  pw.Text(
-                    'P$total.00',
-                    style: pw.TextStyle(
-                      fontSize: 12,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 4),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'Amount Paid:',
-                    style: const pw.TextStyle(fontSize: 10),
-                  ),
-                  pw.Text(
-                    'P${paid.toStringAsFixed(2)}',
-                    style: const pw.TextStyle(fontSize: 10),
-                  ),
-                ],
-              ),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text('Change:', style: const pw.TextStyle(fontSize: 10)),
-                  pw.Text(
-                    'P${change.toStringAsFixed(2)}',
-                    style: const pw.TextStyle(fontSize: 10),
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 8),
-              pw.Divider(thickness: 0.5),
-              pw.SizedBox(height: 12),
-              pw.Text(
-                'Thank you for your purchase!',
-                style: const pw.TextStyle(fontSize: 10),
-              ),
-              pw.Text(
-                'Come again soon!',
-                style: const pw.TextStyle(fontSize: 10),
-              ),
-              pw.SizedBox(height: 16),
-            ],
-          );
-        },
-      ),
+    final pdf = buildReceiptDocument(
+      receiptNumber: receiptNumber,
+      date: date,
+      items: itemsForPdf,
+      total: total,
+      paid: paid,
+      change: change,
+      paymentMethod: paymentMethod,
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
+    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
   }
 
   String _formatDate(DateTime dt) {
@@ -955,22 +815,6 @@ class _POSGridViewState extends State<POSGridView> {
       children: [
         Column(
           children: [
-            // Logo Header
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey.shade200),
-                ),
-              ),
-              child: Image.asset(
-                'assets/images/byte_and_bite_logo.png',
-                height: 50,
-                fit: BoxFit.contain,
-              ),
-            ),
             // Category Tabs
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -987,15 +831,15 @@ class _POSGridViewState extends State<POSGridView> {
             Expanded(
               child: GridView.builder(
                 padding: EdgeInsets.fromLTRB(16, 0, 16, barHeight + 16),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                   childAspectRatio: 0.75,
                 ),
                 itemCount: filteredItems.length,
-                itemBuilder: (context, index) => _itemCard(filteredItems[index]),
+                itemBuilder: (context, index) =>
+                    _itemCard(filteredItems[index]),
               ),
             ),
           ],
@@ -1121,11 +965,11 @@ class _POSGridViewState extends State<POSGridView> {
                   ),
                   const SizedBox(height: 12),
                   for (int i = 0; i < _cart.length; i++)
-                      _cartItemRow(
-                        _cart[i],
-                        i,
-                        onChanged: () => setModalState(() {}),
-                      ),
+                    _cartItemRow(
+                      _cart[i],
+                      i,
+                      onChanged: () => setModalState(() {}),
+                    ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(14),
@@ -1138,7 +982,10 @@ class _POSGridViewState extends State<POSGridView> {
                       children: [
                         const Text(
                           'Total Amount Due',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         Text(
                           '₱$cartTotal',
@@ -1192,7 +1039,6 @@ class _POSGridViewState extends State<POSGridView> {
                           onTap: () {
                             setState(() => _selectedPayment = 'QR');
                             setModalState(() {});
-                            _openQRScanner();
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1246,7 +1092,11 @@ class _POSGridViewState extends State<POSGridView> {
                       children: [
                         const Text(
                           'Change:',
-                          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
                         ),
                         Text(
                           '₱${_change.toStringAsFixed(2)}',
@@ -1268,7 +1118,14 @@ class _POSGridViewState extends State<POSGridView> {
                         backgroundColor: const Color(0xFF009661),
                         padding: const EdgeInsets.symmetric(vertical: 18),
                       ),
-                      child: const Text('Complete Transaction', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                      child: const Text(
+                        'Complete Transaction',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -1446,7 +1303,7 @@ class _POSGridViewState extends State<POSGridView> {
     }
 
     final imageRef = imagePathOrUrl.trim();
-    
+
     // Check if it's a network URL
     final parsed = Uri.tryParse(imageRef);
     final isNetwork =
@@ -1613,7 +1470,10 @@ class _POSGridViewState extends State<POSGridView> {
                   ),
                   const SizedBox(width: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(8),
@@ -1671,93 +1531,4 @@ class _POSGridViewState extends State<POSGridView> {
       ),
     );
   }
-
-  Future<void> _openQRScanner() async {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(20),
-          ),
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Scan QR Code',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        shape: BoxShape.circle,
-                      ),
-                      padding: const EdgeInsets.all(8),
-                      child: const Icon(
-                        Icons.close,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: MobileScanner(
-                onDetect: (capture) {
-                  final List<Barcode> barcodes = capture.barcodes;
-                  if (barcodes.isNotEmpty) {
-                    final qrCode = barcodes.first.rawValue;
-                    if (qrCode != null) {
-                      _handleQRCode(qrCode);
-                      Navigator.pop(context);
-                    }
-                  }
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Position the QR code in the scanner area',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _handleQRCode(String qrCode) {
-    // Process QR code - could be payment gateway URL, amount, etc.
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('QR Code Scanned: $qrCode'),
-        backgroundColor: const Color(0xFF009661),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-    // You can implement actual payment processing here
-  }
-
 }
