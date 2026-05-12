@@ -32,16 +32,25 @@ class MenuBusinessLogic {
   }
 
   /// Extract cart items for receipt in standardized format
-  static List<Map<String, dynamic>> extractCartItems(List<Map<String, dynamic>> cart) {
-    return cart.map((c) => {
-      'name': (c['item'] as Map<String, String>)['name'] ?? '',
-      'price': _parsePrice((c['item'] as Map<String, String>)['price'] ?? '₱0'),
-      'quantity': c['quantity'] as int,
-    }).toList();
+  static List<Map<String, dynamic>> extractCartItems(
+    List<Map<String, dynamic>> cart,
+  ) {
+    return cart
+        .map(
+          (c) => {
+            'name': (c['item'] as Map<String, String>)['name'] ?? '',
+            'price': _parsePrice(
+              (c['item'] as Map<String, String>)['price'] ?? '₱0',
+            ),
+            'quantity': c['quantity'] as int,
+          },
+        )
+        .toList();
   }
 
   /// Get payment method display text
   static String getPaymentMethodDisplay(String method) {
+    if (method == 'QR') return 'CASH';
     return method.toUpperCase();
   }
 }
