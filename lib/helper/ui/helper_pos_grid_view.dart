@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -32,21 +31,32 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
   String _selectedCategory = 'All';
   String _selectedPayment = 'Cash';
   final List<CartItem> _cart = [];
+  final TextEditingController _searchController = TextEditingController();
   final TextEditingController _amountPaidController = TextEditingController();
+  String _searchQuery = '';
   double _change = 0;
   bool _cartBumped = false;
 
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(_onSearchChanged);
     _amountPaidController.addListener(_calculateChange);
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
     _amountPaidController.removeListener(_calculateChange);
     _amountPaidController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+    });
   }
 
   void _calculateChange() {
@@ -61,10 +71,24 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
   }
 
   List<POSItem> get filteredItems {
-    if (_selectedCategory == 'All') return InventoryData.items;
-    return InventoryData.items
-        .where((item) => item.category == _selectedCategory)
-        .toList();
+    var items = InventoryData.items.toList();
+
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      items = items.where((item) {
+        return item.name.toLowerCase().contains(query) ||
+            item.category.toLowerCase().contains(query);
+      }).toList();
+    }
+
+    if (_selectedCategory != 'All') {
+      items = items.where((item) {
+        return item.category == _selectedCategory ||
+            (_selectedCategory == 'Beverage' && item.category == 'Beverages');
+      }).toList();
+    }
+
+    return items;
   }
 
   int get cartTotal => _cart.fold(0, (sum, item) => sum + item.total);
@@ -595,314 +619,6 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
     return pdf;
   }
 
-  Future<void> _openQRScanner() async {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      useSafeArea: true,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.9,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Payment Scan',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1A1A2E),
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Point the camera at QR code',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF999999),
-                        ),
-                      ),
-                    ],
-                  ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        shape: BoxShape.circle,
-                      ),
-                      padding: const EdgeInsets.all(10),
-                      child: const Icon(
-                        Icons.close,
-                        size: 22,
-                        color: Color(0xFF1A1A2E),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Scanner
-            Expanded(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  MobileScanner(
-                    onDetect: (capture) {
-                      final List<Barcode> barcodes = capture.barcodes;
-                      if (barcodes.isNotEmpty) {
-                        final qrCode = barcodes.first.rawValue;
-                        if (qrCode != null) {
-                          _handleQRCode(qrCode);
-                          Navigator.pop(context);
-                        }
-                      }
-                    },
-                  ),
-                  // Scanning frame overlay
-                  Container(
-                    width: 280,
-                    height: 280,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: const Color(0xFF009661),
-                        width: 3,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF009661).withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          spreadRadius: 4,
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Corner markers
-                  Positioned(
-                    top: MediaQuery.of(context).size.height * 0.15,
-                    left: MediaQuery.of(context).size.width * 0.1,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          top: BorderSide(
-                            color: const Color(0xFF009661),
-                            width: 4,
-                          ),
-                          left: BorderSide(
-                            color: const Color(0xFF009661),
-                            width: 4,
-                          ),
-                        ),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: MediaQuery.of(context).size.height * 0.15,
-                    right: MediaQuery.of(context).size.width * 0.1,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          top: BorderSide(
-                            color: const Color(0xFF009661),
-                            width: 4,
-                          ),
-                          right: BorderSide(
-                            color: const Color(0xFF009661),
-                            width: 4,
-                          ),
-                        ),
-                        borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: MediaQuery.of(context).size.height * 0.15,
-                    left: MediaQuery.of(context).size.width * 0.1,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: const Color(0xFF009661),
-                            width: 4,
-                          ),
-                          left: BorderSide(
-                            color: const Color(0xFF009661),
-                            width: 4,
-                          ),
-                        ),
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: MediaQuery.of(context).size.height * 0.15,
-                    right: MediaQuery.of(context).size.width * 0.1,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: const Color(0xFF009661),
-                            width: 4,
-                          ),
-                          right: BorderSide(
-                            color: const Color(0xFF009661),
-                            width: 4,
-                          ),
-                        ),
-                        borderRadius: const BorderRadius.only(
-                          bottomRight: Radius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Instructions
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF009661).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: const Color(0xFF009661).withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: Color(0xFF009661),
-                          size: 20,
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Center the QR code in the frame for accurate scanning',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF009661),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                    label: const Text('Cancel'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey.shade200,
-                      foregroundColor: const Color(0xFF1A1A2E),
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _handleQRCode(String qrCode) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF009661).withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_circle,
-                color: Color(0xFF009661),
-                size: 48,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Payment Scanned!',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A2E),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'QR Code: $qrCode',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Done',
-              style: TextStyle(
-                color: Color(0xFF009661),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     const double barHeight = 72.0;
@@ -912,7 +628,35 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
         Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search items or categories',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          onPressed: () {
+                            _searchController.clear();
+                          },
+                          icon: const Icon(Icons.clear),
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Row(
                 children: [
                   _tab("All"),
@@ -930,7 +674,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 0.68,
+                  childAspectRatio: 0.66,
                 ),
                 itemCount: filteredItems.length,
                 itemBuilder: (context, index) =>
@@ -1062,6 +806,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                 const SizedBox(height: 14),
                 for (int i = 0; i < _cart.length; i++)
                   Padding(
+                    key: ValueKey('${_cart[i].item.name}-$i'),
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Container(
                       padding: const EdgeInsets.all(12),
@@ -1283,25 +1028,22 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () {
-                          setState(() => _selectedPayment = 'QR Code');
-                          _openQRScanner();
-                        },
+                        onTap: () => setState(() => _selectedPayment = 'QR'),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           decoration: BoxDecoration(
-                            color: _selectedPayment == 'QR Code'
+                            color: _selectedPayment == 'QR'
                                 ? const Color(0xFF009661)
                                 : Colors.grey[100],
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Center(
                             child: Text(
-                              'QR Code',
+                              'QR',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: _selectedPayment == 'QR Code'
+                                color: _selectedPayment == 'QR'
                                     ? Colors.white
                                     : Colors.grey[800],
                               ),
@@ -1455,7 +1197,7 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              flex: 3,
+              flex: 2,
               child: Stack(
                 children: [
                   Container(
@@ -1504,19 +1246,23 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
             ),
             const SizedBox(height: 10),
             Expanded(
-              flex: 2,
+              flex: 3,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Text(
-                    item.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                      color: Color(0xFF1A1A2E),
+                  Flexible(
+                    child: Text(
+                      item.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: Color(0xFF1A1A2E),
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -1524,15 +1270,21 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                     style: const TextStyle(
                       color: Color(0xFF009661),
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 15,
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    'Stock: ${item.stock} ${item.unit}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                  Flexible(
+                    child: Text(
+                      'Stock: ${item.stock} ${item.unit}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 10,
+                        height: 1.2,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1568,6 +1320,8 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
         child: Image.network(
           imageRef,
           fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
           errorBuilder: (context, error, stackTrace) => fallbackIcon(),
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
@@ -1589,6 +1343,8 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
         child: Image.asset(
           imageRef,
           fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
           errorBuilder: (context, error, stackTrace) => fallbackIcon(),
         ),
       );
@@ -1605,6 +1361,8 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
       child: Image.file(
         file,
         fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
         errorBuilder: (context, error, stackTrace) => fallbackIcon(),
       ),
     );

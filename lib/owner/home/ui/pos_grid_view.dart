@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../model/pos_item_model.dart';
 import '../../../model/sales_transaction_model.dart';
 import '../../../data/inventory_data.dart';
 import '../../../data/sales_data.dart';
 import '../../../database_helper.dart';
+import '../../../user_storage.dart';
 
 class POSGridView extends StatefulWidget {
   const POSGridView({super.key});
@@ -32,7 +32,9 @@ class _POSGridViewState extends State<POSGridView> {
   String _selectedCategory = 'All';
   String _selectedPayment = 'Cash';
   final List<CartItem> _cart = [];
+  final TextEditingController _searchController = TextEditingController();
   final TextEditingController _amountPaidController = TextEditingController();
+  String _searchQuery = '';
   double _change = 0;
   bool _cartBumped = false;
 
@@ -44,6 +46,7 @@ class _POSGridViewState extends State<POSGridView> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _amountPaidController.removeListener(_calculateChange);
     _amountPaidController.dispose();
     super.dispose();
@@ -61,10 +64,24 @@ class _POSGridViewState extends State<POSGridView> {
   }
 
   List<POSItem> get filteredItems {
-    if (_selectedCategory == 'All') return InventoryData.items;
-    return InventoryData.items
-        .where((item) => item.category == _selectedCategory)
-        .toList();
+    var items = InventoryData.items.toList();
+
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      items = items.where((item) {
+        return item.name.toLowerCase().contains(query) ||
+            item.category.toLowerCase().contains(query);
+      }).toList();
+    }
+
+    if (_selectedCategory != 'All') {
+      items = items.where((item) {
+        return item.category == _selectedCategory ||
+            (_selectedCategory == 'Beverage' && item.category == 'Beverages');
+      }).toList();
+    }
+
+    return items;
   }
 
   int get cartTotal => _cart.fold(0, (sum, item) => sum + item.total);
@@ -85,24 +102,18 @@ class _POSGridViewState extends State<POSGridView> {
   }
 
   void _updateQuantity(int index, int delta) {
+    if (index < 0 || index >= _cart.length) return;
     setState(() {
-      if (index < 0 || index >= _cart.length) {
-        return;
-      }
       _cart[index].quantity += delta;
       if (_cart[index].quantity <= 0) {
-        if (index >= 0 && index < _cart.length) {
-          _cart.removeAt(index);
-        }
+        _cart.removeAt(index);
       }
     });
   }
 
   void _removeFromCart(int index) {
+    if (index < 0 || index >= _cart.length) return;
     setState(() {
-      if (index < 0 || index >= _cart.length) {
-        return;
-      }
       _cart.removeAt(index);
     });
   }
@@ -197,8 +208,21 @@ class _POSGridViewState extends State<POSGridView> {
     }
 
     try {
+      // Get current logged-in user's ID
+      final currentUsername = UserStorage.currentUser ?? '';
+      int currentUserId = 1; // fallback to default owner
+
+      if (currentUsername.isNotEmpty) {
+        final userRecord = await DatabaseHelper.instance.getUserByUsername(
+          currentUsername,
+        );
+        if (userRecord != null && userRecord.containsKey('user_id')) {
+          currentUserId = (userRecord['user_id'] as num).toInt();
+        }
+      }
+
       await DatabaseHelper.instance.recordSale(
-        userId: 1,
+        userId: currentUserId,
         totalAmount: savedTotal.toDouble(),
         items: itemsForDB,
         paymentMethod: _selectedPayment,
@@ -955,7 +979,35 @@ class _POSGridViewState extends State<POSGridView> {
         Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) =>
+                    setState(() => _searchQuery = value.trim()),
+                decoration: InputDecoration(
+                  hintText: 'Search products...',
+                  hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: Color(0xFF7C8794),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 13),
+                ),
+              ),
+            ),
+            // Category Tabs
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Row(
                 children: [
                   _tab("All"),
@@ -973,7 +1025,7 @@ class _POSGridViewState extends State<POSGridView> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 0.68,
+                  childAspectRatio: 0.72,
                 ),
                 itemCount: filteredItems.length,
                 itemBuilder: (context, index) =>
@@ -1106,6 +1158,7 @@ class _POSGridViewState extends State<POSGridView> {
                     _cartItemRow(
                       _cart[i],
                       i,
+                      key: ValueKey('${_cart[i].item.name}-$i'),
                       onChanged: () => setModalState(() {}),
                     ),
                   const SizedBox(height: 8),
@@ -1177,7 +1230,6 @@ class _POSGridViewState extends State<POSGridView> {
                           onTap: () {
                             setState(() => _selectedPayment = 'QR');
                             setModalState(() {});
-                            _openQRScanner();
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1323,7 +1375,7 @@ class _POSGridViewState extends State<POSGridView> {
     return GestureDetector(
       onTap: () => _addToCart(item),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -1338,8 +1390,9 @@ class _POSGridViewState extends State<POSGridView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Image section
             Expanded(
-              flex: 3,
+              flex: 32,
               child: Stack(
                 children: [
                   Container(
@@ -1359,8 +1412,8 @@ class _POSGridViewState extends State<POSGridView> {
                       top: 8,
                       right: 8,
                       child: Container(
-                        width: 22,
-                        height: 22,
+                        width: 24,
+                        height: 24,
                         decoration: BoxDecoration(
                           color: Colors.green,
                           borderRadius: BorderRadius.circular(12),
@@ -1386,40 +1439,48 @@ class _POSGridViewState extends State<POSGridView> {
                 ],
               ),
             ),
-            const SizedBox(height: 10),
-
+            const SizedBox(height: 12),
+            // Content section
             Expanded(
-              flex: 2,
+              flex: 32,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Text(
-                    item.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                      color: Color(0xFF1A1A2E),
+                  Flexible(
+                    child: Text(
+                      item.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: Color(0xFF1A1A2E),
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 6),
-
+                  const SizedBox(height: 8),
                   Text(
                     '₱${item.price}',
                     style: const TextStyle(
                       color: Color(0xFF009661),
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 15,
                     ),
                   ),
-                  const SizedBox(height: 2),
-
-                  Text(
-                    'Stock: ${item.stock} ${item.unit}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                  const SizedBox(height: 4),
+                  Flexible(
+                    child: Text(
+                      'Stock: ${item.stock} ${item.unit}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 10,
+                        height: 1.3,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1507,9 +1568,11 @@ class _POSGridViewState extends State<POSGridView> {
   Widget _cartItemRow(
     CartItem cartItem,
     int index, {
+    Key? key,
     required VoidCallback onChanged,
   }) {
     return Container(
+      key: key,
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1671,82 +1734,5 @@ class _POSGridViewState extends State<POSGridView> {
         ],
       ),
     );
-  }
-
-  Future<void> _openQRScanner() async {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Scan QR Code',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        shape: BoxShape.circle,
-                      ),
-                      padding: const EdgeInsets.all(8),
-                      child: const Icon(Icons.close, size: 20),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: MobileScanner(
-                onDetect: (capture) {
-                  final List<Barcode> barcodes = capture.barcodes;
-                  if (barcodes.isNotEmpty) {
-                    final qrCode = barcodes.first.rawValue;
-                    if (qrCode != null) {
-                      _handleQRCode(qrCode);
-                      Navigator.pop(context);
-                    }
-                  }
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Position the QR code in the scanner area',
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _handleQRCode(String qrCode) {
-    // Process QR code - could be payment gateway URL, amount, etc.
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('QR Code Scanned: $qrCode'),
-        backgroundColor: const Color(0xFF009661),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-    // You can implement actual payment processing here
   }
 }
