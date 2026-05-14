@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../bills/logic/bills_helper.dart';
 import '../../../ui/confirmation_dialog.dart';
+import '../../../database_helper.dart';
 
 class BillsRemindersView extends StatefulWidget {
   const BillsRemindersView({super.key});
@@ -9,11 +10,44 @@ class BillsRemindersView extends StatefulWidget {
 }
 
 class _BillsRemindersViewState extends State<BillsRemindersView> {
-  
   final List<Map<String, dynamic>> _bills = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadBillsFromDatabase();
+  }
+
+  Future<void> _loadBillsFromDatabase() async {
+    try {
+      final expenses = await DatabaseHelper.instance.getPendingExpenses();
+      setState(() {
+        _bills.clear();
+        for (var expense in expenses) {
+          final description = (expense['description'] ?? '').toString();
+          final parts = description.split('|');
+          final category = parts.isNotEmpty ? parts[0] : 'Other';
+          final name = parts.length > 1 ? parts[1] : 'Bill';
+
+          _bills.add({
+            'name': name,
+            'amount': (expense['amount'] as num?)?.toDouble() ?? 0,
+            'category': category,
+            'isPaid':
+                (expense['reminder_status'] ?? 'Pending').toString() ==
+                'Dismissed',
+          });
+        }
+      });
+    } catch (e) {
+      // Silently fail when loading bills from database (offline scenario)
+    }
+  }
+
   int get unpaidBills => _bills.where((b) => !b['isPaid']).length;
-  double get totalUnpaid => _bills.where((b) => !b['isPaid']).fold(0, (sum, b) => sum + (b['amount'] as double));
+  double get totalUnpaid => _bills
+      .where((b) => !b['isPaid'])
+      .fold(0, (sum, b) => sum + (b['amount'] as double));
 
   @override
   Widget build(BuildContext context) {
@@ -24,46 +58,79 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              
-              const Text('Bills & Reminders', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
+              const Text(
+                'Bills & Reminders',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF333333),
+                ),
+              ),
               const SizedBox(height: 16),
-              
+
               Row(
                 children: [
                   Expanded(
-                    child: _summaryCard('Unpaid Bills', '$unpaidBills', Icons.receipt_long, Colors.orange),
+                    child: _summaryCard(
+                      'Unpaid Bills',
+                      '$unpaidBills',
+                      Icons.receipt_long,
+                      Colors.orange,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _summaryCard('Total Due', '₱${totalUnpaid.toStringAsFixed(0)}', Icons.attach_money, Colors.red),
+                    child: _summaryCard(
+                      'Total Due',
+                      '₱${totalUnpaid.toStringAsFixed(0)}',
+                      Icons.attach_money,
+                      Colors.red,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               if (_bills.isEmpty)
                 Container(
                   padding: const EdgeInsets.all(40),
                   child: Column(
                     children: [
-                      Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey[300]),
+                      Icon(
+                        Icons.receipt_long_outlined,
+                        size: 64,
+                        color: Colors.grey[300],
+                      ),
                       const SizedBox(height: 16),
-                      Text('No bills yet', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+                      Text(
+                        'No bills yet',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 16),
+                      ),
                       const SizedBox(height: 8),
-                      Text('Tap + to add a bill reminder', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                      Text(
+                        'Tap + to add a bill reminder',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                      ),
                     ],
                   ),
                 )
               else ...[
-                const Text('All Bills', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
+                const Text(
+                  'All Bills',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF333333),
+                  ),
+                ),
                 const SizedBox(height: 12),
                 ..._bills.map((bill) => _billCard(bill)),
               ],
-              const SizedBox(height: 80), 
+              const SizedBox(height: 80),
             ],
           ),
         ),
-        
+
         Positioned(
           right: 16,
           bottom: 16,
@@ -71,7 +138,13 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
             onPressed: () => _showAddBillDialog(),
             backgroundColor: const Color(0xFF009661),
             icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text('Add Bill', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            label: const Text(
+              'Add Bill',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       ],
@@ -81,7 +154,10 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
   Widget _summaryCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -89,11 +165,21 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
             children: [
               Icon(icon, color: Colors.white, size: 20),
               const SizedBox(width: 8),
-              Text(title, style: const TextStyle(color: Colors.white, fontSize: 12)),
+              Text(
+                title,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -112,9 +198,15 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isPaid ? Colors.green.shade200 : Colors.grey.shade200),
+        border: Border.all(
+          color: isPaid ? Colors.green.shade200 : Colors.grey.shade200,
+        ),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -128,25 +220,44 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                   color: isPaid ? Colors.green.shade50 : Colors.orange.shade50,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.receipt_long, color: isPaid ? Colors.green : Colors.orange, size: 22),
+                child: Icon(
+                  Icons.receipt_long,
+                  color: isPaid ? Colors.green : Colors.orange,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(bill['name'], style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                    Text(
+                      bill['name'],
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
                   ],
                 ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('₱${bill['amount'].toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text(
+                    '₱${bill['amount'].toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   if (isPaid)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.green.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(4),
@@ -171,7 +282,10 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
             decoration: BoxDecoration(
               color: categoryLightColor,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: categoryColor.withValues(alpha: 0.3), width: 1),
+              border: Border.all(
+                color: categoryColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -192,9 +306,19 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
           const SizedBox(height: 10),
           Row(
             children: [
-              Icon(isPaid ? Icons.check_circle : Icons.pending, size: 14, color: isPaid ? Colors.green : Colors.orange),
+              Icon(
+                isPaid ? Icons.check_circle : Icons.pending,
+                size: 14,
+                color: isPaid ? Colors.green : Colors.orange,
+              ),
               const SizedBox(width: 4),
-              Text(isPaid ? 'Paid' : 'Pending', style: TextStyle(fontSize: 11, color: isPaid ? Colors.green : Colors.orange)),
+              Text(
+                isPaid ? 'Paid' : 'Pending',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isPaid ? Colors.green : Colors.orange,
+                ),
+              ),
             ],
           ),
           if (!isPaid) ...[
@@ -206,11 +330,12 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                   final amount = (bill['amount'] ?? 0.0) as double;
                   final name = (bill['name'] ?? 'Bill') as String;
 
-                  final confirmed = await ConfirmationDialog.showMarkAsPaidConfirmation(
-                    context: context,
-                    billName: name,
-                    amount: amount,
-                  );
+                  final confirmed =
+                      await ConfirmationDialog.showMarkAsPaidConfirmation(
+                        context: context,
+                        billName: name,
+                        amount: amount,
+                      );
 
                   if (!confirmed!) return;
 
@@ -251,6 +376,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
     final nameC = TextEditingController();
     final amountC = TextEditingController();
     String selectedCategory = 'Utilities';
+    bool isSubmitting = false;
     final categories = ['Utilities', 'Rent', 'Supplies', 'Other'];
     final categoryIcons = {
       'Utilities': Icons.bolt,
@@ -271,12 +397,13 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                
                 Container(
                   margin: const EdgeInsets.only(top: 12),
                   width: 40,
@@ -286,7 +413,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                
+
                 Container(
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(20),
@@ -306,7 +433,11 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.receipt_long, color: Colors.white, size: 28),
+                        child: const Icon(
+                          Icons.receipt_long,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       const Column(
@@ -332,7 +463,7 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                     ],
                   ),
                 ),
-                
+
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -340,7 +471,11 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                     children: [
                       const Text(
                         'Bill Name',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF333333),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Container(
@@ -354,17 +489,28 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                           decoration: InputDecoration(
                             hintText: 'e.g., Electricity Bill',
                             hintStyle: TextStyle(color: Colors.grey[400]),
-                            prefixIcon: const Icon(Icons.receipt_long, color: Color(0xFF009661), size: 20),
+                            prefixIcon: const Icon(
+                              Icons.receipt_long,
+                              color: Color(0xFF009661),
+                              size: 20,
+                            ),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       const Text(
                         'Amount (₱)',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF333333),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Container(
@@ -379,17 +525,28 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                           decoration: InputDecoration(
                             hintText: '0.00',
                             hintStyle: TextStyle(color: Colors.grey[400]),
-                            prefixIcon: const Icon(Icons.attach_money, color: Color(0xFF009661), size: 20),
+                            prefixIcon: const Icon(
+                              Icons.attach_money,
+                              color: Color(0xFF009661),
+                              size: 20,
+                            ),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       const Text(
                         'Category',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF333333),
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Wrap(
@@ -398,14 +555,23 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                         children: categories.map((category) {
                           bool isSelected = selectedCategory == category;
                           return GestureDetector(
-                            onTap: () => setModalState(() => selectedCategory = category),
+                            onTap: () => setModalState(
+                              () => selectedCategory = category,
+                            ),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFF009661) : Colors.white,
+                                color: isSelected
+                                    ? const Color(0xFF009661)
+                                    : Colors.white,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: isSelected ? const Color(0xFF009661) : Colors.grey.shade300,
+                                  color: isSelected
+                                      ? const Color(0xFF009661)
+                                      : Colors.grey.shade300,
                                 ),
                               ),
                               child: Row(
@@ -414,7 +580,9 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                                   Icon(
                                     categoryIcons[category],
                                     size: 16,
-                                    color: isSelected ? Colors.white : Colors.grey[600],
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.grey[600],
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
@@ -422,7 +590,9 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
-                                      color: isSelected ? Colors.white : Colors.grey[600],
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.grey[600],
                                     ),
                                   ),
                                 ],
@@ -432,21 +602,28 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                         }).toList(),
                       ),
                       const SizedBox(height: 28),
-                      
+
                       Row(
                         children: [
                           Expanded(
                             child: OutlinedButton(
                               onPressed: () => Navigator.pop(context),
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 side: const BorderSide(color: Colors.red),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                                 foregroundColor: Colors.red,
                               ),
                               child: const Text(
                                 'Cancel',
-                                style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ),
@@ -454,43 +631,134 @@ class _BillsRemindersViewState extends State<BillsRemindersView> {
                           Expanded(
                             flex: 2,
                             child: ElevatedButton(
-                              onPressed: () {
-                                if (nameC.text.isNotEmpty && amountC.text.isNotEmpty) {
-                                  setState(() {
-                                    _bills.add({
-                                      'name': nameC.text,
-                                      'amount': double.tryParse(amountC.text) ?? 0,
-                                      'category': selectedCategory,
-                                      'isPaid': false,
-                                    });
-                                  });
-                                  Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Row(
-                                        children: [
-                                          const Icon(Icons.check_circle, color: Colors.white),
-                                          const SizedBox(width: 8),
-                                          Text('${nameC.text} added successfully!'),
-                                        ],
-                                      ),
-                                      backgroundColor: const Color(0xFF009661),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
-                                  );
-                                }
-                              },
+                              onPressed: isSubmitting
+                                  ? null
+                                  : () async {
+                                      if (nameC.text.isNotEmpty &&
+                                          amountC.text.isNotEmpty) {
+                                        setModalState(
+                                          () => isSubmitting = true,
+                                        );
+                                        try {
+                                          // Write to SQLite for persistence
+                                          await DatabaseHelper.instance
+                                              .insertExpense({
+                                                'user_id': 1,
+                                                'description':
+                                                    '$selectedCategory|${nameC.text}',
+                                                'amount':
+                                                    double.tryParse(
+                                                      amountC.text,
+                                                    ) ??
+                                                    0,
+                                                'due_date': DateTime.now()
+                                                    .add(
+                                                      const Duration(days: 7),
+                                                    )
+                                                    .toIso8601String(),
+                                                'reminder_status': 'Pending',
+                                              });
+
+                                          // Add to local list for immediate UI feedback
+                                          setState(() {
+                                            _bills.add({
+                                              'name': nameC.text,
+                                              'amount':
+                                                  double.tryParse(
+                                                    amountC.text,
+                                                  ) ??
+                                                  0,
+                                              'category': selectedCategory,
+                                              'isPaid': false,
+                                            });
+                                          });
+
+                                          if (!context.mounted) return;
+                                          Navigator.pop(context);
+
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.check_circle,
+                                                    color: Colors.white,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    '${nameC.text} added successfully!',
+                                                  ),
+                                                ],
+                                              ),
+                                              backgroundColor: const Color(
+                                                0xFF009661,
+                                              ),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                            ),
+                                          );
+                                        } catch (e) {
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.cloud_off,
+                                                    color: Colors.white,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Bill saved (pending sync)',
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              backgroundColor: Colors.orange,
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                            ),
+                                          );
+                                        } finally {
+                                          if (mounted) {
+                                            setModalState(
+                                              () => isSubmitting = false,
+                                            );
+                                          }
+                                        }
+                                      }
+                                    },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF009661),
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                                 elevation: 0,
                               ),
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.add_circle_outline, color: Colors.white, size: 20),
+                                  Icon(
+                                    Icons.add_circle_outline,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Add Bill',

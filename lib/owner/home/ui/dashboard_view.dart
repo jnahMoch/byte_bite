@@ -42,7 +42,8 @@ class _DashboardViewState extends State<DashboardView> {
         totalSales = summary.totalSales;
         billsPaid = summary.billsPaid;
       });
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('Dashboard._loadSummary() failed: $e\n$st');
       if (!mounted) return;
       setState(() {
         transactionCount = 0;

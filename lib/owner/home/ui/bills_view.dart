@@ -64,6 +64,7 @@ class _BillsViewState extends State<BillsView> {
     final amountController = TextEditingController();
     String selectedCategory = 'Utilities';
     DateTime selectedDate = DateTime.now().add(const Duration(days: 7));
+    bool isSubmitting = false;
     final categories = ['Utilities', 'Rent', 'Supplies', 'Other'];
     final categoryIcons = {
       'Utilities': Icons.bolt,
@@ -368,50 +369,104 @@ class _BillsViewState extends State<BillsView> {
                           Expanded(
                             flex: 2,
                             child: ElevatedButton(
-                              onPressed: () async {
-                                if (nameController.text.isNotEmpty &&
-                                    amountController.text.isNotEmpty) {
-                                  final parsedAmount =
-                                      double.tryParse(amountController.text) ??
-                                      0;
+                              onPressed: isSubmitting
+                                  ? null
+                                  : () async {
+                                      if (nameController.text.isNotEmpty &&
+                                          amountController.text.isNotEmpty) {
+                                        final parsedAmount =
+                                            double.tryParse(
+                                              amountController.text,
+                                            ) ??
+                                            0;
 
-                                  await _billsController.addBill(
-                                    title: nameController.text,
-                                    category: selectedCategory,
-                                    amount: parsedAmount,
-                                    dueDate: selectedDate,
-                                  );
-                                  await _loadBills();
+                                        setDialogState(
+                                          () => isSubmitting = true,
+                                        );
+                                        try {
+                                          await _billsController.addBill(
+                                            title: nameController.text,
+                                            category: selectedCategory,
+                                            amount: parsedAmount,
+                                            dueDate: selectedDate,
+                                          );
+                                          await _loadBills();
 
-                                  if (!mounted || !dialogContext.mounted) {
-                                    return;
-                                  }
-                                  Navigator.of(dialogContext).pop();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.check_circle,
-                                            color: Colors.white,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              '${nameController.text} added successfully!',
+                                          if (!mounted ||
+                                              !dialogContext.mounted) {
+                                            return;
+                                          }
+                                          Navigator.of(dialogContext).pop();
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.check_circle,
+                                                    color: Colors.white,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Text(
+                                                      '${nameController.text} added successfully!',
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              backgroundColor: const Color(
+                                                0xFF009661,
+                                              ),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      backgroundColor: const Color(0xFF009661),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
+                                          );
+                                        } catch (e) {
+                                          if (!mounted ||
+                                              !dialogContext.mounted) {
+                                            return;
+                                          }
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.cloud_off,
+                                                    color: Colors.white,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Bill saved (pending sync)',
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              backgroundColor: Colors.orange,
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                            ),
+                                          );
+                                        } finally {
+                                          if (mounted) {
+                                            setDialogState(
+                                              () => isSubmitting = false,
+                                            );
+                                          }
+                                        }
+                                      }
+                                    },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF009661),
                                 padding: const EdgeInsets.symmetric(

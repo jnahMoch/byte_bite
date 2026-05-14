@@ -146,6 +146,8 @@ class _POSHomePageState extends State<POSHomePage> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+        // Refresh Dashboard to update Today's Summary with any offline-created transactions
+        _dashboardKey.currentState?.refresh();
       }
     });
     // ──────────────────────────────────────────────────────────────────────

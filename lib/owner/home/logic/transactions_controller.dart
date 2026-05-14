@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../data/sales_data.dart';
 import '../../../database_helper.dart';
@@ -10,28 +11,16 @@ class TransactionsController {
   Future<bool> deleteTransaction(int saleId) async {
     try {
       final db = await DatabaseHelper.instance.database;
-      
+
       // Delete related sale items first
-      await db.delete(
-        'SaleItems',
-        where: 'sale_id = ?',
-        whereArgs: [saleId],
-      );
-      
+      await db.delete('SaleItems', where: 'sale_id = ?', whereArgs: [saleId]);
+
       // Delete related payments
-      await db.delete(
-        'Payments',
-        where: 'sale_id = ?',
-        whereArgs: [saleId],
-      );
-      
+      await db.delete('Payments', where: 'sale_id = ?', whereArgs: [saleId]);
+
       // Delete the sale
-      await db.delete(
-        'Sales',
-        where: 'sale_id = ?',
-        whereArgs: [saleId],
-      );
-      
+      await db.delete('Sales', where: 'sale_id = ?', whereArgs: [saleId]);
+
       return true;
     } catch (e) {
       return false;
@@ -123,25 +112,49 @@ class TransactionsController {
   }
 
   Future<int> getTodaysTransactionCount() async {
-    await ensureTodaysTransactionsPersisted();
-    final db = await DatabaseHelper.instance.database;
-    final start = _todayStart().toIso8601String();
-    final rows = await db.rawQuery(
-      'SELECT COUNT(*) AS cnt FROM Sales WHERE date_time >= ?',
-      [start],
-    );
-    return (rows.first['cnt'] as num?)?.toInt() ?? 0;
+    try {
+      // Persist any unsaved transactions from SalesData to SQLite first
+      await ensureTodaysTransactionsPersisted();
+
+      final db = await DatabaseHelper.instance.database;
+      final start = _todayStart().toIso8601String();
+
+      // Query SQLite (now includes all transactions, persisted + synced)
+      final rows = await db.rawQuery(
+        'SELECT COUNT(*) AS cnt FROM Sales WHERE date_time >= ?',
+        [start],
+      );
+
+      if (rows.isEmpty) return 0;
+      final cnt = rows.first['cnt'];
+      return (cnt as num?)?.toInt() ?? 0;
+    } catch (e, st) {
+      debugPrint('getTodaysTransactionCount failed: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<double> getTodaysTotalSales() async {
-    await ensureTodaysTransactionsPersisted();
-    final db = await DatabaseHelper.instance.database;
-    final start = _todayStart().toIso8601String();
-    final rows = await db.rawQuery(
-      'SELECT COALESCE(SUM(total_amount), 0) AS total FROM Sales WHERE date_time >= ?',
-      [start],
-    );
-    return (rows.first['total'] as num?)?.toDouble() ?? 0.0;
+    try {
+      // Persist any unsaved transactions from SalesData to SQLite first
+      await ensureTodaysTransactionsPersisted();
+
+      final db = await DatabaseHelper.instance.database;
+      final start = _todayStart().toIso8601String();
+
+      // Query SQLite (now includes all transactions, persisted + synced)
+      final rows = await db.rawQuery(
+        'SELECT COALESCE(SUM(total_amount), 0) AS total FROM Sales WHERE date_time >= ?',
+        [start],
+      );
+
+      if (rows.isEmpty) return 0.0;
+      final total = rows.first['total'];
+      return (total as num?)?.toDouble() ?? 0.0;
+    } catch (e, st) {
+      debugPrint('getTodaysTotalSales failed: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<void> syncTodaysTransactionsToFirebase() async {
