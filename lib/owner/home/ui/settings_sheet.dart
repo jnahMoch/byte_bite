@@ -43,7 +43,9 @@ class _SettingsSheetState extends State<SettingsSheet> {
             'Create a new helper account',
             onTap: () {
               Navigator.pop(context);
-              _showAddHelperDialog(context);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _showAddHelperDialog(context);
+              });
             },
           ),
           _settingsTile(
@@ -53,7 +55,9 @@ class _SettingsSheetState extends State<SettingsSheet> {
             'View and manage helper accounts',
             onTap: () {
               Navigator.pop(context);
-              _showManageHelpersDialog(context);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _showManageHelpersDialog(context);
+              });
             },
           ),
           const SizedBox(height: 20),
@@ -173,214 +177,256 @@ class _SettingsSheetState extends State<SettingsSheet> {
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (ctx, setDialogState) => Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          elevation: 8,
-          shadowColor: Colors.black26,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-            constraints: const BoxConstraints(maxWidth: 360),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        builder: (ctx, setDialogState) {
+          final maxHeight = MediaQuery.of(dialogContext).size.height * 0.9;
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            elevation: 8,
+            shadowColor: Colors.black26,
+            insetAnimationDuration: const Duration(milliseconds: 200),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+              constraints: BoxConstraints(maxWidth: 360, maxHeight: maxHeight),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Add Helper',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(ctx),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          shape: BoxShape.circle,
-                        ),
-                        padding: const EdgeInsets.all(8),
-                        child: const Icon(
-                          Icons.close,
-                          size: 20,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                _buildInputField(
-                  controller: usernameController,
-                  label: 'Username',
-                  icon: Icons.person_outline,
-                  hintText: 'Enter username',
-                ),
-                const SizedBox(height: 16),
-                _buildInputField(
-                  controller: passwordController,
-                  label: 'Password',
-                  icon: Icons.lock_outline,
-                  hintText: 'Enter password',
-                  obscureText: !isPasswordVisible,
-                  suffixIcon: IconButton(
-                    onPressed: () {
-                      setDialogState(() {
-                        isPasswordVisible = !isPasswordVisible;
-                      });
-                    },
-                    icon: Icon(
-                      isPasswordVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                      color: const Color(0xFF009661),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _buildInputField(
-                  controller: confirmPasswordController,
-                  label: 'Confirm Password',
-                  icon: Icons.lock_outline,
-                  hintText: 'Confirm password',
-                  obscureText: !isConfirmPasswordVisible,
-                  suffixIcon: IconButton(
-                    onPressed: () {
-                      setDialogState(() {
-                        isConfirmPasswordVisible = !isConfirmPasswordVisible;
-                      });
-                    },
-                    icon: Icon(
-                      isConfirmPasswordVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                      color: const Color(0xFF009661),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 28),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          side: const BorderSide(color: Colors.red),
-                          foregroundColor: Colors.red,
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.red,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          String username = usernameController.text.trim();
-                          String password = passwordController.text.trim();
-                          String confirmPassword = confirmPasswordController
-                              .text
-                              .trim();
-
-                          if (username.isEmpty ||
-                              password.isEmpty ||
-                              confirmPassword.isEmpty) {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please fill in all fields'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          if (password.length < 6) {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Password must be at least 6 characters',
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          if (password != confirmPassword) {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              const SnackBar(
-                                content: Text('Passwords do not match'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          if (await UserStorage.userExistsPersistent(
-                            username,
-                          )) {
-                            // ignore: use_build_context_synchronously
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              const SnackBar(
-                                content: Text('Username already exists'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          await UserStorage.addHelperPersistent(
-                            username,
-                            password,
-                          );
-                          if (!ctx.mounted) return;
-                          Navigator.pop(ctx);
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Helper account created successfully',
-                              ),
-                              backgroundColor: Color(0xFF009661),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF009661),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
                           'Add Helper',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(ctx),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              shape: BoxShape.circle,
+                            ),
+                            padding: const EdgeInsets.all(8),
+                            child: const Icon(
+                              Icons.close,
+                              size: 20,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // Personal Information Section
+                    Text(
+                      'Personal Information',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[700],
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInputField(
+                      controller: usernameController,
+                      label: 'Username',
+                      icon: Icons.person_outline,
+                      hintText: 'Enter username',
+                      helperText: 'Alphanumeric, 3-20 characters',
+                    ),
+                    const SizedBox(height: 24),
+                    // Security Settings Section
+                    Text(
+                      'Security Settings',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildInputField(
+                            controller: passwordController,
+                            label: 'Password',
+                            icon: Icons.lock_outline,
+                            hintText: 'Enter password',
+                            helperText: 'Minimum 6 characters recommended',
+                            obscureText: !isPasswordVisible,
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                setDialogState(() {
+                                  isPasswordVisible = !isPasswordVisible;
+                                });
+                              },
+                              icon: Icon(
+                                isPasswordVisible
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: const Color(0xFF009661),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildInputField(
+                            controller: confirmPasswordController,
+                            label: 'Confirm Password',
+                            icon: Icons.lock_outline,
+                            hintText: 'Confirm password',
+                            helperText: 'Must match password above',
+                            obscureText: !isConfirmPasswordVisible,
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                setDialogState(() {
+                                  isConfirmPasswordVisible =
+                                      !isConfirmPasswordVisible;
+                                });
+                              },
+                              icon: Icon(
+                                isConfirmPasswordVisible
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: const Color(0xFF009661),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              side: const BorderSide(color: Colors.red),
+                              foregroundColor: Colors.red,
+                            ),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              String username = usernameController.text.trim();
+                              String password = passwordController.text.trim();
+                              String confirmPassword = confirmPasswordController
+                                  .text
+                                  .trim();
+
+                              if (username.isEmpty ||
+                                  password.isEmpty ||
+                                  confirmPassword.isEmpty) {
+                                ScaffoldMessenger.of(ctx).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Please fill in all fields'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              if (password.length < 6) {
+                                ScaffoldMessenger.of(ctx).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Password must be at least 6 characters',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              if (password != confirmPassword) {
+                                ScaffoldMessenger.of(ctx).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Passwords do not match'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              if (await UserStorage.userExistsPersistent(
+                                username,
+                              )) {
+                                // ignore: use_build_context_synchronously
+                                ScaffoldMessenger.of(ctx).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Username already exists'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              await UserStorage.addHelperPersistent(
+                                username,
+                                password,
+                              );
+                              if (!ctx.mounted) return;
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Helper account created successfully',
+                                  ),
+                                  backgroundColor: Color(0xFF009661),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF009661),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Add Helper',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -405,7 +451,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
             shadowColor: Colors.black26,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-              constraints: const BoxConstraints(maxWidth: 400, maxHeight: 550),
+              constraints: const BoxConstraints(maxWidth: 440, maxHeight: 600),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,6 +484,20 @@ class _SettingsSheetState extends State<SettingsSheet> {
                     ],
                   ),
                   const SizedBox(height: 24),
+                  Text(
+                    'Active Helpers',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'These accounts can log in and manage sales activity.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  ),
+                  const SizedBox(height: 14),
                   if (helpers.isEmpty)
                     Expanded(
                       child: Center(
@@ -451,7 +511,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'No helpers yet',
+                              'No active helpers yet',
                               style: TextStyle(
                                 color: Colors.grey[500],
                                 fontSize: 16,
@@ -460,7 +520,8 @@ class _SettingsSheetState extends State<SettingsSheet> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Add helpers from Settings',
+                              'Add helpers from Settings to see them here',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.grey[400],
                                 fontSize: 13,
@@ -472,149 +533,423 @@ class _SettingsSheetState extends State<SettingsSheet> {
                     )
                   else
                     Flexible(
-                      child: ListView.builder(
+                      child: ListView.separated(
                         shrinkWrap: true,
                         itemCount: helpers.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final helper = helpers[index];
                           return Container(
-                            margin: const EdgeInsets.only(bottom: 14),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: Colors.grey.shade200,
-                                width: 1.5,
+                                width: 1.25,
                               ),
                             ),
-                            child: Row(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: const Color(
-                                      0xFF009661,
-                                    ).withValues(alpha: 0.15),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.person,
-                                    color: Color(0xFF009661),
-                                    size: 22,
-                                  ),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF009661,
+                                        ).withValues(alpha: 0.14),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.person,
+                                        color: Color(0xFF009661),
+                                        size: 24,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            helper['username']!,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 8,
+                                            children: [
+                                              _helperStatusChip(
+                                                label: 'Helper',
+                                                backgroundColor: const Color(
+                                                  0xFFE7F7EF,
+                                                ),
+                                                foregroundColor: const Color(
+                                                  0xFF009661,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 14),
-                                Expanded(
+                                const SizedBox(height: 14),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
+                                    ),
+                                  ),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        helper['username']!,
-                                        style: const TextStyle(
+                                        'Account details',
+                                        style: TextStyle(
+                                          fontSize: 12,
                                           fontWeight: FontWeight.w700,
-                                          fontSize: 14,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Username: ${helper['username']}',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey[700],
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        'Helper Account',
+                                        'Role: Helper',
                                         style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[500],
+                                          fontSize: 13,
+                                          color: Colors.grey[700],
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.lock_reset,
-                                    color: Color(0xFF009661),
-                                    size: 20,
-                                  ),
-                                  tooltip: 'Reset Password',
-                                  onPressed: () => _showResetPasswordDialog(
-                                    context,
-                                    helper['username']!,
-                                    setDialogState,
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete_outline,
-                                    color: Colors.red,
-                                    size: 20,
-                                  ),
-                                  tooltip: 'Delete',
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                        ),
-                                        title: const Text(
-                                          'Delete Helper?',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        content: Text(
-                                          'Are you sure you want to delete ${helper['username']}?',
-                                          style: const TextStyle(fontSize: 14),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(ctx),
-                                            child: const Text(
-                                              'Cancel',
-                                              style: TextStyle(
-                                                color: Colors.grey,
-                                              ),
-                                            ),
-                                          ),
-                                          TextButton(
-                                            onPressed: () async {
-                                              await UserStorage.deleteHelperPersistent(
+                                const SizedBox(height: 14),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 48,
+                                        child: OutlinedButton.icon(
+                                          onPressed: () =>
+                                              _showResetPasswordDialog(
+                                                context,
                                                 helper['username']!,
-                                              );
-                                              if (!ctx.mounted) return;
-                                              Navigator.pop(ctx);
-                                              setDialogState(() {});
-                                              ScaffoldMessenger.of(
-                                                ctx,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    'Helper deleted',
-                                                  ),
-                                                  backgroundColor: Color(
-                                                    0xFF009661,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                            child: const Text(
-                                              'Delete',
+                                                setDialogState,
+                                              ),
+                                          icon: const Icon(
+                                            Icons.lock_reset,
+                                            size: 20,
+                                          ),
+                                          label: const FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(
+                                              'Reset Password',
+                                              maxLines: 1,
+                                              softWrap: false,
                                               style: TextStyle(
-                                                color: Colors.red,
+                                                fontSize: 15,
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
                                           ),
-                                        ],
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: const Color(
+                                              0xFF009661,
+                                            ),
+                                            side: const BorderSide(
+                                              color: Color(0xFF009661),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            alignment: Alignment.center,
+                                          ),
+                                        ),
                                       ),
-                                    );
-                                  },
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 48,
+                                        child: OutlinedButton.icon(
+                                          onPressed: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (ctx) => Dialog(
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
+                                                ),
+                                                elevation: 8,
+                                                shadowColor: Colors.black
+                                                    .withValues(alpha: 0.15),
+                                                child: Container(
+                                                  constraints:
+                                                      const BoxConstraints(
+                                                        maxWidth: 420,
+                                                      ),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 28,
+                                                        vertical: 28,
+                                                      ),
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      // Title with Icon
+                                                      Row(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Container(
+                                                            padding:
+                                                                const EdgeInsets.all(
+                                                                  10,
+                                                                ),
+                                                            decoration: BoxDecoration(
+                                                              color: Colors.red
+                                                                  .withValues(
+                                                                    alpha: 0.12,
+                                                                  ),
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    12,
+                                                                  ),
+                                                            ),
+                                                            child: const Icon(
+                                                              Icons
+                                                                  .delete_outline,
+                                                              color: Colors.red,
+                                                              size: 24,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 16,
+                                                          ),
+                                                          const Expanded(
+                                                            child: Text(
+                                                              'Delete Helper?',
+                                                              style: TextStyle(
+                                                                fontSize: 20,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w800,
+                                                                color: Colors
+                                                                    .black87,
+                                                                height: 1.3,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 20,
+                                                      ),
+                                                      // Message
+                                                      Text(
+                                                        'Are you sure you want to delete ${helper['username']}?',
+                                                        style: TextStyle(
+                                                          fontSize: 15,
+                                                          color:
+                                                              Colors.grey[600],
+                                                          height: 1.6,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 32,
+                                                      ),
+                                                      // Action Buttons
+                                                      Row(
+                                                        children: [
+                                                          Expanded(
+                                                            child: TextButton(
+                                                              onPressed: () =>
+                                                                  Navigator.pop(
+                                                                    ctx,
+                                                                  ),
+                                                              style: TextButton.styleFrom(
+                                                                padding:
+                                                                    const EdgeInsets.symmetric(
+                                                                      vertical:
+                                                                          14,
+                                                                    ),
+                                                                shape: RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        12,
+                                                                      ),
+                                                                ),
+                                                                foregroundColor:
+                                                                    Colors.red,
+                                                                overlayColor: Colors
+                                                                    .red
+                                                                    .withValues(
+                                                                      alpha:
+                                                                          0.08,
+                                                                    ),
+                                                              ),
+                                                              child: const Text(
+                                                                'Cancel',
+                                                                style: TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w700,
+                                                                  fontSize: 15,
+                                                                  color: Colors
+                                                                      .red,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 12,
+                                                          ),
+                                                          Expanded(
+                                                            child: ElevatedButton(
+                                                              onPressed: () async {
+                                                                await UserStorage.deleteHelperPersistent(
+                                                                  helper['username']!,
+                                                                );
+                                                                if (!ctx
+                                                                    .mounted) {
+                                                                  return;
+                                                                }
+                                                                Navigator.pop(
+                                                                  ctx,
+                                                                );
+                                                                setDialogState(
+                                                                  () {},
+                                                                );
+                                                                ScaffoldMessenger.of(
+                                                                  ctx,
+                                                                ).showSnackBar(
+                                                                  const SnackBar(
+                                                                    content: Text(
+                                                                      'Helper deleted',
+                                                                    ),
+                                                                    backgroundColor:
+                                                                        Color(
+                                                                          0xFF009661,
+                                                                        ),
+                                                                  ),
+                                                                );
+                                                              },
+                                                              style: ElevatedButton.styleFrom(
+                                                                backgroundColor:
+                                                                    Colors.red,
+                                                                foregroundColor:
+                                                                    Colors
+                                                                        .white,
+                                                                elevation: 0,
+                                                                padding:
+                                                                    const EdgeInsets.symmetric(
+                                                                      vertical:
+                                                                          14,
+                                                                    ),
+                                                                shape: RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        12,
+                                                                      ),
+                                                                ),
+                                                                overlayColor: Colors
+                                                                    .white
+                                                                    .withValues(
+                                                                      alpha:
+                                                                          0.1,
+                                                                    ),
+                                                              ),
+                                                              child: const Text(
+                                                                'Delete',
+                                                                style: TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w700,
+                                                                  fontSize: 15,
+                                                                  color: Colors
+                                                                      .white,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            size: 20,
+                                          ),
+                                          label: const FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(
+                                              'Remove',
+                                              maxLines: 1,
+                                              softWrap: false,
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: Colors.red,
+                                            side: const BorderSide(
+                                              color: Colors.red,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            alignment: Alignment.center,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -638,132 +973,199 @@ class _SettingsSheetState extends State<SettingsSheet> {
   ) {
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
+    bool isNewPasswordVisible = false;
+    bool isConfirmPasswordVisible = false;
 
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          constraints: const BoxConstraints(maxWidth: 320),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Reset Password for $username',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: newPasswordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'New Password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: confirmPasswordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'Confirm Password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 8,
+          shadowColor: Colors.black26,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
-                      ),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Reset Password for $username',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(ctx),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          padding: const EdgeInsets.all(8),
+                          child: const Icon(
+                            Icons.close,
+                            size: 20,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _buildInputField(
+                    controller: newPasswordController,
+                    label: 'New Password',
+                    icon: Icons.lock_outline,
+                    obscureText: !isNewPasswordVisible,
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setDialogState(() {
+                          isNewPasswordVisible = !isNewPasswordVisible;
+                        });
+                      },
+                      icon: Icon(
+                        isNewPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: const Color(0xFF009661),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        String newPassword = newPasswordController.text.trim();
-                        String confirmPassword = confirmPasswordController.text
-                            .trim();
-
-                        if (newPassword.isEmpty || confirmPassword.isEmpty) {
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please fill in all fields'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-
-                        if (newPassword.length < 6) {
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Password must be at least 6 characters',
-                              ),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-
-                        if (newPassword != confirmPassword) {
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            const SnackBar(
-                              content: Text('Passwords do not match'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-
-                        await UserStorage.resetHelperPasswordPersistent(
-                          username,
-                          newPassword,
-                        );
-                        if (!ctx.mounted) return;
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(
-                            content: Text('Password reset successfully'),
-                            backgroundColor: Color(0xFF009661),
-                          ),
-                        );
+                  const SizedBox(height: 16),
+                  _buildInputField(
+                    controller: confirmPasswordController,
+                    label: 'Confirm Password',
+                    icon: Icons.lock_outline,
+                    obscureText: !isConfirmPasswordVisible,
+                    suffixIcon: IconButton(
+                      onPressed: () {
+                        setDialogState(() {
+                          isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                        });
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF009661),
-                      ),
-                      child: const Text(
-                        'Reset',
-                        style: TextStyle(color: Colors.white),
+                      icon: Icon(
+                        isConfirmPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: const Color(0xFF009661),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 28),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            side: const BorderSide(color: Colors.red),
+                            foregroundColor: Colors.red,
+                          ),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            String newPassword = newPasswordController.text
+                                .trim();
+                            String confirmPassword = confirmPasswordController
+                                .text
+                                .trim();
+
+                            if (newPassword.isEmpty ||
+                                confirmPassword.isEmpty) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please fill in all fields'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            if (newPassword.length < 6) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Password must be at least 6 characters',
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            if (newPassword != confirmPassword) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Passwords do not match'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            await UserStorage.resetHelperPasswordPersistent(
+                              username,
+                              newPassword,
+                            );
+                            if (!ctx.mounted) return;
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              const SnackBar(
+                                content: Text('Password reset successfully'),
+                                backgroundColor: Color(0xFF009661),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF009661),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Reset',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -1156,39 +1558,77 @@ class _SettingsSheetState extends State<SettingsSheet> {
     );
   }
 
+  Widget _helperStatusChip({
+    required String label,
+    required Color backgroundColor,
+    required Color foregroundColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: foregroundColor,
+        ),
+      ),
+    );
+  }
+
   Widget _buildInputField({
     required TextEditingController controller,
     required String label,
     required IconData icon,
     String? hintText,
+    String? helperText,
     bool obscureText = false,
     bool readOnly = false,
     Widget? suffixIcon,
   }) {
-    return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      readOnly: readOnly,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hintText,
-        filled: true,
-        fillColor: Colors.grey.shade50,
-        prefixIcon: Icon(icon, color: const Color(0xFF009661)),
-        suffixIcon: suffixIcon,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: controller,
+          obscureText: obscureText,
+          readOnly: readOnly,
+          decoration: InputDecoration(
+            labelText: helperText != null ? '$label *' : label,
+            hintText: hintText,
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            prefixIcon: Icon(icon, color: const Color(0xFF009661)),
+            suffixIcon: suffixIcon,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0xFF009661), width: 2),
+            ),
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade200),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF009661), width: 2),
-        ),
-      ),
+        if (helperText != null) ...[
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text(
+              helperText,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -1208,11 +1648,6 @@ class _SettingsSheetState extends State<SettingsSheet> {
         'question': 'How do I change my password?',
         'answer':
             'Go to Settings > Account > Change Password and enter your current and new password.',
-      },
-      {
-        'question': 'Can I customize notifications?',
-        'answer':
-            'Yes! Go to Settings > Notifications to enable or disable different notification types like Orders, Payments, System alerts, and Promotions.',
       },
       {
         'question': 'How do I update my profile information?',
@@ -1393,14 +1828,14 @@ class _SettingsSheetState extends State<SettingsSheet> {
                                       ).showSnackBar(
                                         const SnackBar(
                                           content: Text(
-                                            'Email: support@byteandbite.com',
+                                            'Email: byteandbite@gmail.com',
                                           ),
                                           backgroundColor: Color(0xFF009661),
                                         ),
                                       );
                                     },
                                     child: Text(
-                                      'support@byteandbite.com',
+                                      'byteandbite@gmail.com',
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.blue.shade700,
@@ -1422,7 +1857,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    '+234 800 123 4567',
+                                    '+63 965 769 3159',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.blue.shade700,

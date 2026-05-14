@@ -393,11 +393,6 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
             'Go to Settings > Account > Change Password and enter your current and new password.',
       },
       {
-        'question': 'Can I customize notifications?',
-        'answer':
-            'Yes! Go to Settings > Notifications to enable or disable different notification types like Orders, Payments, System alerts, and Promotions.',
-      },
-      {
         'question': 'How do I update my profile information?',
         'answer':
             'Go to Settings > Profile to view your account details. You can update your phone number there.',
@@ -577,7 +572,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    'support@byteandbite.com',
+                                    'byteandbite@gmail.com',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.blue.shade700,
@@ -598,7 +593,7 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    '+234 800 123 4567',
+                                    '+63 965 769 3159',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.blue.shade700,

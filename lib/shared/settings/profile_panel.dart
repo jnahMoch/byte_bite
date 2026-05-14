@@ -145,8 +145,9 @@ Future<void> showProfileDialog(
                                 final emailRegex = RegExp(
                                   r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
                                 );
+                                // Email is optional
                                 if (text.isEmpty) {
-                                  return 'Please enter an email address';
+                                  return null;
                                 }
                                 if (!emailRegex.hasMatch(text)) {
                                   return 'Enter a valid email address';
