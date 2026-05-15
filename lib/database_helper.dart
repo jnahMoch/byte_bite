@@ -9,6 +9,14 @@ class DatabaseHelper {
   Future<Database> get database async =>
       _database ??= await _initDB('byte_and_bite.db');
 
+  /// Close the database connection (used during backup/restore operations)
+  Future<void> closeDatabase() async {
+    if (_database != null && _database!.isOpen) {
+      await _database!.close();
+      _database = null;
+    }
+  }
+
   Future<Database> _initDB(String file) async => await openDatabase(
     join(await getDatabasesPath(), file),
     version: 2,

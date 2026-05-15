@@ -1,0 +1,238 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ══════════════════════════════════════════════════════════════════
+    // HELPER FUNCTIONS
+    // ══════════════════════════════════════════════════════════════════
+    
+    /// Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    /// Check if user is the owner (role == 'Owner' in their user document)
+    function isOwner() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Owner';
+    }
+    
+    /// Check if user is a helper (role == 'Helper' in their user document)
+    function isHelper() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Helper';
+    }
+    
+    /// Check if user is the owner of a resource
+    function isOwnerUser() {
+      return isOwner();
+    }
+    
+    /// Check if user's account is still active
+    function isActive() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive != false;
+    }
+    
+    /// Check if user can perform owner actions
+    function canManageOwner() {
+      return isAuthenticated() && isActive() && isOwner();
+    }
+    
+    /// Validate email format
+    function isValidEmail(email) {
+      return email.matches('.*@.*\\..*');
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // USERS COLLECTION - Role-based access
+    // ══════════════════════════════════════════════════════════════════
+    
+    match /users/{userId} {
+      // Owner can read/write all user documents
+      allow read, write: if canManageOwner();
+      
+      // Users can read their own profile
+      allow read: if isAuthenticated() && isActive() && 
+                     (request.auth.uid == userId || canManageOwner());
+      
+      // Users can update their own profile (name, email, phone only)
+      allow update: if isAuthenticated() && isActive() &&
+                       request.auth.uid == userId &&
+                       request.resource.data.keys().hasAll(['name', 'email', 'phone']) &&
+                       !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'password']);
+      
+      // Helper cannot create new users
+      match /helpers/{helperId} {
+        allow read: if canManageOwner();
+        allow write: if canManageOwner();
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // PRODUCTS COLLECTION - Inventory management
+    // ══════════════════════════════════════════════════════════════════
+    
+    match /products/{productId} {
+      // Authenticated users can read products
+      allow read: if isAuthenticated() && isActive();
+      
+      // Only owner can create/update/delete products
+      allow create, update, delete: if canManageOwner();
+      
+      // Validate product data on write
+      allow write: if canManageOwner() &&
+                      request.resource.data.name is string &&
+                      request.resource.data.price is number &&
+                      request.resource.data.price >= 0;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // SALES & TRANSACTIONS - Helper and Owner access
+    // ══════════════════════════════════════════════════════════════════
+    
+    match /transactions/{transactionId} {
+      // Any authenticated user can read transactions
+      allow read: if isAuthenticated() && isActive();
+      
+      // Authenticated users can create transactions (sales)
+      allow create: if isAuthenticated() && isActive() &&
+                       request.resource.data.user_id == request.auth.uid &&
+                       request.resource.data.timestamp is timestamp &&
+                       request.resource.data.amount is number &&
+                       request.resource.data.amount > 0;
+      
+      // Only the transaction creator or owner can update/delete
+      allow update, delete: if canManageOwner() ||
+                               (isAuthenticated() && isActive() &&
+                                resource.data.user_id == request.auth.uid);
+    }
+
+    match /sales/{saleId} {
+      // Any authenticated user can read sales
+      allow read: if isAuthenticated() && isActive();
+      
+      // Helpers can create sales (POS transactions)
+      allow create: if isAuthenticated() && isActive() &&
+                       request.resource.data.user_id == request.auth.uid &&
+                       request.resource.data.total_amount >= 0 &&
+                       request.resource.data.created_at is timestamp;
+      
+      // Only owner can update/delete
+      allow update, delete: if canManageOwner();
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // EXPENSES & BILLS - Owner only
+    // ══════════════════════════════════════════════════════════════════
+    
+    match /expenses/{expenseId} {
+      // Authenticated users can read expenses
+      allow read: if isAuthenticated() && isActive();
+      
+      // Only owner can create/update/delete expenses
+      allow create, update, delete: if canManageOwner() &&
+                                       request.resource.data.amount >= 0 &&
+                                       request.resource.data.description is string;
+    }
+
+    match /bills/{billId} {
+      // Authenticated users can read bills
+      allow read: if isAuthenticated() && isActive();
+      
+      // Only owner can create/update/delete bills
+      allow create, update, delete: if canManageOwner() &&
+                                       request.resource.data.amount >= 0 &&
+                                       request.resource.data.due_date is timestamp;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // REPORTS & ANALYTICS - Owner only
+    // ══════════════════════════════════════════════════════════════════
+    
+    match /reports/{reportId} {
+      // Only owner can read reports
+      allow read: if canManageOwner();
+      
+      // Only owner can manage reports
+      allow create, update, delete: if canManageOwner();
+    }
+
+    match /analytics/{analyticsId} {
+      // Only owner can access analytics
+      allow read: if canManageOwner();
+      allow write: if canManageOwner();
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // NOTIFICATIONS - User-specific access
+    // ══════════════════════════════════════════════════════════════════
+    
+    match /notifications/{userId}/{notificationId} {
+      // Users can read their own notifications
+      allow read: if isAuthenticated() && isActive() && 
+                     request.auth.uid == userId;
+      
+      // Users can create notifications for themselves
+      allow create: if isAuthenticated() && isActive() &&
+                       request.auth.uid == userId;
+      
+      // Users can update/delete their own notifications
+      allow update, delete: if isAuthenticated() && isActive() &&
+                               request.auth.uid == userId;
+      
+      // Owner can read all notifications
+      allow read: if canManageOwner();
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // AUDIT LOG - Owner only (append-only)
+    // ══════════════════════════════════════════════════════════════════
+    
+    match /audit_log/{logId} {
+      // Only owner can read audit logs
+      allow read: if canManageOwner();
+      
+      // System only appends to audit log (no updates/deletes)
+      allow create: if canManageOwner() &&
+                       request.resource.data.timestamp is timestamp &&
+                       request.resource.data.action is string &&
+                       request.resource.data.user_id is string;
+      
+      // Prevent updates and deletes to audit log
+      allow update, delete: if false;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // BACKUPS - Owner only
+    // ══════════════════════════════════════════════════════════════════
+    
+    match /backups/{backupId} {
+      // Only owner can access backups
+      allow read, create, update, delete: if canManageOwner() &&
+                                              request.resource.data.timestamp is timestamp &&
+                                              request.resource.data.hash is string;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // INVENTORY - Owner write, User read
+    // ══════════════════════════════════════════════════════════════════
+    
+    match /inventory/{itemId} {
+      // Authenticated users can read inventory
+      allow read: if isAuthenticated() && isActive();
+      
+      // Only owner can modify inventory
+      allow create, update, delete: if canManageOwner() &&
+                                       request.resource.data.quantity >= 0;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // CATCH-ALL - Deny all other access
+    // ══════════════════════════════════════════════════════════════════
+    
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
