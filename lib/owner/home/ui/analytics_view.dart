@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import '../../../database_helper.dart';
 import '../../../data/inventory_data.dart';
 import '../logic/analytics_controller.dart';
+import 'helper_sales_report_section.dart';
 
 extension DateTimeExtensions on DateTime {
   bool isSameDate(DateTime other) {
@@ -809,6 +810,10 @@ class _AnalyticsViewState extends State<AnalyticsView> {
           _bestSellingSection(),
           const SizedBox(height: 12),
           _paymentMethodsSection(),
+          const SizedBox(height: 20),
+          HelperSalesReportSection(
+            analyticsController: _analyticsController,
+          ),
         ],
       ),
     );
