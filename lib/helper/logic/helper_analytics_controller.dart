@@ -19,12 +19,15 @@ class HelperAnalyticsController {
 
   static bool _paidAtColumnEnsured = false;
 
-  Future<HelperAnalyticsSummary> loadSummary(String period) async {
+  Future<HelperAnalyticsSummary> loadSummary(
+    String period, {
+    DateTime? customStartDate,
+    DateTime? customEndDate,
+  }) async {
     await _ensurePaidAtColumn();
 
     final db = await DatabaseHelper.instance.database;
-    final startDate = _periodStart(period);
-    final salesFilter = _dateFilter('date_time', startDate);
+    final salesFilter = _periodFilter(period, customStartDate, customEndDate);
 
     final transactionRows = await db.rawQuery('''
       SELECT
@@ -73,30 +76,53 @@ class HelperAnalyticsController {
     _paidAtColumnEnsured = true;
   }
 
-  DateTime? _periodStart(String period) {
+  _DateFilter _periodFilter(
+    String period,
+    DateTime? customStartDate,
+    DateTime? customEndDate,
+  ) {
     final now = DateTime.now();
+    DateTime? startDate;
+    DateTime? endDate;
 
     if (period == 'Today') {
-      return DateTime(now.year, now.month, now.day);
-    }
-    if (period == 'This Week') {
-      final startOfDay = DateTime(now.year, now.month, now.day);
-      return startOfDay.subtract(Duration(days: startOfDay.weekday - 1));
-    }
-    if (period == 'This Month') {
-      return DateTime(now.year, now.month, 1);
-    }
-    return null;
-  }
+      startDate = DateTime(now.year, now.month, now.day);
+    } else if (period == 'This Week') {
+      startDate = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).subtract(Duration(days: now.weekday - 1));
+    } else if (period == 'This Month') {
+      startDate = DateTime(now.year, now.month, 1);
+    } else if (period == 'Custom') {
+      startDate = customStartDate;
+      endDate = customEndDate ?? customStartDate;
 
-  _DateFilter _dateFilter(String column, DateTime? startDate) {
+      if (startDate == null) {
+        return const _DateFilter(whereClause: '', whereArgs: []);
+      }
+    }
+
     if (startDate == null) {
       return const _DateFilter(whereClause: '', whereArgs: []);
     }
 
+    // For preset periods, end date is end of today (or now)
+    if (endDate == null) {
+      endDate = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).add(Duration(days: 1)).subtract(Duration(seconds: 1));
+    } else {
+      // For custom dates, include the entire end date
+      endDate = endDate.add(Duration(days: 1)).subtract(Duration(seconds: 1));
+    }
+
     return _DateFilter(
-      whereClause: 'WHERE $column >= ?',
-      whereArgs: [startDate.toIso8601String()],
+      whereClause: 'WHERE date_time >= ? AND date_time <= ?',
+      whereArgs: [startDate.toIso8601String(), endDate.toIso8601String()],
     );
   }
 }

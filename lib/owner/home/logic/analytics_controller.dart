@@ -8,9 +8,13 @@ import '../../../database_helper.dart';
 class AnalyticsController {
   const AnalyticsController();
 
-  Future<String> exportAnalyticsReport({required String period}) async {
+  Future<String> exportAnalyticsReport({
+    required String period,
+    DateTime? customStartDate,
+    DateTime? customEndDate,
+  }) async {
     final db = await DatabaseHelper.instance.database;
-    final filter = _periodFilter(period);
+    final filter = _periodFilter(period, customStartDate, customEndDate);
 
     final summaryRows = await db.rawQuery('''
       SELECT
@@ -57,7 +61,37 @@ class AnalyticsController {
 
     final csv = StringBuffer();
     csv.writeln('Section,Metric,Value');
-    csv.writeln('Summary,Period,${_csv(period)}');
+
+    String periodLabel = period;
+    if (period == 'Custom' && customStartDate != null) {
+      String formatter(DateTime date) {
+        final months = [
+          '',
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
+        return '${months[date.month]} ${date.day}, ${date.year}';
+      }
+
+      if (customEndDate != null && customStartDate != customEndDate) {
+        periodLabel =
+            '${formatter(customStartDate)} - ${formatter(customEndDate)}';
+      } else {
+        periodLabel = formatter(customStartDate);
+      }
+    }
+
+    csv.writeln('Summary,Period,${_csv(periodLabel)}');
     csv.writeln('Summary,Transactions,$txCount');
     csv.writeln('Summary,Total Sales,${totalSales.toStringAsFixed(2)}');
     csv.writeln('Summary,Items Sold,$itemsSold');
@@ -90,7 +124,14 @@ class AnalyticsController {
 
     final exportDir = await _ensurePublicExportDir();
     final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
-    final periodSlug = period.toLowerCase().replaceAll(' ', '_');
+
+    String periodSlug = period.toLowerCase().replaceAll(' ', '_');
+    if (period == 'Custom' && customStartDate != null) {
+      final startStr = customStartDate.toString().split(' ')[0];
+      final endStr = customEndDate?.toString().split(' ')[0] ?? startStr;
+      periodSlug = 'custom_${startStr}_to_$endStr';
+    }
+
     final filePath = p.join(
       exportDir.path,
       'analytics_${periodSlug}_$timestamp.csv',
@@ -179,9 +220,14 @@ class AnalyticsController {
         code == 5;
   }
 
-  _SqlFilter _periodFilter(String period) {
+  _SqlFilter _periodFilter(
+    String period,
+    DateTime? customStartDate,
+    DateTime? customEndDate,
+  ) {
     final now = DateTime.now();
     DateTime? startDate;
+    DateTime? endDate;
 
     if (period == 'Today') {
       startDate = DateTime(now.year, now.month, now.day);
@@ -193,15 +239,34 @@ class AnalyticsController {
       ).subtract(Duration(days: now.weekday - 1));
     } else if (period == 'This Month') {
       startDate = DateTime(now.year, now.month, 1);
+    } else if (period == 'Custom') {
+      startDate = customStartDate;
+      endDate = customEndDate ?? customStartDate;
+
+      if (startDate == null) {
+        return const _SqlFilter(whereClause: '', whereArgs: []);
+      }
     }
 
     if (startDate == null) {
       return const _SqlFilter(whereClause: '', whereArgs: []);
     }
 
+    // For preset periods, end date is end of today (or now)
+    if (endDate == null) {
+      endDate = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).add(Duration(days: 1)).subtract(Duration(seconds: 1));
+    } else {
+      // For custom dates, include the entire end date
+      endDate = endDate.add(Duration(days: 1)).subtract(Duration(seconds: 1));
+    }
+
     return _SqlFilter(
-      whereClause: 'WHERE s.date_time >= ?',
-      whereArgs: [startDate.toIso8601String()],
+      whereClause: 'WHERE s.date_time >= ? AND s.date_time <= ?',
+      whereArgs: [startDate.toIso8601String(), endDate.toIso8601String()],
     );
   }
 
@@ -212,55 +277,43 @@ class AnalyticsController {
 
   Future<void> deleteSaleByProduct(String productName) async {
     final db = await DatabaseHelper.instance.database;
-    
+
     // Find the product ID
     final products = await db.query(
       'Products',
       where: 'name = ?',
       whereArgs: [productName],
     );
-    
+
     if (products.isEmpty) return;
-    
+
     final productId = (products.first['product_id'] as num?)?.toInt();
     if (productId == null) return;
-    
+
     // Find all sales that contain this product
     final saleItems = await db.query(
       'SaleItems',
       where: 'product_id = ?',
       whereArgs: [productId],
     );
-    
+
     if (saleItems.isEmpty) return;
-    
+
     // Get the first sale ID to delete
     final saleId = (saleItems.first['sale_id'] as num?)?.toInt();
     if (saleId == null) return;
-    
+
     // Delete in order: SaleItems, Payments, Sales
-    await db.delete(
-      'SaleItems',
-      where: 'sale_id = ?',
-      whereArgs: [saleId],
-    );
-    
-    await db.delete(
-      'Payments',
-      where: 'sale_id = ?',
-      whereArgs: [saleId],
-    );
-    
-    await db.delete(
-      'Sales',
-      where: 'sale_id = ?',
-      whereArgs: [saleId],
-    );
+    await db.delete('SaleItems', where: 'sale_id = ?', whereArgs: [saleId]);
+
+    await db.delete('Payments', where: 'sale_id = ?', whereArgs: [saleId]);
+
+    await db.delete('Sales', where: 'sale_id = ?', whereArgs: [saleId]);
   }
 
   Future<void> deleteSaleByPaymentMethod(String paymentMethod) async {
     final db = await DatabaseHelper.instance.database;
-    
+
     // Find the first payment using this method
     final payments = await db.query(
       'Payments',
@@ -268,30 +321,18 @@ class AnalyticsController {
       whereArgs: [paymentMethod],
       limit: 1,
     );
-    
+
     if (payments.isEmpty) return;
-    
+
     final saleId = (payments.first['sale_id'] as num?)?.toInt();
     if (saleId == null) return;
-    
+
     // Delete in order: SaleItems, Payments, Sales
-    await db.delete(
-      'SaleItems',
-      where: 'sale_id = ?',
-      whereArgs: [saleId],
-    );
-    
-    await db.delete(
-      'Payments',
-      where: 'sale_id = ?',
-      whereArgs: [saleId],
-    );
-    
-    await db.delete(
-      'Sales',
-      where: 'sale_id = ?',
-      whereArgs: [saleId],
-    );
+    await db.delete('SaleItems', where: 'sale_id = ?', whereArgs: [saleId]);
+
+    await db.delete('Payments', where: 'sale_id = ?', whereArgs: [saleId]);
+
+    await db.delete('Sales', where: 'sale_id = ?', whereArgs: [saleId]);
   }
 
   /// Track transaction deletion event for analytics
@@ -303,23 +344,21 @@ class AnalyticsController {
   }) async {
     try {
       final db = await DatabaseHelper.instance.database;
-      
+
       // Insert deletion event into analytics log if available
       // This can be used to track which transactions were deleted
-      await db.insert(
-        'TransactionDeletionLog',
-        {
-          'sale_id': saleId,
-          'amount': amount,
-          'payment_method': paymentMethod,
-          'item_count': itemCount,
-          'deleted_at': DateTime.now().toIso8601String(),
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      ).catchError((_) {
-        // Table might not exist, that's okay
-        return 0;
-      });
+      await db
+          .insert('TransactionDeletionLog', {
+            'sale_id': saleId,
+            'amount': amount,
+            'payment_method': paymentMethod,
+            'item_count': itemCount,
+            'deleted_at': DateTime.now().toIso8601String(),
+          }, conflictAlgorithm: ConflictAlgorithm.replace)
+          .catchError((_) {
+            // Table might not exist, that's okay
+            return 0;
+          });
     } catch (e) {
       // Silently fail logging if there's an error
     }
