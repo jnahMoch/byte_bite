@@ -83,6 +83,18 @@ class UserStorage {
     };
   }
 
+  static Future<int> resolveCurrentUserId({int fallbackUserId = 1}) async {
+    final username = _currentUser?.trim() ?? '';
+    if (username.isEmpty) return fallbackUserId;
+
+    final existing = await DatabaseHelper.instance.getUserByUsername(username);
+    if (existing == null) return fallbackUserId;
+
+    final userId = existing['user_id'];
+    if (userId is num) return userId.toInt();
+    return fallbackUserId;
+  }
+
   static void setCurrentUser(String username) {
     _currentUser = username;
     _currentUserRole = _users[username]?['role'];

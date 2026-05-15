@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../../../database_helper.dart';
 import '../../../user_storage.dart';
 import '../../../shared/settings/profile_panel.dart';
 
@@ -12,6 +13,21 @@ class SettingsSheet extends StatefulWidget {
 }
 
 class _SettingsSheetState extends State<SettingsSheet> {
+  static const List<String> _monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -112,6 +128,19 @@ class _SettingsSheetState extends State<SettingsSheet> {
         ],
       ),
     );
+  }
+
+  String _formatSaleTimestamp(String dateTimeText) {
+    final dateTime = DateTime.tryParse(dateTimeText);
+    if (dateTime == null) return 'Unknown time';
+
+    final hour = dateTime.hour > 12
+        ? dateTime.hour - 12
+        : (dateTime.hour == 0 ? 12 : dateTime.hour);
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+
+    return '${_monthNames[dateTime.month - 1]} ${dateTime.day}, ${dateTime.year} • ${hour.toString().padLeft(2, '0')}:$minute $period';
   }
 
   Widget _sectionTitle(String title) {
@@ -434,6 +463,26 @@ class _SettingsSheetState extends State<SettingsSheet> {
   Future<void> _showManageHelpersDialog(BuildContext context) async {
     await UserStorage.hydrateHelpersFromSQLite();
 
+    final helpers = UserStorage.getHelpers();
+    final helperSales = <String, Map<String, dynamic>>{};
+    for (final helper in helpers) {
+      final username = helper['username'] ?? '';
+      if (username.isEmpty) continue;
+
+      final summary = await DatabaseHelper.instance.getHelperSalesSummary(
+        username,
+      );
+      final recentSales = await DatabaseHelper.instance.getRecentHelperSales(
+        username,
+        limit: 3,
+      );
+
+      helperSales[username] = {
+        'summary': summary,
+        'recentSales': recentSales,
+      };
+    }
+
     if (!mounted) return;
 
     showDialog(
@@ -644,6 +693,132 @@ class _SettingsSheetState extends State<SettingsSheet> {
                                         ),
                                       ),
                                     ],
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF7FBF9),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(
+                                        0xFF009661,
+                                      ).withValues(alpha: 0.12),
+                                    ),
+                                  ),
+                                  child: Builder(
+                                    builder: (context) {
+                                      final username = helper['username']!;
+                                      final salesData = helperSales[username] ??
+                                          {'summary': {}, 'recentSales': []};
+                                      final summary = salesData['summary']
+                                          as Map<String, dynamic>;
+                                      final recentSales = salesData['recentSales']
+                                          as List<Map<String, dynamic>>;
+                                      final saleCount =
+                                          (summary['sale_count'] as num?)
+                                                  ?.toInt() ??
+                                              0;
+                                      final totalSales =
+                                          (summary['total_sales'] as num?)
+                                                  ?.toDouble() ??
+                                              0.0;
+
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Sales handled',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            '$saleCount sale${saleCount == 1 ? '' : 's'} • Rs. ${totalSales.toStringAsFixed(0)} total',
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          if (recentSales.isNotEmpty) ...[
+                                            const SizedBox(height: 10),
+                                            Text(
+                                              'Recent sales',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w700,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            ...recentSales.map(
+                                              (sale) => Padding(
+                                                padding: const EdgeInsets.only(
+                                                  bottom: 8,
+                                                ),
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.all(10),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          10,
+                                                        ),
+                                                    border: Border.all(
+                                                      color:
+                                                          Colors.grey.shade200,
+                                                    ),
+                                                  ),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        'Sale #${sale['sale_id']}',
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        _formatSaleTimestamp(
+                                                          sale['date_time']
+                                                              .toString(),
+                                                        ),
+                                                        style: TextStyle(
+                                                          fontSize: 11,
+                                                          color:
+                                                              Colors.grey[600],
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        'Rs. ${(sale['total_amount'] as num?)?.toDouble().toStringAsFixed(0) ?? '0'} • ${sale['payment_method'] ?? 'Cash'}',
+                                                        style: TextStyle(
+                                                          fontSize: 11,
+                                                          color:
+                                                              Colors.grey[700],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      );
+                                    },
                                   ),
                                 ),
                                 const SizedBox(height: 14),

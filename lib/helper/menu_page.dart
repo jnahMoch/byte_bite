@@ -5,6 +5,7 @@ import '../data/inventory_data.dart';
 import '../data/sales_data.dart';
 import '../model/sales_transaction_model.dart';
 import '../database_helper.dart';
+import '../user_storage.dart';
 
 // UI Components
 import 'menu/ui/category_filter.dart';
@@ -194,8 +195,9 @@ class _MenuContentState extends State<MenuContent> {
 
     // persist header row so dashboard can query it
     try {
+      final currentUserId = await UserStorage.resolveCurrentUserId();
       await DatabaseHelper.instance.recordSale(
-        userId: 1,
+        userId: currentUserId,
         totalAmount: total.toDouble(),
         items: [],
         paymentMethod: paymentMethod,

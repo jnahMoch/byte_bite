@@ -293,6 +293,46 @@ class DatabaseHelper {
         JOIN Payments pay ON s.sale_id  = pay.sale_id
         ORDER BY s.date_time DESC''');
 
+  Future<Map<String, dynamic>> getHelperSalesSummary(String username) async {
+    final rows = await (await database).rawQuery(
+      '''
+      SELECT
+        COUNT(s.sale_id) AS sale_count,
+        COALESCE(SUM(s.total_amount), 0) AS total_sales,
+        MAX(s.date_time) AS last_sale_at
+      FROM Sales s
+      INNER JOIN Users u ON s.user_id = u.user_id
+      WHERE u.username = ?
+    ''',
+      [username],
+    );
+
+    return rows.isNotEmpty ? rows.first : <String, dynamic>{};
+  }
+
+  Future<List<Map<String, dynamic>>> getRecentHelperSales(
+    String username, {
+    int limit = 3,
+  }) async {
+    return (await database).rawQuery(
+      '''
+      SELECT
+        s.sale_id,
+        s.date_time,
+        s.total_amount,
+        pay.method AS payment_method,
+        pay.status AS payment_status
+      FROM Sales s
+      INNER JOIN Users u ON s.user_id = u.user_id
+      LEFT JOIN Payments pay ON pay.sale_id = s.sale_id
+      WHERE u.username = ?
+      ORDER BY s.date_time DESC
+      LIMIT ?
+    ''',
+      [username, limit],
+    );
+  }
+
   Future<int> logInventoryChange(
     int productId,
     String changeType,
