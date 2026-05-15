@@ -82,23 +82,34 @@ class _HelperAnalyticsViewState extends State<HelperAnalyticsView> {
 
   Future<void> _showCustomDatePicker() async {
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    DateTime clampDate(DateTime date, DateTime firstDate, DateTime lastDate) {
+      if (date.isBefore(firstDate)) return firstDate;
+      if (date.isAfter(lastDate)) return lastDate;
+      return DateTime(date.year, date.month, date.day);
+    }
 
     final startDate = await _showStyledDatePicker(
       context: context,
-      initialDate: _customStartDate ?? now,
+      initialDate: clampDate(_customStartDate ?? today, DateTime(2000), today),
       firstDate: DateTime(2000),
-      lastDate: now,
+      lastDate: today,
       title: 'Select start date',
     );
 
     if (!mounted) return;
     if (startDate == null) return;
 
+    var endDateSeed = _customEndDate ?? startDate;
+    if (endDateSeed.isBefore(startDate)) {
+      endDateSeed = startDate;
+    }
+
     final endDate = await _showStyledDatePicker(
       context: context,
-      initialDate: _customEndDate ?? startDate,
+      initialDate: clampDate(endDateSeed, startDate, today),
       firstDate: startDate,
-      lastDate: now,
+      lastDate: today,
       title: 'Select end date',
     );
 
@@ -143,13 +154,19 @@ class _HelperAnalyticsViewState extends State<HelperAnalyticsView> {
     required DateTime lastDate,
     required String title,
   }) async {
+    final clampedInitialDate = initialDate.isBefore(firstDate)
+        ? firstDate
+        : (initialDate.isAfter(lastDate)
+              ? lastDate
+              : DateTime(initialDate.year, initialDate.month, initialDate.day));
+
     return showDialog<DateTime>(
       context: context,
       builder: (context) {
-        DateTime selectedDate = initialDate;
+        DateTime selectedDate = clampedInitialDate;
         final TextEditingController dateInputController = TextEditingController(
           text:
-              '${_months[initialDate.month]} ${initialDate.day}, ${initialDate.year}',
+              '${_months[clampedInitialDate.month]} ${clampedInitialDate.day}, ${clampedInitialDate.year}',
         );
         bool useTextInput = false;
 

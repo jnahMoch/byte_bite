@@ -81,23 +81,34 @@ class _AnalyticsViewState extends State<AnalyticsView> {
 
   Future<void> _showCustomDatePicker() async {
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    DateTime clampDate(DateTime date, DateTime firstDate, DateTime lastDate) {
+      if (date.isBefore(firstDate)) return firstDate;
+      if (date.isAfter(lastDate)) return lastDate;
+      return DateTime(date.year, date.month, date.day);
+    }
 
     final startDate = await _showStyledDatePicker(
       context: context,
-      initialDate: _customStartDate ?? now,
+      initialDate: clampDate(_customStartDate ?? today, DateTime(2000), today),
       firstDate: DateTime(2000),
-      lastDate: now,
+      lastDate: today,
       title: 'Select start date',
     );
 
     if (!mounted) return;
     if (startDate == null) return;
 
+    var endDateSeed = _customEndDate ?? startDate;
+    if (endDateSeed.isBefore(startDate)) {
+      endDateSeed = startDate;
+    }
+
     final endDate = await _showStyledDatePicker(
       context: context,
-      initialDate: _customEndDate ?? startDate,
+      initialDate: clampDate(endDateSeed, startDate, today),
       firstDate: startDate,
-      lastDate: now,
+      lastDate: today,
       title: 'Select end date',
     );
 
@@ -142,13 +153,19 @@ class _AnalyticsViewState extends State<AnalyticsView> {
     required DateTime lastDate,
     required String title,
   }) async {
+    final clampedInitialDate = initialDate.isBefore(firstDate)
+        ? firstDate
+        : (initialDate.isAfter(lastDate)
+              ? lastDate
+              : DateTime(initialDate.year, initialDate.month, initialDate.day));
+
     return showDialog<DateTime>(
       context: context,
       builder: (context) {
-        DateTime selectedDate = initialDate;
+        DateTime selectedDate = clampedInitialDate;
         final TextEditingController dateInputController = TextEditingController(
           text:
-              '${_months[initialDate.month]} ${initialDate.day}, ${initialDate.year}',
+              '${_months[clampedInitialDate.month]} ${clampedInitialDate.day}, ${clampedInitialDate.year}',
         );
         bool useTextInput = false;
 
@@ -503,21 +520,28 @@ class _AnalyticsViewState extends State<AnalyticsView> {
   _PeriodFilter _periodFilter() {
     final now = DateTime.now();
     DateTime? startDate;
-    DateTime? endDate;
+    DateTime? endDateExclusive;
+
+    DateTime startOfDay(DateTime date) =>
+        DateTime(date.year, date.month, date.day);
+    DateTime nextDayStart(DateTime date) =>
+        DateTime(date.year, date.month, date.day).add(const Duration(days: 1));
 
     if (_selectedPeriod == 'Today') {
-      startDate = DateTime(now.year, now.month, now.day);
+      startDate = startOfDay(now);
+      endDateExclusive = nextDayStart(now);
     } else if (_selectedPeriod == 'This Week') {
-      startDate = DateTime(
-        now.year,
-        now.month,
-        now.day,
-      ).subtract(Duration(days: now.weekday - 1));
+      startDate = startOfDay(now).subtract(Duration(days: now.weekday - 1));
+      endDateExclusive = nextDayStart(now);
     } else if (_selectedPeriod == 'This Month') {
       startDate = DateTime(now.year, now.month, 1);
+      endDateExclusive = nextDayStart(now);
     } else if (_selectedPeriod == 'Custom') {
-      startDate = _customStartDate;
-      endDate = _customEndDate ?? _customStartDate;
+      startDate = _customStartDate == null
+          ? null
+          : startOfDay(_customStartDate!);
+      final rawEndDate = _customEndDate ?? _customStartDate;
+      endDateExclusive = rawEndDate == null ? null : nextDayStart(rawEndDate);
 
       if (startDate == null) {
         return const _PeriodFilter(whereClause: '', whereArgs: []);
@@ -527,21 +551,14 @@ class _AnalyticsViewState extends State<AnalyticsView> {
       return const _PeriodFilter(whereClause: '', whereArgs: []);
     }
 
-    // For preset periods, end date is end of today (or now)
-    if (endDate == null) {
-      endDate = DateTime(
-        now.year,
-        now.month,
-        now.day,
-      ).add(Duration(days: 1)).subtract(Duration(seconds: 1));
-    } else {
-      // For custom dates, include the entire end date
-      endDate = endDate.add(Duration(days: 1)).subtract(Duration(seconds: 1));
-    }
+    endDateExclusive ??= nextDayStart(now);
 
     return _PeriodFilter(
-      whereClause: 'WHERE s.date_time >= ? AND s.date_time <= ?',
-      whereArgs: [startDate.toIso8601String(), endDate.toIso8601String()],
+      whereClause: 'WHERE s.date_time >= ? AND s.date_time < ?',
+      whereArgs: [
+        startDate.toIso8601String(),
+        endDateExclusive.toIso8601String(),
+      ],
     );
   }
 
@@ -811,9 +828,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
           const SizedBox(height: 12),
           _paymentMethodsSection(),
           const SizedBox(height: 20),
-          HelperSalesReportSection(
-            analyticsController: _analyticsController,
-          ),
+          HelperSalesReportSection(analyticsController: _analyticsController),
         ],
       ),
     );

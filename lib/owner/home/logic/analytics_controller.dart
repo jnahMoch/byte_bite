@@ -248,9 +248,16 @@ class AnalyticsController {
   Future<HelperSalesReportData> loadHelperSalesReport({
     required String period,
     String? helperUsername,
+    DateTime? customStartDate,
+    DateTime? customEndDate,
   }) async {
     final db = await DatabaseHelper.instance.database;
-    final filter = _helperSalesFilter(period, helperUsername);
+    final filter = _helperSalesFilter(
+      period,
+      helperUsername,
+      customStartDate,
+      customEndDate,
+    );
 
     final summaryRows = await db.rawQuery('''
       SELECT
@@ -358,8 +365,9 @@ class AnalyticsController {
               helperName: (row['helper_name'] ?? 'Unknown').toString(),
               transactionCount: (row['tx_count'] as num?)?.toInt() ?? 0,
               totalSales: (row['total_sales'] as num?)?.toDouble() ?? 0.0,
-              itemsSold: performanceItemsByHelper[
-                      (row['helper_name'] ?? 'Unknown').toString()] ??
+              itemsSold:
+                  performanceItemsByHelper[(row['helper_name'] ?? 'Unknown')
+                      .toString()] ??
                   0,
             ),
           )
@@ -368,7 +376,8 @@ class AnalyticsController {
           .map(
             (row) => HelperProductBreakdownRow(
               helperName: (row['helper_name'] ?? 'Unknown').toString(),
-              productName: (row['product_name'] ?? 'Unknown Product').toString(),
+              productName: (row['product_name'] ?? 'Unknown Product')
+                  .toString(),
               quantitySold: (row['quantity_sold'] as num?)?.toInt() ?? 0,
               totalSales: (row['total_sales'] as num?)?.toDouble() ?? 0.0,
             ),
@@ -379,7 +388,8 @@ class AnalyticsController {
             (row) => HelperTransactionRow(
               saleId: (row['sale_id'] as num?)?.toInt() ?? 0,
               helperName: (row['helper_name'] ?? 'Unknown').toString(),
-              dateTime: DateTime.tryParse((row['date_time'] ?? '').toString()) ??
+              dateTime:
+                  DateTime.tryParse((row['date_time'] ?? '').toString()) ??
                   DateTime.now(),
               timePeriod: _timePeriodLabel(
                 DateTime.tryParse((row['date_time'] ?? '').toString()) ??
@@ -398,11 +408,15 @@ class AnalyticsController {
   Future<String> exportHelperSalesReport({
     required String period,
     String? helperUsername,
+    DateTime? customStartDate,
+    DateTime? customEndDate,
     required String format,
   }) async {
     final report = await loadHelperSalesReport(
       period: period,
       helperUsername: helperUsername,
+      customStartDate: customStartDate,
+      customEndDate: customEndDate,
     );
 
     final exportDir = await _ensurePublicExportDir();
@@ -510,7 +524,12 @@ class AnalyticsController {
             style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
           ),
           pw.TableHelper.fromTextArray(
-            headers: const ['Helper', 'Transactions', 'Items Sold', 'Total Sales'],
+            headers: const [
+              'Helper',
+              'Transactions',
+              'Items Sold',
+              'Total Sales',
+            ],
             data: report.helperPerformance
                 .map(
                   (row) => [
@@ -576,7 +595,9 @@ class AnalyticsController {
     return document.save();
   }
 
-  Future<List<int>> _buildHelperReportExcel(HelperSalesReportData report) async {
+  Future<List<int>> _buildHelperReportExcel(
+    HelperSalesReportData report,
+  ) async {
     final workbook = excel.Excel.createExcel();
     workbook.delete('Sheet1');
 
@@ -739,21 +760,26 @@ class AnalyticsController {
   ) {
     final now = DateTime.now();
     DateTime? startDate;
-    DateTime? endDate;
+    DateTime? endDateExclusive;
+
+    DateTime startOfDay(DateTime date) =>
+        DateTime(date.year, date.month, date.day);
+    DateTime nextDayStart(DateTime date) =>
+        DateTime(date.year, date.month, date.day).add(const Duration(days: 1));
 
     if (period == 'Today') {
-      startDate = DateTime(now.year, now.month, now.day);
+      startDate = startOfDay(now);
+      endDateExclusive = nextDayStart(now);
     } else if (period == 'This Week') {
-      startDate = DateTime(
-        now.year,
-        now.month,
-        now.day,
-      ).subtract(Duration(days: now.weekday - 1));
+      startDate = startOfDay(now).subtract(Duration(days: now.weekday - 1));
+      endDateExclusive = nextDayStart(now);
     } else if (period == 'This Month') {
       startDate = DateTime(now.year, now.month, 1);
+      endDateExclusive = nextDayStart(now);
     } else if (period == 'Custom') {
-      startDate = customStartDate;
-      endDate = customEndDate ?? customStartDate;
+      startDate = customStartDate == null ? null : startOfDay(customStartDate);
+      final rawEndDate = customEndDate ?? customStartDate;
+      endDateExclusive = rawEndDate == null ? null : nextDayStart(rawEndDate);
 
       if (startDate == null) {
         return const _SqlFilter(whereClause: '', whereArgs: []);
@@ -764,29 +790,27 @@ class AnalyticsController {
       return const _SqlFilter(whereClause: '', whereArgs: []);
     }
 
-    // For preset periods, end date is end of today (or now)
-    if (endDate == null) {
-      endDate = DateTime(
-        now.year,
-        now.month,
-        now.day,
-      ).add(Duration(days: 1)).subtract(Duration(seconds: 1));
-    } else {
-      // For custom dates, include the entire end date
-      endDate = endDate.add(Duration(days: 1)).subtract(Duration(seconds: 1));
-    }
+    endDateExclusive ??= nextDayStart(now);
 
     return _SqlFilter(
-      whereClause: 'WHERE s.date_time >= ? AND s.date_time <= ?',
-      whereArgs: [startDate.toIso8601String(), endDate.toIso8601String()],
+      whereClause: 'WHERE s.date_time >= ? AND s.date_time < ?',
+      whereArgs: [
+        startDate.toIso8601String(),
+        endDateExclusive.toIso8601String(),
+      ],
     );
   }
 
-  _SqlFilter _helperSalesFilter(String period, String? helperUsername) {
+  _SqlFilter _helperSalesFilter(
+    String period,
+    String? helperUsername,
+    DateTime? customStartDate,
+    DateTime? customEndDate,
+  ) {
     final clauses = <String>['u.role = ?'];
     final args = <Object?>['Helper'];
 
-    final periodFilter = _periodFilter(period);
+    final periodFilter = _periodFilter(period, customStartDate, customEndDate);
     if (periodFilter.whereClause.isNotEmpty) {
       clauses.add(periodFilter.whereClause.replaceFirst('WHERE ', ''));
       args.addAll(periodFilter.whereArgs);

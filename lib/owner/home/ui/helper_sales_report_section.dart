@@ -21,6 +21,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
     'This Week',
     'This Month',
     'All Time',
+    'Custom',
   ];
 
   String _selectedPeriod = 'This Month';
@@ -28,6 +29,9 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
   bool _isLoading = true;
   List<String> _helperNames = [];
   HelperSalesReportData? _report;
+  // Custom date range for "Custom" period
+  DateTime? _customStartDate;
+  DateTime? _customEndDate;
 
   @override
   void initState() {
@@ -64,6 +68,8 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
       final report = await widget.analyticsController.loadHelperSalesReport(
         period: _selectedPeriod,
         helperUsername: helperFilter,
+        customStartDate: _customStartDate,
+        customEndDate: _customEndDate,
       );
       if (!mounted) return;
       setState(() {
@@ -91,11 +97,14 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
       final helperFilter = _selectedHelper == 'All Helpers'
           ? null
           : _selectedHelper;
-      final exportedPath = await widget.analyticsController.exportHelperSalesReport(
-        period: _selectedPeriod,
-        helperUsername: helperFilter,
-        format: format,
-      );
+      final exportedPath = await widget.analyticsController
+          .exportHelperSalesReport(
+            period: _selectedPeriod,
+            helperUsername: helperFilter,
+            customStartDate: _customStartDate,
+            customEndDate: _customEndDate,
+            format: format,
+          );
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -176,21 +185,15 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
               tooltip: 'Export helper sales report',
               onSelected: _exportReport,
               itemBuilder: (context) => const [
-                PopupMenuItem(
-                  value: 'csv',
-                  child: Text('Export CSV'),
-                ),
-                PopupMenuItem(
-                  value: 'pdf',
-                  child: Text('Export PDF'),
-                ),
-                PopupMenuItem(
-                  value: 'excel',
-                  child: Text('Export Excel'),
-                ),
+                PopupMenuItem(value: 'csv', child: Text('Export CSV')),
+                PopupMenuItem(value: 'pdf', child: Text('Export PDF')),
+                PopupMenuItem(value: 'excel', child: Text('Export Excel')),
               ],
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF009661).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -233,51 +236,77 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
                   child: _filterChip(
                     label: period,
                     selected: _selectedPeriod == period,
-                    onTap: () {
-                      setState(() {
-                        _selectedPeriod = period;
-                      });
-                      _reloadReport();
+                    onTap: () async {
+                      if (period == 'Custom') {
+                        await _showCustomDatePicker();
+                      } else {
+                        setState(() {
+                          _selectedPeriod = period;
+                          _customStartDate = null;
+                          _customEndDate = null;
+                        });
+                        _reloadReport();
+                      }
                     },
                   ),
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedHelper,
-                    items: [
-                      const DropdownMenuItem(
-                        value: 'All Helpers',
-                        child: Text('All Helpers'),
-                      ),
-                      ..._helperNames.map(
-                        (helper) => DropdownMenuItem(
-                          value: helper,
-                          child: Text(helper),
-                        ),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() {
-                        _selectedHelper = value;
-                      });
-                      _reloadReport();
-                    },
-                  ),
-                ),
+              ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 136, maxWidth: 180),
+                child: _helperDropdownChip(),
               ),
             ],
           ),
         ),
+        if (_selectedPeriod == 'Custom' && _customStartDate != null) ...[
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFECFDF3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFA7F3D0)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today,
+                        size: 16,
+                        color: Color(0xFF009661),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _formatRangeLabel(),
+                          style: const TextStyle(
+                            color: Color(0xFF059669),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: _showCustomDatePicker,
+                  child: const Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: Color(0xFF009661),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 16),
         if (_isLoading)
           const Center(
@@ -357,9 +386,9 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
                                     width: 40,
                                     height: 40,
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF009661).withValues(
-                                        alpha: 0.12,
-                                      ),
+                                      color: const Color(
+                                        0xFF009661,
+                                      ).withValues(alpha: 0.12),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
@@ -598,6 +627,294 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
     );
   }
 
+  Widget _helperDropdownChip() {
+    final bool active = _selectedHelper != 'All Helpers';
+    final Color activeColor = const Color(0xFF009661);
+    final Color neutralBorder = Colors.grey.shade300;
+    final Color neutralText = Colors.grey.shade700;
+
+    return PopupMenuButton<String>(
+      tooltip: 'Select helper',
+      onSelected: (value) {
+        setState(() {
+          _selectedHelper = value;
+        });
+        _reloadReport();
+      },
+      constraints: const BoxConstraints(minWidth: 136, maxWidth: 180),
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 'All Helpers',
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'All Helpers',
+                  style: TextStyle(
+                    fontWeight: _selectedHelper == 'All Helpers'
+                        ? FontWeight.w700
+                        : FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (_selectedHelper == 'All Helpers')
+                const Icon(Icons.check, size: 16, color: Color(0xFF009661)),
+            ],
+          ),
+        ),
+        ..._helperNames.map(
+          (helper) => PopupMenuItem(
+            value: helper,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    helper,
+                    style: TextStyle(
+                      fontWeight: _selectedHelper == helper
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                    ),
+                  ),
+                ),
+                if (_selectedHelper == helper)
+                  const Icon(Icons.check, size: 16, color: Color(0xFF009661)),
+              ],
+            ),
+          ),
+        ),
+      ],
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? activeColor : Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: active ? activeColor : neutralBorder),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: activeColor.withValues(alpha: 0.12),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                _selectedHelper,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: active ? Colors.white : neutralText,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 18,
+              color: active ? Colors.white : neutralText,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showCustomDatePicker() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    DateTime clampDate(DateTime date, DateTime firstDate, DateTime lastDate) {
+      if (date.isBefore(firstDate)) return firstDate;
+      if (date.isAfter(lastDate)) return lastDate;
+      return DateTime(date.year, date.month, date.day);
+    }
+
+    final startDate = await _showStyledDatePicker(
+      context: context,
+      initialDate: clampDate(_customStartDate ?? today, DateTime(2000), today),
+      firstDate: DateTime(2000),
+      lastDate: today,
+      title: 'Select start date',
+    );
+    if (!mounted) return;
+    if (startDate == null) return;
+
+    var endDateSeed = _customEndDate ?? startDate;
+    if (endDateSeed.isBefore(startDate)) {
+      endDateSeed = startDate;
+    }
+
+    final endDate = await _showStyledDatePicker(
+      context: context,
+      initialDate: clampDate(endDateSeed, startDate, today),
+      firstDate: startDate,
+      lastDate: today,
+      title: 'Select end date',
+    );
+    if (!mounted) return;
+    if (endDate == null) return;
+
+    if (startDate.isAfter(endDate)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Start date must be before or equal to end date'),
+          backgroundColor: Colors.red.shade600,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _customStartDate = startDate;
+      _customEndDate = endDate;
+      _selectedPeriod = 'Custom';
+    });
+
+    await _reloadReport();
+  }
+
+  Future<DateTime?> _showStyledDatePicker({
+    required BuildContext context,
+    required DateTime initialDate,
+    required DateTime firstDate,
+    required DateTime lastDate,
+    required String title,
+  }) async {
+    final clampedInitialDate = initialDate.isBefore(firstDate)
+        ? firstDate
+        : (initialDate.isAfter(lastDate)
+              ? lastDate
+              : DateTime(initialDate.year, initialDate.month, initialDate.day));
+
+    return showDialog<DateTime>(
+      context: context,
+      builder: (context) {
+        DateTime selectedDate = clampedInitialDate;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                      border: Border(
+                        bottom: BorderSide(
+                          color: const Color(0xFFA7F3D0),
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFF009661),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: CalendarDatePicker(
+                      initialDate: selectedDate,
+                      firstDate: firstDate,
+                      lastDate: lastDate,
+                      onDateChanged: (d) => setState(() => selectedDate = d),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFFFF8C42),
+                          ),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF009661),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: TextButton(
+                            onPressed: () =>
+                                Navigator.pop(context, selectedDate),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text(
+                              'OK',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _formatRangeLabel() {
+    if (_customStartDate == null) return '';
+    final months = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    String fmt(DateTime d) => '${months[d.month]} ${d.day}, ${d.year}';
+    if (_customEndDate != null &&
+        !(_customStartDate!.year == _customEndDate!.year &&
+            _customStartDate!.month == _customEndDate!.month &&
+            _customStartDate!.day == _customEndDate!.day)) {
+      return '${fmt(_customStartDate!)} – ${fmt(_customEndDate!)}';
+    }
+    return fmt(_customStartDate!);
+  }
+
   Widget _sectionCard({required String title, required Widget child}) {
     return Container(
       width: double.infinity,
@@ -619,10 +936,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-            ),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 14),
           child,
@@ -665,10 +979,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
           const SizedBox(height: 4),
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],
       ),

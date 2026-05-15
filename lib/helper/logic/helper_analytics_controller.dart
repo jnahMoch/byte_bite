@@ -83,21 +83,26 @@ class HelperAnalyticsController {
   ) {
     final now = DateTime.now();
     DateTime? startDate;
-    DateTime? endDate;
+    DateTime? endDateExclusive;
+
+    DateTime startOfDay(DateTime date) =>
+        DateTime(date.year, date.month, date.day);
+    DateTime nextDayStart(DateTime date) =>
+        DateTime(date.year, date.month, date.day).add(const Duration(days: 1));
 
     if (period == 'Today') {
-      startDate = DateTime(now.year, now.month, now.day);
+      startDate = startOfDay(now);
+      endDateExclusive = nextDayStart(now);
     } else if (period == 'This Week') {
-      startDate = DateTime(
-        now.year,
-        now.month,
-        now.day,
-      ).subtract(Duration(days: now.weekday - 1));
+      startDate = startOfDay(now).subtract(Duration(days: now.weekday - 1));
+      endDateExclusive = nextDayStart(now);
     } else if (period == 'This Month') {
       startDate = DateTime(now.year, now.month, 1);
+      endDateExclusive = nextDayStart(now);
     } else if (period == 'Custom') {
-      startDate = customStartDate;
-      endDate = customEndDate ?? customStartDate;
+      startDate = customStartDate == null ? null : startOfDay(customStartDate);
+      final rawEndDate = customEndDate ?? customStartDate;
+      endDateExclusive = rawEndDate == null ? null : nextDayStart(rawEndDate);
 
       if (startDate == null) {
         return const _DateFilter(whereClause: '', whereArgs: []);
@@ -108,21 +113,14 @@ class HelperAnalyticsController {
       return const _DateFilter(whereClause: '', whereArgs: []);
     }
 
-    // For preset periods, end date is end of today (or now)
-    if (endDate == null) {
-      endDate = DateTime(
-        now.year,
-        now.month,
-        now.day,
-      ).add(Duration(days: 1)).subtract(Duration(seconds: 1));
-    } else {
-      // For custom dates, include the entire end date
-      endDate = endDate.add(Duration(days: 1)).subtract(Duration(seconds: 1));
-    }
+    endDateExclusive ??= nextDayStart(now);
 
     return _DateFilter(
-      whereClause: 'WHERE date_time >= ? AND date_time <= ?',
-      whereArgs: [startDate.toIso8601String(), endDate.toIso8601String()],
+      whereClause: 'WHERE date_time >= ? AND date_time < ?',
+      whereArgs: [
+        startDate.toIso8601String(),
+        endDateExclusive.toIso8601String(),
+      ],
     );
   }
 }
