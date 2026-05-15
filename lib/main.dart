@@ -1,3 +1,4 @@
+import 'package:byte_bite/auth/backup_service.dart';
 import 'package:byte_bite/owner/homepage.dart';
 import 'package:byte_bite/helper/homepage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -30,6 +31,12 @@ void main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
+  // ── Security: Automatic Daily Backups ─────────────────────────────────
+  // Schedule automatic backups on app startup to prevent data loss.
+  // Backups are stored locally and can be restored if needed.
+  // ────────────────────────────────────────────────────────────────────────
+  await BackupService().scheduleAutomaticBackups();
+
   runApp(const ByteAndBiteApp());
 }
 
@@ -56,10 +63,24 @@ class ByteAndBiteApp extends StatelessWidget {
       ),
       home: const AppStartupPage(),
       routes: {
-        '/dashboard': (context) => const POSHomePage(),
-        '/helper-dashboard': (context) => const HelperHomePage(),
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignUpPage(),
+      },
+      onGenerateRoute: (settings) {
+        // Route guard for protected pages
+        if (settings.name == '/dashboard') {
+          return MaterialPageRoute(
+            builder: (context) => const POSHomePage(),
+            settings: settings,
+          );
+        }
+        if (settings.name == '/helper-dashboard') {
+          return MaterialPageRoute(
+            builder: (context) => const HelperHomePage(),
+            settings: settings,
+          );
+        }
+        return null; // Let MaterialApp handle unknown routes
       },
     );
   }
