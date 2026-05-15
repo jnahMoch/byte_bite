@@ -20,6 +20,9 @@ class _DashboardViewState extends State<DashboardView> {
   int transactionCount = 0;
   double totalSales = 0.0;
   int billsPaid = 0;
+  double monthlySales = 0.0;
+  double monthlyExpenses = 0.0;
+  double monthlyNetIncome = 0.0;
 
   /// refresh the summary from outside
   Future<void> refresh() async {
@@ -41,6 +44,9 @@ class _DashboardViewState extends State<DashboardView> {
         transactionCount = summary.transactions;
         totalSales = summary.totalSales;
         billsPaid = summary.billsPaid;
+        monthlySales = summary.monthlySales;
+        monthlyExpenses = summary.monthlyExpenses;
+        monthlyNetIncome = summary.monthlyNetIncome;
       });
     } catch (e, st) {
       debugPrint('Dashboard._loadSummary() failed: $e\n$st');
@@ -49,6 +55,9 @@ class _DashboardViewState extends State<DashboardView> {
         transactionCount = 0;
         totalSales = 0.0;
         billsPaid = 0;
+        monthlySales = 0.0;
+        monthlyExpenses = 0.0;
+        monthlyNetIncome = 0.0;
       });
     }
   }
@@ -225,6 +234,46 @@ class _DashboardViewState extends State<DashboardView> {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 24),
+
+          const Text(
+            'Monthly Finance',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF333333),
+            ),
+          ),
+          const SizedBox(height: 12),
+          GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              _statCard(
+                'Monthly Sales',
+                '₱${monthlySales.toStringAsFixed(2)}',
+                Icons.trending_up,
+                const Color(0xFF22C55E),
+              ),
+              _statCard(
+                'Monthly Expenses',
+                '₱${monthlyExpenses.toStringAsFixed(2)}',
+                Icons.receipt_long,
+                const Color(0xFFEF4444),
+              ),
+              _statCard(
+                'Monthly Net Income',
+                '₱${monthlyNetIncome.toStringAsFixed(2)}',
+                Icons.account_balance_wallet,
+                monthlyNetIncome >= 0
+                    ? const Color(0xFF009661)
+                    : const Color(0xFFEF4444),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
 
