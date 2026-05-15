@@ -46,4 +46,46 @@ class BillsData {
       overdueBills.fold(0, (sum, b) => sum + b.amount);
   static double get totalUpcoming =>
       upcomingBills.fold(0, (sum, b) => sum + b.amount);
+
+  // Get bills for a specific month
+  static List<Bill> getBillsForMonth(int year, int month) {
+    return bills
+        .where((b) =>
+            b.dueDate.year == year && b.dueDate.month == month)
+        .toList();
+  }
+
+  // Get bills for current month
+  static List<Bill> getBillsForCurrentMonth() {
+    final now = DateTime.now();
+    return getBillsForMonth(now.year, now.month);
+  }
+
+  // Calculate total paid expenses for a specific month
+  static double getTotalPaidExpensesForMonth(int year, int month) {
+    final monthBills = getBillsForMonth(year, month);
+    return monthBills
+        .where((b) => b.isPaid)
+        .fold(0.0, (sum, b) => sum + b.amount);
+  }
+
+  // Calculate total pending expenses for a specific month
+  static double getTotalPendingExpensesForMonth(int year, int month) {
+    final monthBills = getBillsForMonth(year, month);
+    return monthBills
+        .where((b) => !b.isPaid)
+        .fold(0.0, (sum, b) => sum + b.amount);
+  }
+
+  // Calculate total expenses (both paid and pending) for a specific month
+  static double getTotalExpensesForMonth(int year, int month) {
+    final monthBills = getBillsForMonth(year, month);
+    return monthBills.fold(0.0, (sum, b) => sum + b.amount);
+  }
+
+  // Calculate total expenses for current month
+  static double getTotalExpensesForCurrentMonth() {
+    final now = DateTime.now();
+    return getTotalExpensesForMonth(now.year, now.month);
+  }
 }

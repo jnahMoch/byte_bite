@@ -6,10 +6,12 @@ import 'stat_card.dart';
 
 class OverviewSection extends StatelessWidget {
   final List<SalesTransaction> transactions;
+  final String timeFilter;
 
   const OverviewSection({
     super.key,
     required this.transactions,
+    required this.timeFilter,
   });
 
   @override
@@ -18,6 +20,8 @@ class OverviewSection extends StatelessWidget {
     final transactionCount = ReportsLogic.getTransactionCount(transactions);
     final averageSale = ReportsLogic.getAverageSale(transactions);
     final itemsSold = ReportsLogic.getItemsSold(transactions);
+    final totalExpenses = ReportsLogic.getTotalExpenses(timeFilter);
+    final netIncome = ReportsLogic.getNetIncome(transactions, timeFilter);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,6 +47,20 @@ class OverviewSection extends StatelessWidget {
               subtext: '$transactionCount orders',
               icon: Icons.trending_up,
               iconColor: Colors.green,
+            ),
+            StatCard(
+              label: 'Total Expenses',
+              value: 'Rs. ${totalExpenses.toStringAsFixed(0)}',
+              subtext: 'Bills & costs',
+              icon: Icons.receipt_long,
+              iconColor: Colors.red,
+            ),
+            StatCard(
+              label: 'Net Income',
+              value: 'Rs. ${netIncome.toStringAsFixed(0)}',
+              subtext: 'Sales - Expenses',
+              icon: Icons.trending_up,
+              iconColor: netIncome >= 0 ? Colors.green : Colors.red,
             ),
             StatCard(
               label: 'Average Sale',

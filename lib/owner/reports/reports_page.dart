@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/bills_data.dart';
 import '../../data/sales_data.dart';
 import 'logic/reports_logic.dart';
 import 'widgets/exports.dart';
@@ -17,17 +18,19 @@ class _ReportsPageState extends State<ReportsPage> {
   @override
   void initState() {
     super.initState();
-    // Listen to changes in SalesData to refresh analytics
-    SalesData.notifier.addListener(_onSalesDataChanged);
+    // Listen to changes in SalesData and BillsData to refresh analytics
+    SalesData.notifier.addListener(_onDataChanged);
+    BillsData.notifier.addListener(_onDataChanged);
   }
 
   @override
   void dispose() {
-    SalesData.notifier.removeListener(_onSalesDataChanged);
+    SalesData.notifier.removeListener(_onDataChanged);
+    BillsData.notifier.removeListener(_onDataChanged);
     super.dispose();
   }
 
-  void _onSalesDataChanged() {
+  void _onDataChanged() {
     if (mounted) {
       setState(() {});
     }
@@ -59,7 +62,10 @@ class _ReportsPageState extends State<ReportsPage> {
               },
             ),
             const SizedBox(height: 24),
-            OverviewSection(transactions: filteredTransactions),
+            OverviewSection(
+              transactions: filteredTransactions,
+              timeFilter: selectedTimeFilter,
+            ),
             const SizedBox(height: 24),
             BestSellingSection(transactions: filteredTransactions),
             const SizedBox(height: 24),
