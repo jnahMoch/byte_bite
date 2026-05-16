@@ -1,5 +1,13 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 import 'dart:math' as math;
+
+import 'package:csv/csv.dart';
+import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart' as pdf;
+import 'package:pdf/widgets.dart' as pw;
+import 'package:share_plus/share_plus.dart';
 
 import '../../../database_helper.dart';
 import '../../../data/inventory_data.dart';
@@ -11,6 +19,8 @@ extension DateTimeExtensions on DateTime {
     return year == other.year && month == other.month && day == other.day;
   }
 }
+
+enum _AnalyticsExportFormat { pdf, csv }
 
 class AnalyticsView extends StatefulWidget {
   const AnalyticsView({super.key});
@@ -77,6 +87,686 @@ class _AnalyticsViewState extends State<AnalyticsView> {
     } catch (e) {
       // Error loading data silently
     }
+  }
+
+  Future<void> _showExportOptionsDialog() async {
+    final selectedFormat = await showDialog<_AnalyticsExportFormat>(
+      context: context,
+      builder: (dialogContext) {
+        bool pdfPressed = false;
+        bool csvPressed = false;
+        bool cancelPressed = false;
+
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 24,
+          ),
+          backgroundColor: Colors.transparent,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 560),
+            padding: const EdgeInsets.all(20),
+            margin: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 255, 255, 255),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: const Color.fromARGB(255, 255, 255, 255),
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x22000000),
+                  blurRadius: 22,
+                  offset: Offset(0, 10),
+                ),
+              ],
+            ),
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                Widget exportButton({
+                  required String label,
+                  required IconData icon,
+                  required bool pressed,
+                  required VoidCallback onTap,
+                  required void Function(bool) onPressedChange,
+                  required Color accentColor,
+                  required Color activeColor,
+                }) {
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: onTap,
+                      onTapDown: (_) => setState(() => onPressedChange(true)),
+                      onTapCancel: () => setState(() => onPressedChange(false)),
+                      onTapUp: (_) => setState(() => onPressedChange(false)),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 140),
+                        curve: Curves.easeOut,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: pressed ? activeColor : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: pressed
+                                ? activeColor
+                                : accentColor.withValues(alpha: 0.3),
+                            width: 1.2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: pressed
+                                  ? activeColor.withValues(alpha: 0.22)
+                                  : const Color(0x12000000),
+                              blurRadius: pressed ? 12 : 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              icon,
+                              size: 18,
+                              color: pressed ? Colors.white : accentColor,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                label,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: pressed ? Colors.white : accentColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                Widget cancelButton() {
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () => Navigator.pop(dialogContext),
+                      onTapDown: (_) => setState(() => cancelPressed = true),
+                      onTapCancel: () => setState(() => cancelPressed = false),
+                      onTapUp: (_) => setState(() => cancelPressed = false),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 140),
+                        curve: Curves.easeOut,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: cancelPressed
+                              ? const Color(0xFFF97316)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(
+                              0xFFF97316,
+                            ).withValues(alpha: 0.45),
+                            width: 1.1,
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: cancelPressed
+                                ? Colors.white
+                                : const Color(0xFFF97316),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                return ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(4, 4, 4, 2),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 14),
+                          child: Text(
+                            'Export Analytics',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF14532D),
+                            ),
+                          ),
+                        ),
+                        const Text(
+                          'Choose a format to export your analytics data.',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF166534),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Stack vertically on narrow screens
+                            if (constraints.maxWidth < 480) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: exportButton(
+                                      label: 'Export as PDF',
+                                      icon: Icons.picture_as_pdf_outlined,
+                                      pressed: pdfPressed,
+                                      onTap: () => Navigator.pop(
+                                        dialogContext,
+                                        _AnalyticsExportFormat.pdf,
+                                      ),
+                                      onPressedChange: (value) =>
+                                          pdfPressed = value,
+                                      accentColor: const Color(0xFF009661),
+                                      activeColor: const Color(0xFF009661),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: exportButton(
+                                      label: 'Export as CSV',
+                                      icon: Icons.table_chart_outlined,
+                                      pressed: csvPressed,
+                                      onTap: () => Navigator.pop(
+                                        dialogContext,
+                                        _AnalyticsExportFormat.csv,
+                                      ),
+                                      onPressedChange: (value) =>
+                                          csvPressed = value,
+                                      accentColor: const Color(0xFF009661),
+                                      activeColor: const Color(0xFF009661),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }
+
+                            // Side-by-side and flexible on wider screens
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: exportButton(
+                                    label: 'Export as PDF',
+                                    icon: Icons.picture_as_pdf_outlined,
+                                    pressed: pdfPressed,
+                                    onTap: () => Navigator.pop(
+                                      dialogContext,
+                                      _AnalyticsExportFormat.pdf,
+                                    ),
+                                    onPressedChange: (value) =>
+                                        pdfPressed = value,
+                                    accentColor: const Color(0xFF009661),
+                                    activeColor: const Color(0xFF009661),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: exportButton(
+                                    label: 'Export as CSV',
+                                    icon: Icons.table_chart_outlined,
+                                    pressed: csvPressed,
+                                    onTap: () => Navigator.pop(
+                                      dialogContext,
+                                      _AnalyticsExportFormat.csv,
+                                    ),
+                                    onPressedChange: (value) =>
+                                        csvPressed = value,
+                                    accentColor: const Color(0xFF009661),
+                                    activeColor: const Color(0xFF009661),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 18),
+                        Row(children: [const Spacer(), cancelButton()]),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted || selectedFormat == null) return;
+    await _handleExportSelection(selectedFormat);
+  }
+
+  Future<void> _handleExportSelection(_AnalyticsExportFormat format) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Exporting report...'),
+        backgroundColor: Color(0xFF009661),
+      ),
+    );
+
+    try {
+      final exportedFiles = switch (format) {
+        _AnalyticsExportFormat.pdf => [await _exportAnalyticsAsPdf()],
+        _AnalyticsExportFormat.csv => await _exportAnalyticsAsCsv(),
+      };
+
+      if (!mounted) return;
+
+      await _showShareExportDialog(exportedFiles, format);
+
+      if (!mounted) return;
+      final destinationLabel = format == _AnalyticsExportFormat.pdf
+          ? 'PDF report'
+          : 'CSV files';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Saved $destinationLabel locally.'),
+          backgroundColor: const Color(0xFF009661),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Export failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showShareExportDialog(
+    List<String> exportedFiles,
+    _AnalyticsExportFormat format,
+  ) async {
+    if (!mounted) return;
+
+    final shouldShare = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text(
+            'Export complete',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF14532D),
+            ),
+          ),
+          content: Text(
+            format == _AnalyticsExportFormat.pdf
+                ? 'The PDF report is ready. Share it through email or cloud storage?'
+                : 'The CSV files are ready. Share them through email or cloud storage?',
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF166534),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFF97316),
+              ),
+              child: const Text('Close'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF009661),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Share now'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldShare != true || !mounted) return;
+
+    await SharePlus.instance.share(
+      ShareParams(
+        files: exportedFiles.map((path) => XFile(path)).toList(),
+        text: format == _AnalyticsExportFormat.pdf
+            ? 'Byte Bite analytics PDF report'
+            : 'Byte Bite analytics CSV exports',
+      ),
+    );
+  }
+
+  Future<_AnalyticsExportSnapshot> _collectAnalyticsExportSnapshot() async {
+    final summary = await _getSalesSummaryForPeriod();
+    final bestSellingItems = await _getBestSellingItems();
+    final paymentMethods = await _getPaymentMethodStats();
+
+    return _AnalyticsExportSnapshot(
+      period: _selectedPeriod,
+      periodLabel: _formatExportPeriodLabel(),
+      customStartDate: _customStartDate,
+      customEndDate: _customEndDate,
+      summary: summary,
+      bestSellingItems: bestSellingItems,
+      paymentMethods: paymentMethods,
+    );
+  }
+
+  Future<String> _exportAnalyticsAsPdf() async {
+    final snapshot = await _collectAnalyticsExportSnapshot();
+    final exportDir = await _ensureAnalyticsExportDirectory();
+    final filePath = p.join(
+      exportDir.path,
+      _buildAnalyticsExportBaseName(
+        snapshot.period,
+        snapshot.customStartDate,
+        snapshot.customEndDate,
+        'pdf',
+      ),
+    );
+
+    final document = pw.Document();
+    document.addPage(
+      pw.MultiPage(
+        pageFormat: pdf.PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(24),
+        build: (context) => [
+          pw.Text(
+            'Analytics Report',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 6),
+          pw.Text('Period: ${snapshot.periodLabel}'),
+          pw.SizedBox(height: 14),
+          pw.Text(
+            'Summary',
+            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 6),
+          pw.TableHelper.fromTextArray(
+            headers: const ['Metric', 'Value'],
+            data: [
+              ['Period', snapshot.periodLabel],
+              ['Transactions', snapshot.summary.transactionCount.toString()],
+              ['Total Sales', snapshot.summary.totalSales.toStringAsFixed(2)],
+              ['Items Sold', snapshot.summary.itemsSold.toString()],
+              [
+                'Average Sale',
+                _avgSaleForSummary(snapshot.summary).toStringAsFixed(2),
+              ],
+            ],
+            border: pw.TableBorder.all(
+              color: pdf.PdfColors.grey400,
+              width: 0.5,
+            ),
+            headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 10,
+            ),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+          ),
+          pw.SizedBox(height: 14),
+          pw.Text(
+            'BestSellingItems',
+            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 6),
+          pw.TableHelper.fromTextArray(
+            headers: const [
+              'Rank',
+              'Product Name',
+              'Units Sold',
+              'Sales Value',
+            ],
+            data: snapshot.bestSellingItems.isEmpty
+                ? [
+                    const ['No data available', '', '', ''],
+                  ]
+                : snapshot.bestSellingItems.asMap().entries.map((entry) {
+                    final item = entry.value;
+                    return [
+                      '${entry.key + 1}',
+                      item.name,
+                      '${item.unitsSold}',
+                      item.salesValue.toStringAsFixed(2),
+                    ];
+                  }).toList(),
+            border: pw.TableBorder.all(
+              color: pdf.PdfColors.grey400,
+              width: 0.5,
+            ),
+            headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 10,
+            ),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+          ),
+          pw.SizedBox(height: 14),
+          pw.Text(
+            'PaymentMethods',
+            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 6),
+          pw.TableHelper.fromTextArray(
+            headers: const ['Method', 'Transactions', 'Sales Value'],
+            data: snapshot.paymentMethods.isEmpty
+                ? [
+                    const ['No data available', '', ''],
+                  ]
+                : snapshot.paymentMethods
+                      .map(
+                        (item) => [
+                          item.method,
+                          '${item.transactionCount}',
+                          item.salesValue.toStringAsFixed(2),
+                        ],
+                      )
+                      .toList(),
+            border: pw.TableBorder.all(
+              color: pdf.PdfColors.grey400,
+              width: 0.5,
+            ),
+            headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 10,
+            ),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+          ),
+        ],
+      ),
+    );
+
+    await File(filePath).writeAsBytes(await document.save(), flush: true);
+    return filePath;
+  }
+
+  Future<List<String>> _exportAnalyticsAsCsv() async {
+    final snapshot = await _collectAnalyticsExportSnapshot();
+    final exportDir = await _ensureAnalyticsExportDirectory();
+    final exportFolder = Directory(
+      p.join(
+        exportDir.path,
+        _buildAnalyticsExportBaseName(
+          snapshot.period,
+          snapshot.customStartDate,
+          snapshot.customEndDate,
+          null,
+        ),
+      ),
+    );
+
+    if (!await exportFolder.exists()) {
+      await exportFolder.create(recursive: true);
+    }
+
+    final summaryFile = File(p.join(exportFolder.path, 'summary.csv'));
+    final bestSellersFile = File(p.join(exportFolder.path, 'best_sellers.csv'));
+    final paymentsFile = File(p.join(exportFolder.path, 'payments.csv'));
+
+    await summaryFile.writeAsString(_buildSummaryCsv(snapshot), flush: true);
+    await bestSellersFile.writeAsString(
+      _buildBestSellersCsv(snapshot),
+      flush: true,
+    );
+    await paymentsFile.writeAsString(_buildPaymentsCsv(snapshot), flush: true);
+
+    return [summaryFile.path, bestSellersFile.path, paymentsFile.path];
+  }
+
+  Future<Directory> _ensureAnalyticsExportDirectory() async {
+    final root = await getApplicationDocumentsDirectory();
+    final exportDir = Directory(p.join(root.path, 'ByteBiteAnalyticsExports'));
+    if (!await exportDir.exists()) {
+      await exportDir.create(recursive: true);
+    }
+    return exportDir;
+  }
+
+  String _buildAnalyticsExportBaseName(
+    String period,
+    DateTime? customStartDate,
+    DateTime? customEndDate,
+    String? extension,
+  ) {
+    final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
+    final periodSlug = _buildAnalyticsPeriodSlug(
+      period,
+      customStartDate,
+      customEndDate,
+    );
+    final baseName = 'analytics_${periodSlug}_$timestamp';
+    return extension == null ? baseName : '$baseName.$extension';
+  }
+
+  String _buildAnalyticsPeriodSlug(
+    String period,
+    DateTime? customStartDate,
+    DateTime? customEndDate,
+  ) {
+    if (period != 'Custom' || customStartDate == null) {
+      return period.toLowerCase().replaceAll(' ', '_');
+    }
+
+    final start = _dateOnlyString(customStartDate);
+    final end = _dateOnlyString(customEndDate ?? customStartDate);
+    return 'custom_${start}_to_$end';
+  }
+
+  String _formatExportPeriodLabel() {
+    if (_selectedPeriod != 'Custom' || _customStartDate == null) {
+      return _selectedPeriod;
+    }
+
+    if (_customEndDate != null &&
+        !_customStartDate!.isSameDate(_customEndDate!)) {
+      return '${_formatExportDate(_customStartDate!)} – ${_formatExportDate(_customEndDate!)}';
+    }
+
+    return _formatExportDate(_customStartDate!);
+  }
+
+  String _formatExportDate(DateTime date) {
+    return '${_months[date.month]} ${date.day}, ${date.year}';
+  }
+
+  String _dateOnlyString(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  double _avgSaleForSummary(_SalesSummary summary) {
+    return summary.transactionCount > 0
+        ? summary.totalSales / summary.transactionCount
+        : 0.0;
+  }
+
+  String _buildSummaryCsv(_AnalyticsExportSnapshot snapshot) {
+    final rows = <List<dynamic>>[
+      [
+        'period',
+        'custom_start_date',
+        'custom_end_date',
+        'transaction_count',
+        'total_sales',
+        'items_sold',
+        'avg_sale',
+      ],
+      [
+        snapshot.period,
+        snapshot.customStartDate == null
+            ? ''
+            : snapshot.customStartDate!.toIso8601String(),
+        snapshot.customEndDate == null
+            ? ''
+            : snapshot.customEndDate!.toIso8601String(),
+        snapshot.summary.transactionCount,
+        snapshot.summary.totalSales.toStringAsFixed(2),
+        snapshot.summary.itemsSold,
+        _avgSaleForSummary(snapshot.summary).toStringAsFixed(2),
+      ],
+    ];
+
+    return const ListToCsvConverter().convert(rows);
+  }
+
+  String _buildBestSellersCsv(_AnalyticsExportSnapshot snapshot) {
+    final rows = <List<dynamic>>[
+      ['rank', 'product_name', 'units_sold', 'sales_value'],
+      ...snapshot.bestSellingItems.asMap().entries.map((entry) {
+        final item = entry.value;
+        return [
+          entry.key + 1,
+          item.name,
+          item.unitsSold,
+          item.salesValue.toStringAsFixed(2),
+        ];
+      }),
+    ];
+
+    return const ListToCsvConverter().convert(rows);
+  }
+
+  String _buildPaymentsCsv(_AnalyticsExportSnapshot snapshot) {
+    final rows = <List<dynamic>>[
+      ['method', 'transaction_count', 'sales_value'],
+      ...snapshot.paymentMethods.map(
+        (item) => [
+          item.method,
+          item.transactionCount,
+          item.salesValue.toStringAsFixed(2),
+        ],
+      ),
+    ];
+
+    return const ListToCsvConverter().convert(rows);
   }
 
   Future<void> _showCustomDatePicker() async {
@@ -473,7 +1163,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
       INNER JOIN Products p ON si.product_id = p.product_id
       ${filter.whereClause}
       GROUP BY si.product_id, p.name
-      ORDER BY units_sold DESC, sales_value DESC
+      ORDER BY units_sold DESC, sales_value DESC, p.name ASC
       LIMIT ?
       ''',
       [...filter.whereArgs, limit],
@@ -590,42 +1280,7 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                 ),
               ),
               OutlinedButton.icon(
-                onPressed: () async {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Exporting report...'),
-                      backgroundColor: Color(0xFF009661),
-                    ),
-                  );
-
-                  try {
-                    final exportedPath = await _analyticsController
-                        .exportAnalyticsReport(
-                          period: _selectedPeriod,
-                          customStartDate: _customStartDate,
-                          customEndDate: _customEndDate,
-                        );
-
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'File exported to public storage: $exportedPath',
-                        ),
-                        backgroundColor: const Color(0xFF009661),
-                        duration: const Duration(seconds: 6),
-                      ),
-                    );
-                  } catch (e) {
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Export failed: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
+                onPressed: _showExportOptionsDialog,
                 icon: const Icon(
                   Icons.download,
                   size: 18,
@@ -1582,6 +2237,26 @@ class _SalesSummary {
     required this.transactionCount,
     required this.totalSales,
     required this.itemsSold,
+  });
+}
+
+class _AnalyticsExportSnapshot {
+  final String period;
+  final String periodLabel;
+  final DateTime? customStartDate;
+  final DateTime? customEndDate;
+  final _SalesSummary summary;
+  final List<_BestSellingProduct> bestSellingItems;
+  final List<_PaymentMethodStat> paymentMethods;
+
+  const _AnalyticsExportSnapshot({
+    required this.period,
+    required this.periodLabel,
+    required this.customStartDate,
+    required this.customEndDate,
+    required this.summary,
+    required this.bestSellingItems,
+    required this.paymentMethods,
   });
 }
 
