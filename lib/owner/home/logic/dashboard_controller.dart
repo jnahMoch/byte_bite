@@ -1,4 +1,3 @@
-import '../../../data/bills_data.dart';
 import '../../../database_helper.dart';
 import 'bills_controller.dart';
 import 'transactions_controller.dart';
@@ -39,11 +38,11 @@ class DashboardController {
       'SELECT COALESCE(SUM(total_amount), 0) AS total FROM Sales WHERE date_time >= ?',
       [monthStart],
     );
-    final monthlySalesValue = (monthlySalesRows.isNotEmpty
-            ? monthlySalesRows.first['total']
-            : null) as num?;
+    final monthlySalesValue =
+        (monthlySalesRows.isNotEmpty ? monthlySalesRows.first['total'] : null)
+            as num?;
     final monthlySales = monthlySalesValue?.toDouble() ?? 0.0;
-    final monthlyExpenses = BillsData.getTotalExpensesForCurrentMonth();
+    final monthlyExpenses = await billsController.getMonthlyPaidExpenses();
     final monthlyNetIncome = monthlySales - monthlyExpenses;
 
     // Cloud sync is best-effort and must never block local dashboard metrics.

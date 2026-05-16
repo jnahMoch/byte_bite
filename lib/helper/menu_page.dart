@@ -10,7 +10,8 @@ import 'menu/ui/category_filter.dart';
 import 'menu/ui/menu_items_grid.dart';
 import 'menu/ui/checkout_panel.dart';
 import 'menu/ui/receipt_dialog.dart';
-import 'package:byte_bite/owner/menu/ui/add_product_dialog.dart' show showAddProductDialog;
+import 'package:byte_bite/owner/menu/ui/add_product_dialog.dart'
+    show showAddProductDialog;
 
 // Logic & Helpers
 import 'menu/logic/menu_business_logic.dart';

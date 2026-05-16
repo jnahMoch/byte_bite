@@ -15,6 +15,8 @@ class HelperDashboardView extends StatefulWidget {
   State<HelperDashboardView> createState() => _HelperDashboardViewState();
 }
 
+class HelperDashboardViewState extends _HelperDashboardViewState {}
+
 class _HelperDashboardViewState extends State<HelperDashboardView> {
   final DashboardController _dashboardController = const DashboardController();
   late Future<DashboardSummary> _summaryFuture;
@@ -23,6 +25,13 @@ class _HelperDashboardViewState extends State<HelperDashboardView> {
   void initState() {
     super.initState();
     _summaryFuture = _dashboardController.loadTodaysSummary();
+  }
+
+  Future<void> refresh() async {
+    if (!mounted) return;
+    setState(() {
+      _summaryFuture = _dashboardController.loadTodaysSummary();
+    });
   }
 
   int get _lowStockCount =>

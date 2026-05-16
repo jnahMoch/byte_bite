@@ -4,8 +4,12 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 
 import '../data/inventory_data.dart';
+import '../data/bills_data.dart';
+import '../data/sales_data.dart';
 import 'home/logic/inventory_controller.dart';
+import 'home/logic/bills_controller.dart';
 import 'home/logic/notifications_controller.dart';
+import 'home/logic/transactions_controller.dart';
 import 'home/ui/analytics_view.dart';
 import 'home/ui/bills_view.dart';
 import 'home/ui/dashboard_view.dart';
@@ -46,6 +50,9 @@ class POSHomePage extends StatefulWidget {
 class _POSHomePageState extends State<POSHomePage> {
   int _currentIndex = 0;
   final InventoryController _inventoryController = const InventoryController();
+  final TransactionsController _transactionsController =
+      const TransactionsController();
+  final BillsController _billsController = const BillsController();
   final NotificationsController _notificationsController =
       const NotificationsController();
 
@@ -94,6 +101,39 @@ class _POSHomePageState extends State<POSHomePage> {
     }
   }
 
+  Future<void> _hydrateDashboardDataFromStorage() async {
+    try {
+      // Step 1: Restore from Firestore into SQLite (best-effort)
+      await _transactionsController.restoreTransactionsFromFirebase();
+      await _billsController.restoreBillsFromFirebase();
+
+      // Step 2: Load from SQLite into in-memory lists
+      final loadedTransactions = await _transactionsController
+          .loadPersistedTransactions();
+      if (loadedTransactions.isNotEmpty) {
+        SalesData.transactions
+          ..clear()
+          ..addAll(loadedTransactions);
+        SalesData.notifier.value++;
+      }
+
+      final loadedBills = await _billsController.loadBills();
+      if (loadedBills.isNotEmpty) {
+        BillsData.bills
+          ..clear()
+          ..addAll(loadedBills);
+        BillsData.notifier.value++;
+      }
+
+      // Step 3: Refresh dashboard with new data
+      if (mounted) {
+        _dashboardKey.currentState?.refresh();
+      }
+    } catch (_) {
+      // Keep current in-memory summary data if hydration fails.
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -111,6 +151,7 @@ class _POSHomePageState extends State<POSHomePage> {
     // Listen to inventory changes to update notification badge
     InventoryData.notifier.addListener(_updateNotificationBadge);
     _hydrateInventoryFromStorage();
+    _hydrateDashboardDataFromStorage();
 
     // ── Offline + Cloud Sync ───────────────────────────────────────────────
     // Step 1 — snapshot current status on startup.

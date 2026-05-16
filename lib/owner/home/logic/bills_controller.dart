@@ -117,6 +117,21 @@ class BillsController {
     return (rows.first['cnt'] as num?)?.toInt() ?? 0;
   }
 
+  Future<double> getMonthlyPaidExpenses() async {
+    await _ensurePaidAtColumn();
+    final db = await DatabaseHelper.instance.database;
+    final now = DateTime.now();
+    final monthStart = DateTime(now.year, now.month, 1).toIso8601String();
+    final rows = await db.rawQuery(
+      "SELECT COALESCE(SUM(amount), 0) AS total FROM Expenses WHERE reminder_status = 'Dismissed' AND paid_at IS NOT NULL AND paid_at >= ?",
+      [monthStart],
+    );
+
+    if (rows.isEmpty) return 0.0;
+    final total = rows.first['total'];
+    return (total as num?)?.toDouble() ?? 0.0;
+  }
+
   Future<void> syncTodaysPaidBillsToFirebase() async {
     await _ensurePaidAtColumn();
     final user = FirebaseAuth.instance.currentUser;
@@ -207,6 +222,70 @@ class BillsController {
     return rawDescription.substring(idx + 1);
   }
 
+  Future<void> restoreBillsFromFirebase() async {
+    await _ensurePaidAtColumn();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('bills')
+          .where('user_id', isEqualTo: user.uid)
+          .get();
+
+      final db = await DatabaseHelper.instance.database;
+
+      for (final doc in querySnapshot.docs) {
+        final data = doc.data();
+        final expenseId = (data['expense_id'] as num?)?.toInt();
+        final title = (data['title'] ?? '').toString();
+        final category = (data['category'] ?? 'Other').toString();
+        final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
+        final dueRaw = (data['due_date'] ?? '').toString();
+        final dueDate = DateTime.tryParse(dueRaw) ?? DateTime.now();
+        final reminderStatus = (data['reminder_status'] ?? 'Pending')
+            .toString();
+        final paidAt = (data['paid_at'] ?? '').toString();
+
+        if (expenseId == null) continue;
+
+        final existing = await db.query(
+          'Expenses',
+          where: 'expense_id = ?',
+          whereArgs: [expenseId],
+          limit: 1,
+        );
+
+        if (existing.isEmpty) {
+          await db.insert('Expenses', {
+            'expense_id': expenseId,
+            'user_id': 1,
+            'description': '$category|$title',
+            'amount': amount,
+            'due_date': dueDate.toIso8601String(),
+            'reminder_status': reminderStatus,
+            'paid_at': paidAt.isEmpty ? null : paidAt,
+          });
+        } else {
+          await db.update(
+            'Expenses',
+            {
+              'description': '$category|$title',
+              'amount': amount,
+              'due_date': dueDate.toIso8601String(),
+              'reminder_status': reminderStatus,
+              'paid_at': paidAt.isEmpty ? null : paidAt,
+            },
+            where: 'expense_id = ?',
+            whereArgs: [expenseId],
+          );
+        }
+      }
+    } catch (_) {
+      // Best-effort restore; continue even if Firebase is unreachable
+    }
+  }
+
   Future<void> deleteBill(String billId) async {
     final expenseId = int.tryParse(billId);
     if (expenseId == null) return;
@@ -219,10 +298,7 @@ class BillsController {
     );
 
     try {
-      await FirebaseFirestore.instance
-          .collection('bills')
-          .doc(billId)
-          .delete();
+      await FirebaseFirestore.instance.collection('bills').doc(billId).delete();
     } catch (_) {}
   }
 }
