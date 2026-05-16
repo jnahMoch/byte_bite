@@ -26,6 +26,9 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
 
   String _selectedPeriod = 'This Month';
   String _selectedHelper = 'All Staff';
+  // Display label shown in the dropdown chip. `_selectedHelper` is used
+  // as the actual filter value (e.g. 'Helper' role or a username).
+  String _selectedHelperLabel = 'All Staff';
   bool _isLoading = true;
   List<String> _helperNames = [];
   HelperSalesReportData? _report;
@@ -632,12 +635,50 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
     final Color activeColor = const Color(0xFF009661);
     final Color neutralBorder = Colors.grey.shade300;
     final Color neutralText = Colors.grey.shade700;
-
     return PopupMenuButton<String>(
       tooltip: 'Select staff',
-      onSelected: (value) {
+      onSelected: (value) async {
+        if (value == 'Helper') {
+          // Show secondary selector for helpers
+          final selection = await showDialog<String?>(
+            context: context,
+            builder: (context) {
+              return SimpleDialog(
+                title: const Text('Select helper'),
+                children: [
+                  SimpleDialogOption(
+                    onPressed: () => Navigator.pop(context, 'Helper'),
+                    child: const Text('All Helpers'),
+                  ),
+                  if (_helperNames.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('No helpers available'),
+                    ),
+                  ..._helperNames.map(
+                    (h) => SimpleDialogOption(
+                      onPressed: () => Navigator.pop(context, h),
+                      child: Text(h),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (selection != null) {
+            setState(() {
+              _selectedHelper = selection;
+              _selectedHelperLabel = selection == 'Helper' ? 'All Helpers' : selection;
+            });
+            _reloadReport();
+          }
+          return;
+        }
+
         setState(() {
           _selectedHelper = value;
+          _selectedHelperLabel = value;
         });
         _reloadReport();
       },
@@ -678,7 +719,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
                   ),
                 ),
               ),
-              if (_selectedHelper == 'Helper')
+              if (_selectedHelper == 'Helper' || _selectedHelperLabel == 'All Helpers')
                 const Icon(Icons.check, size: 16, color: Color(0xFF009661)),
             ],
           ),
@@ -700,28 +741,6 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
               if (_selectedHelper == 'Owner')
                 const Icon(Icons.check, size: 16, color: Color(0xFF009661)),
             ],
-          ),
-        ),
-        const PopupMenuDivider(),
-        ..._helperNames.map(
-          (helper) => PopupMenuItem(
-            value: helper,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    helper,
-                    style: TextStyle(
-                      fontWeight: _selectedHelper == helper
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                    ),
-                  ),
-                ),
-                if (_selectedHelper == helper)
-                  const Icon(Icons.check, size: 16, color: Color(0xFF009661)),
-              ],
-            ),
           ),
         ),
       ],
@@ -747,7 +766,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
           children: [
             Flexible(
               child: Text(
-                _selectedHelper,
+                _selectedHelperLabel,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
