@@ -63,8 +63,8 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
 
     try {
         final helperFilter = _selectedHelper == 'All Staff'
-          ? null
-          : _selectedHelper;
+            ? null
+            : _selectedHelper;
       final report = await widget.analyticsController.loadHelperSalesReport(
         period: _selectedPeriod,
         helperUsername: helperFilter,
@@ -664,6 +664,45 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
             ],
           ),
         ),
+        PopupMenuItem(
+          value: 'Helper',
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'helper',
+                  style: TextStyle(
+                    fontWeight: _selectedHelper == 'Helper'
+                        ? FontWeight.w700
+                        : FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (_selectedHelper == 'Helper')
+                const Icon(Icons.check, size: 16, color: Color(0xFF009661)),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'Owner',
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'owner',
+                  style: TextStyle(
+                    fontWeight: _selectedHelper == 'Owner'
+                        ? FontWeight.w700
+                        : FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (_selectedHelper == 'Owner')
+                const Icon(Icons.check, size: 16, color: Color(0xFF009661)),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
         ..._helperNames.map(
           (helper) => PopupMenuItem(
             value: helper,

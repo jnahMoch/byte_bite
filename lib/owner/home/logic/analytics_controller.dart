@@ -806,7 +806,8 @@ class AnalyticsController {
     DateTime? customStartDate,
     DateTime? customEndDate,
   ) {
-    // Include both Helper and Owner roles so reports cover all staff
+    // Include both Helpers and Owners by default; allow filtering
+    // either by role (pass 'Helper' or 'Owner') or by specific username.
     final clauses = <String>['u.role IN (?, ?)'];
     final args = <Object?>['Helper', 'Owner'];
 
@@ -817,8 +818,16 @@ class AnalyticsController {
     }
 
     if (helperUsername != null && helperUsername.isNotEmpty) {
-      clauses.add('u.username = ?');
-      args.add(helperUsername);
+      // If the filter value is a role name, filter by role instead of username
+      if (helperUsername == 'Helper' || helperUsername == 'Owner') {
+        clauses.clear();
+        clauses.add('u.role = ?');
+        args.clear();
+        args.add(helperUsername);
+      } else {
+        clauses.add('u.username = ?');
+        args.add(helperUsername);
+      }
     }
 
     return _SqlFilter(
