@@ -10,8 +10,7 @@ import '../../../model/sales_transaction_model.dart';
 import '../../../data/inventory_data.dart';
 import '../../../data/sales_data.dart';
 import '../../../database_helper.dart';
-import '../../../user_storage.dart';
-
+import '../../user_storage.dart';
 
 class HelperPOSGridView extends StatefulWidget {
   const HelperPOSGridView({super.key});

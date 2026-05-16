@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 
 // UI Components
+import '../data/bills_data.dart';
 import 'ui/helper_dashboard_view.dart';
 import 'ui/helper_analytics_view.dart';
 import 'ui/helper_bottom_nav_bar.dart';
@@ -15,6 +16,9 @@ import 'ui/helper_settings_sheet.dart';
 import 'ui/helper_bills_reminders_view.dart';
 import '../data/inventory_data.dart';
 import 'logic/inventory_controller.dart';
+import '../owner/home/logic/bills_controller.dart';
+import '../owner/home/logic/transactions_controller.dart';
+import '../data/sales_data.dart';
 
 /// Main Helper Home Page
 ///
@@ -35,6 +39,10 @@ class HelperHomePage extends StatefulWidget {
 class _HelperHomePageState extends State<HelperHomePage> {
   int _currentIndex = 0;
   final InventoryController _inventoryController = const InventoryController();
+  final TransactionsController _transactionsController =
+      const TransactionsController();
+  final BillsController _billsController = const BillsController();
+  final GlobalKey<HelperDashboardViewState> _dashboardKey = GlobalKey();
   late final List<Widget> _pages;
 
   // ── Offline + Cloud Sync ─────────────────────────────────────────────────
@@ -73,11 +81,44 @@ class _HelperHomePageState extends State<HelperHomePage> {
     }
   }
 
+  Future<void> _hydrateDashboardDataFromStorage() async {
+    try {
+      // Step 1: Restore from Firestore into SQLite (best-effort)
+      await _transactionsController.restoreTransactionsFromFirebase();
+      await _billsController.restoreBillsFromFirebase();
+
+      // Step 2: Load from SQLite into in-memory lists
+      final loadedTransactions = await _transactionsController
+          .loadPersistedTransactions();
+      if (loadedTransactions.isNotEmpty) {
+        SalesData.transactions
+          ..clear()
+          ..addAll(loadedTransactions);
+        SalesData.notifier.value++;
+      }
+
+      final loadedBills = await _billsController.loadBills();
+      if (loadedBills.isNotEmpty) {
+        BillsData.bills
+          ..clear()
+          ..addAll(loadedBills);
+        BillsData.notifier.value++;
+      }
+
+      // Step 3: Refresh dashboard with new data
+      if (mounted) {
+        _dashboardKey.currentState?.refresh();
+      }
+    } catch (_) {
+      // Keep current in-memory summary data if hydration fails.
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _pages = [
-      HelperDashboardView(onNavigate: _navigateToPage),
+      HelperDashboardView(key: _dashboardKey, onNavigate: _navigateToPage),
       const HelperAnalyticsView(),
       const HelperPOSGridView(),
       const HelperInventoryView(),
@@ -85,6 +126,7 @@ class _HelperHomePageState extends State<HelperHomePage> {
     ];
 
     _hydrateInventoryFromStorage();
+    _hydrateDashboardDataFromStorage();
 
     // ── Offline + Cloud Sync ───────────────────────────────────────────────
     // Step 1 — check current status on startup.

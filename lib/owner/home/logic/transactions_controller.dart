@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../data/sales_data.dart';
+import '../../../model/sales_transaction_model.dart';
 import '../../../database_helper.dart';
 
 class TransactionsController {
@@ -111,6 +112,76 @@ class TransactionsController {
     }
   }
 
+  Future<List<SalesTransaction>> loadPersistedTransactions() async {
+    await ensureTodaysTransactionsPersisted();
+
+    final db = await DatabaseHelper.instance.database;
+    final rows = await db.rawQuery('''
+      SELECT
+        s.sale_id,
+        s.date_time,
+        s.total_amount,
+        pay.method AS payment_method,
+        pay.status AS payment_status
+      FROM Sales s
+      LEFT JOIN Payments pay ON pay.sale_id = s.sale_id
+      ORDER BY s.date_time DESC, s.sale_id DESC
+    ''');
+
+    final transactions = <SalesTransaction>[];
+    for (final row in rows) {
+      final saleId = (row['sale_id'] as num?)?.toInt();
+      if (saleId == null) continue;
+
+      final itemRows = await db.rawQuery(
+        '''
+        SELECT
+          si.quantity,
+          si.subtotal,
+          p.name,
+          p.price
+        FROM SaleItems si
+        LEFT JOIN Products p ON p.product_id = si.product_id
+        WHERE si.sale_id = ?
+        ORDER BY si.item_id ASC
+      ''',
+        [saleId],
+      );
+
+      final items = itemRows.map((itemRow) {
+        final quantity = (itemRow['quantity'] as num?)?.toInt() ?? 0;
+        final subtotal = (itemRow['subtotal'] as num?)?.toDouble() ?? 0.0;
+        final productName = (itemRow['name'] ?? 'Item').toString();
+        final unitPrice =
+            (itemRow['price'] as num?)?.toDouble() ??
+            (quantity > 0 ? subtotal / quantity : 0.0);
+
+        return <String, dynamic>{
+          'name': productName,
+          'price': unitPrice,
+          'quantity': quantity,
+        };
+      }).toList();
+
+      final totalAmount = (row['total_amount'] as num?)?.toDouble() ?? 0.0;
+      transactions.add(
+        SalesTransaction(
+          receiptNumber: saleId.toString(),
+          dateTime:
+              DateTime.tryParse((row['date_time'] ?? '').toString()) ??
+              DateTime.now(),
+          items: items,
+          total: totalAmount.round(),
+          amountPaid: totalAmount,
+          change: 0.0,
+          paymentMethod: (row['payment_method'] ?? 'Cash').toString(),
+        ),
+      );
+    }
+
+    return transactions;
+  }
+
   Future<int> getTodaysTransactionCount() async {
     try {
       // Persist any unsaved transactions from SalesData to SQLite first
@@ -155,6 +226,47 @@ class TransactionsController {
       debugPrint('getTodaysTotalSales failed: $e\n$st');
       rethrow;
     }
+  }
+
+  Future<void> restoreTransactionsFromFirebase() async {
+    try {
+      final db = await DatabaseHelper.instance.database;
+      final snapshot = await FirebaseFirestore.instance
+          .collection('transactions')
+          .get();
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final saleId = (data['sale_id'] as num?)?.toInt();
+        if (saleId == null) continue;
+
+        final existing = await db.query(
+          'Sales',
+          where: 'sale_id = ?',
+          whereArgs: [saleId],
+          limit: 1,
+        );
+        if (existing.isNotEmpty) continue;
+
+        final totalAmount = (data['total_amount'] as num?)?.toDouble() ?? 0.0;
+        final dateTime =
+            DateTime.tryParse((data['date_time'] ?? '').toString()) ??
+            DateTime.now();
+        final paymentMethod = (data['payment_method'] ?? 'Cash').toString();
+
+        final insertedId = await db.insert('Sales', {
+          'user_id': 1,
+          'date_time': dateTime.toIso8601String(),
+          'total_amount': totalAmount,
+        });
+
+        await db.insert('Payments', {
+          'sale_id': insertedId,
+          'method': paymentMethod,
+          'status': (data['payment_status'] ?? 'Success').toString(),
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> syncTodaysTransactionsToFirebase() async {
