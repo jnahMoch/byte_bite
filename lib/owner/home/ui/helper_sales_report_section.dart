@@ -25,7 +25,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
   ];
 
   String _selectedPeriod = 'This Month';
-  String _selectedHelper = 'All Helpers';
+  String _selectedHelper = 'All Staff';
   bool _isLoading = true;
   List<String> _helperNames = [];
   HelperSalesReportData? _report;
@@ -62,7 +62,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
     });
 
     try {
-      final helperFilter = _selectedHelper == 'All Helpers'
+        final helperFilter = _selectedHelper == 'All Staff'
           ? null
           : _selectedHelper;
       final report = await widget.analyticsController.loadHelperSalesReport(
@@ -89,7 +89,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
     try {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Exporting helper sales report...'),
+          content: Text('Exporting staff sales report...'),
           backgroundColor: Color(0xFF009661),
         ),
       );
@@ -173,7 +173,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
           children: [
             const Expanded(
               child: Text(
-                'Sales by Helper',
+                'Sales by Staff',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -181,8 +181,8 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
                 ),
               ),
             ),
-            PopupMenuButton<String>(
-              tooltip: 'Export helper sales report',
+              PopupMenuButton<String>(
+              tooltip: 'Export staff sales report',
               onSelected: _exportReport,
               itemBuilder: (context) => const [
                 PopupMenuItem(value: 'csv', child: Text('Export CSV')),
@@ -222,7 +222,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
         ),
         const SizedBox(height: 10),
         Text(
-          'Track employee performance, commissions, and product-level sales by helper.',
+          'Track employee performance, commissions, and product-level sales by staff.',
           style: TextStyle(fontSize: 12, color: Colors.grey[600]),
         ),
         const SizedBox(height: 16),
@@ -325,7 +325,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
               border: Border.all(color: Colors.grey.shade200),
             ),
             child: Text(
-              'No helper sales data found for the selected filters.',
+              'No staff sales data found for the selected filters.',
               style: TextStyle(color: Colors.grey[600]),
             ),
           )
@@ -356,7 +356,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
                 const Color(0xFFF97316),
               ),
               _statCard(
-                'Helpers',
+                'Staff',
                 report.helperPerformance.length.toString(),
                 Icons.people_outline,
                 const Color(0xFF8B5CF6),
@@ -365,9 +365,9 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
           ),
           const SizedBox(height: 18),
           _sectionCard(
-            title: 'Helper Performance',
+            title: 'Staff Performance',
             child: report.helperPerformance.isEmpty
-                ? const Text('No helper summary available.')
+                ? const Text('No staff summary available.')
                 : Column(
                     children: report.helperPerformance
                         .map(
@@ -442,7 +442,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
           ),
           const SizedBox(height: 18),
           _sectionCard(
-            title: 'Product Breakdown by Helper',
+            title: 'Product Breakdown by Staff',
             child: groupedProducts.isEmpty
                 ? const Text('No product breakdown available.')
                 : Column(
@@ -628,7 +628,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
   }
 
   Widget _helperDropdownChip() {
-    final bool active = _selectedHelper != 'All Helpers';
+    final bool active = _selectedHelper != 'All Staff';
     final Color activeColor = const Color(0xFF009661);
     final Color neutralBorder = Colors.grey.shade300;
     final Color neutralText = Colors.grey.shade700;
@@ -646,20 +646,20 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       itemBuilder: (context) => [
         PopupMenuItem(
-          value: 'All Helpers',
+          value: 'All Staff',
           child: Row(
             children: [
               Expanded(
                 child: Text(
-                  'All Helpers',
+                  'All Staff',
                   style: TextStyle(
-                    fontWeight: _selectedHelper == 'All Helpers'
+                    fontWeight: _selectedHelper == 'All Staff'
                         ? FontWeight.w700
                         : FontWeight.w500,
                   ),
                 ),
               ),
-              if (_selectedHelper == 'All Helpers')
+              if (_selectedHelper == 'All Staff')
                 const Icon(Icons.check, size: 16, color: Color(0xFF009661)),
             ],
           ),

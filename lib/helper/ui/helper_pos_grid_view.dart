@@ -12,6 +12,7 @@ import '../../../data/sales_data.dart';
 import '../../../database_helper.dart';
 import '../../../user_storage.dart';
 
+
 class HelperPOSGridView extends StatefulWidget {
   const HelperPOSGridView({super.key});
 
@@ -243,9 +244,20 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
     }
 
     try {
-      /*final currentUserId = await UserStorage.resolveCurrentUserId();*/
+      // Resolve the currently logged-in user's ID (fallback to owner)
+      final currentUsername = UserStorage.currentUser ?? '';
+      int currentUserId = 1; // default owner
+      if (currentUsername.isNotEmpty) {
+        final userRecord = await DatabaseHelper.instance.getUserByUsername(
+          currentUsername,
+        );
+        if (userRecord != null && userRecord.containsKey('user_id')) {
+          currentUserId = (userRecord['user_id'] as num).toInt();
+        }
+      }
+
       await DatabaseHelper.instance.recordSale(
-        userId: 1,                                          //change//
+        userId: currentUserId,
         totalAmount: savedTotal.toDouble(),
         items: itemsForDB,
         paymentMethod: paymentMethod,

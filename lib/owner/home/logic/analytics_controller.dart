@@ -354,7 +354,7 @@ class AnalyticsController {
     return HelperSalesReportData(
       period: period,
       helperFilterLabel: helperUsername == null || helperUsername.isEmpty
-          ? 'All Helpers'
+          ? 'All Staff'
           : helperUsername,
       transactionCount: transactionCount,
       totalSales: totalSales,
@@ -451,14 +451,13 @@ class AnalyticsController {
     final csv = StringBuffer();
     csv.writeln('Section,Metric,Value');
     csv.writeln('Summary,Period,${_csv(report.period)}');
-    csv.writeln('Summary,Helper Filter,${_csv(report.helperFilterLabel)}');
+    csv.writeln('Summary,Staff Filter,${_csv(report.helperFilterLabel)}');
     csv.writeln('Summary,Transactions,${report.transactionCount}');
     csv.writeln('Summary,Total Sales,${report.totalSales.toStringAsFixed(2)}');
     csv.writeln('Summary,Items Sold,${report.itemsSold}');
     csv.writeln('');
-
-    csv.writeln('Helper Performance');
-    csv.writeln('Helper,Transactions,Items Sold,Total Sales');
+    csv.writeln('Staff Performance');
+    csv.writeln('Staff,Transactions,Items Sold,Total Sales');
     for (final row in report.helperPerformance) {
       csv.writeln(
         '${_csv(row.helperName)},${row.transactionCount},${row.itemsSold},${row.totalSales.toStringAsFixed(2)}',
@@ -467,7 +466,7 @@ class AnalyticsController {
     csv.writeln('');
 
     csv.writeln('Product Breakdown');
-    csv.writeln('Helper,Product,Quantity Sold,Total Sales');
+    csv.writeln('Staff,Product,Quantity Sold,Total Sales');
     for (final row in report.productBreakdown) {
       csv.writeln(
         '${_csv(row.helperName)},${_csv(row.productName)},${row.quantitySold},${row.totalSales.toStringAsFixed(2)}',
@@ -477,7 +476,7 @@ class AnalyticsController {
 
     csv.writeln('Transaction Details');
     csv.writeln(
-      'Sale ID,Helper,Date Time,Payment Method,Payment Status,Total Amount,Product Summary',
+      'Sale ID,Staff,Date Time,Payment Method,Payment Status,Total Amount,Product Summary',
     );
     for (final row in report.transactions) {
       csv.writeln(
@@ -497,12 +496,12 @@ class AnalyticsController {
         margin: const pw.EdgeInsets.all(24),
         build: (context) => [
           pw.Text(
-            'Sales by Helper Report',
+            'Staff Sales Report',
             style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 6),
           pw.Text('Period: ${report.period}'),
-          pw.Text('Helper Filter: ${report.helperFilterLabel}'),
+          pw.Text('Staff Filter: ${report.helperFilterLabel}'),
           pw.SizedBox(height: 12),
           pw.Text(
             'Summary',
@@ -520,12 +519,12 @@ class AnalyticsController {
           ),
           pw.SizedBox(height: 12),
           pw.Text(
-            'Helper Performance',
+            'Staff Performance',
             style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
           ),
           pw.TableHelper.fromTextArray(
             headers: const [
-              'Helper',
+              'Staff',
               'Transactions',
               'Items Sold',
               'Total Sales',
@@ -807,8 +806,9 @@ class AnalyticsController {
     DateTime? customStartDate,
     DateTime? customEndDate,
   ) {
-    final clauses = <String>['u.role = ?'];
-    final args = <Object?>['Helper'];
+    // Include both Helper and Owner roles so reports cover all staff
+    final clauses = <String>['u.role IN (?, ?)'];
+    final args = <Object?>['Helper', 'Owner'];
 
     final periodFilter = _periodFilter(period, customStartDate, customEndDate);
     if (periodFilter.whereClause.isNotEmpty) {

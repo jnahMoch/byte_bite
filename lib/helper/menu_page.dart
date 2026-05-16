@@ -193,9 +193,20 @@ class _MenuContentState extends State<MenuContent> {
 
     // persist header row so dashboard can query it
     try {
-      /*final currentUserId = await UserStorage.resolveCurrentUserId();*/
+      // Resolve the currently logged-in user's ID (fallback to owner)
+      final currentUsername = UserStorage.currentUser ?? '';
+      int currentUserId = 1; // default owner
+      if (currentUsername.isNotEmpty) {
+        final userRecord = await DatabaseHelper.instance.getUserByUsername(
+          currentUsername,
+        );
+        if (userRecord != null && userRecord.containsKey('user_id')) {
+          currentUserId = (userRecord['user_id'] as num).toInt();
+        }
+      }
+
       await DatabaseHelper.instance.recordSale(
-        userId: 1,                                          //change//
+        userId: currentUserId,
         totalAmount: total.toDouble(),
         items: [],
         paymentMethod: paymentMethod,
