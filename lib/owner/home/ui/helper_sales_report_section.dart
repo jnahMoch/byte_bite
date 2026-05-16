@@ -94,7 +94,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
         ),
       );
 
-      final helperFilter = _selectedHelper == 'All Helpers'
+        final helperFilter = _selectedHelper == 'All Staff'
           ? null
           : _selectedHelper;
       final exportedPath = await widget.analyticsController
@@ -634,7 +634,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
     final Color neutralText = Colors.grey.shade700;
 
     return PopupMenuButton<String>(
-      tooltip: 'Select helper',
+      tooltip: 'Select staff',
       onSelected: (value) {
         setState(() {
           _selectedHelper = value;
@@ -670,7 +670,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
             children: [
               Expanded(
                 child: Text(
-                  'helper',
+                  'Helper',
                   style: TextStyle(
                     fontWeight: _selectedHelper == 'Helper'
                         ? FontWeight.w700
@@ -689,7 +689,7 @@ class _HelperSalesReportSectionState extends State<HelperSalesReportSection> {
             children: [
               Expanded(
                 child: Text(
-                  'owner',
+                  'Owner',
                   style: TextStyle(
                     fontWeight: _selectedHelper == 'Owner'
                         ? FontWeight.w700

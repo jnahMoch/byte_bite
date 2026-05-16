@@ -546,7 +546,7 @@ class AnalyticsController {
             style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
           ),
           pw.TableHelper.fromTextArray(
-            headers: const ['Helper', 'Product', 'Qty', 'Total'],
+            headers: const ['Processed By', 'Product', 'Qty', 'Total'],
             data: report.productBreakdown
                 .map(
                   (row) => [
@@ -563,29 +563,106 @@ class AnalyticsController {
             'Transaction Details',
             style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
           ),
-          pw.TableHelper.fromTextArray(
-            headers: const [
-              'Sale ID',
-              'Helper',
-              'Date/Time',
-              'Payment',
-              'Status',
-              'Total',
-              'Products',
-            ],
-            data: report.transactions
-                .map(
-                  (row) => [
-                    row.saleId.toString(),
-                    row.helperName,
-                    row.dateTime.toIso8601String(),
-                    row.paymentMethod,
-                    row.paymentStatus,
-                    row.totalAmount.toStringAsFixed(2),
-                    row.productSummary,
+          // Custom Transaction Details table with better column sizing and wrapping
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(0.6), // Sale ID (small)
+              1: const pw.FlexColumnWidth(1.2), // Processed By
+              2: const pw.FlexColumnWidth(1.6), // Date/Time
+              3: const pw.FlexColumnWidth(1.0), // Payment
+              4: const pw.FlexColumnWidth(0.9), // Status
+              5: const pw.FlexColumnWidth(0.8), // Total (right-align)
+              6: const pw.FlexColumnWidth(3.5), // Products (wide, wraps)
+            },
+            children: [
+              // Header row
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                children: [
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                    child: pw.Text('Sale ID', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                    child: pw.Text('Processed By', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                    child: pw.Text('Date/Time', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                    child: pw.Text('Payment', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                    child: pw.Text('Status', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                    child: pw.Align(alignment: pw.Alignment.centerRight, child: pw.Text('Total', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold))),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                    child: pw.Text('Products', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                  ),
+                ],
+              ),
+              // Data rows
+              ...report.transactions.map(
+                (row) => pw.TableRow(
+                  decoration: const pw.BoxDecoration(),
+                  children: [
+                    // Sale ID - center
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                      child: pw.Align(
+                        alignment: pw.Alignment.center,
+                        child: pw.Text(row.saleId.toString(), style: const pw.TextStyle(fontSize: 11)),
+                      ),
+                    ),
+                    // Processed By
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                      child: pw.Text(row.helperName, style: const pw.TextStyle(fontSize: 11)),
+                    ),
+                    // Date/Time
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                      child: pw.Text(
+                        row.dateTime.toLocal().toIso8601String().replaceFirst('T', ' '),
+                        style: const pw.TextStyle(fontSize: 11),
+                      ),
+                    ),
+                    // Payment
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                      child: pw.Text(row.paymentMethod, style: const pw.TextStyle(fontSize: 11)),
+                    ),
+                    // Status
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                      child: pw.Text(row.paymentStatus, style: const pw.TextStyle(fontSize: 11)),
+                    ),
+                    // Total - right aligned
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                      child: pw.Align(
+                        alignment: pw.Alignment.centerRight,
+                        child: pw.Text('Rs. ${row.totalAmount.toStringAsFixed(0)}', style: const pw.TextStyle(fontSize: 11)),
+                      ),
+                    ),
+                    // Products - allow wrapping and multi-line
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                      child: pw.Text(row.productSummary, style: const pw.TextStyle(fontSize: 11), softWrap: true),
+                    ),
                   ],
-                )
-                .toList(),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -606,7 +683,7 @@ class AnalyticsController {
       excel.TextCellValue(report.period),
     ]);
     summarySheet.appendRow([
-      excel.TextCellValue('Helper Filter'),
+      excel.TextCellValue('Staff Filter'),
       excel.TextCellValue(report.helperFilterLabel),
     ]);
     summarySheet.appendRow([
@@ -622,9 +699,9 @@ class AnalyticsController {
       excel.IntCellValue(report.itemsSold),
     ]);
 
-    final helperSheet = workbook['Helper Performance'];
+    final helperSheet = workbook['Staff Performance'];
     helperSheet.appendRow([
-      excel.TextCellValue('Helper'),
+      excel.TextCellValue('Processed By'),
       excel.TextCellValue('Transactions'),
       excel.TextCellValue('Items Sold'),
       excel.TextCellValue('Total Sales'),
@@ -640,7 +717,7 @@ class AnalyticsController {
 
     final productSheet = workbook['Product Breakdown'];
     productSheet.appendRow([
-      excel.TextCellValue('Helper'),
+      excel.TextCellValue('Processed By'),
       excel.TextCellValue('Product'),
       excel.TextCellValue('Quantity Sold'),
       excel.TextCellValue('Total Sales'),
@@ -657,7 +734,7 @@ class AnalyticsController {
     final transactionSheet = workbook['Transaction Details'];
     transactionSheet.appendRow([
       excel.TextCellValue('Sale ID'),
-      excel.TextCellValue('Helper'),
+      excel.TextCellValue('Processed By'),
       excel.TextCellValue('Date Time'),
       excel.TextCellValue('Period'),
       excel.TextCellValue('Payment Method'),
