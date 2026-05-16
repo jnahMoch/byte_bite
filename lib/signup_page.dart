@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'auth/local_auth_service.dart';
 import 'user_storage.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -85,6 +86,20 @@ class _SignUpPageState extends State<SignUpPage> {
 
       UserStorage.registerOwner(username, password);
 
+      // ── FIX: Persist owner to local SQLite ───────────────────────────────
+      // Without this, after logout + app restart, SQLite has no owner record.
+      // checkOwnerExistsInFirestore() falls through to Firestore which requires
+      // authentication — fails when unauthenticated — shows SignUpPage again.
+      // Storing locally here ensures the setup screen never reappears.
+      await LocalAuthService.instance.upsertLocalCredential(
+        username: username,
+        password: password,
+        role: 'Owner',
+        email: email,
+        name: username,
+      );
+      // ─────────────────────────────────────────────────────────────────────
+
       _showSnackBar('Owner account created! You can now login.', Colors.green);
       Future.delayed(
         const Duration(seconds: 2),
@@ -94,6 +109,19 @@ class _SignUpPageState extends State<SignUpPage> {
     } on FirebaseAuthException catch (e) {
       final localSuccess = UserStorage.registerOwner(username, password);
       if (localSuccess) {
+        // ── FIX: Also persist locally in offline/error fallback ────────────
+        // Same fix applied to the offline registration path so the owner
+        // record exists in SQLite regardless of network availability.
+        final offlineEmail = UserStorage.toFirebaseEmail(username);
+        await LocalAuthService.instance.upsertLocalCredential(
+          username: username,
+          password: password,
+          role: 'Owner',
+          email: offlineEmail,
+          name: username,
+        );
+        // ───────────────────────────────────────────────────────────────────
+
         _showSnackBar(
           'Account created (offline mode). You can now login.',
           Colors.orange,
