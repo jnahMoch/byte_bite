@@ -83,18 +83,6 @@ class UserStorage {
     };
   }
 
-  static Future<int> resolveCurrentUserId({int fallbackUserId = 1}) async {
-    final username = _currentUser?.trim() ?? '';
-    if (username.isEmpty) return fallbackUserId;
-
-    final existing = await DatabaseHelper.instance.getUserByUsername(username);
-    if (existing == null) return fallbackUserId;
-
-    final userId = existing['user_id'];
-    if (userId is num) return userId.toInt();
-    return fallbackUserId;
-  }
-
   static void setCurrentUser(String username) {
     _currentUser = username;
     _currentUserRole = _users[username]?['role'];
@@ -302,7 +290,6 @@ class UserStorage {
   }
 
   static String fromFirebaseEmail(String email) {
-    // Convert '@bytebite.app' email back to username
     return email.replaceAll('@bytebite.app', '').replaceAll('_', ' ').trim();
   }
 
@@ -316,7 +303,50 @@ class UserStorage {
     if (role == 'Owner') _ownerRegistered = true;
   }
 
+  // ── FIXED: checkOwnerExistsInFirestore ───────────────────────────────────
+  // ROOT CAUSE OF BUG:
+  //   After logout, currentUser is null → Firestore read is unauthenticated
+  //   → Security rules deny it (request.auth != null required) → exception
+  //   caught → returns _ownerRegistered which is always false on restart
+  //   (in-memory variable resets) → SignUpPage appears every time.
+  //
+  // FIX: Check SQLite local database FIRST before querying Firestore.
+  //   SQLite requires no authentication and persists across restarts.
+  //   Firestore is only queried if no local record exists, which only
+  //   happens on a genuine first-time setup (no owner registered yet).
+  // ─────────────────────────────────────────────────────────────────────────
   static Future<bool> checkOwnerExistsInFirestore() async {
+    // 1. In-memory check — fastest, valid within the same session
+    if (_ownerRegistered) return true;
+
+    // 2. Local SQLite check — works offline, requires no authentication.
+    //    After the owner completes setup, their record is always in SQLite.
+    //    This is the primary guard that prevents the setup screen from
+    //    reappearing after logout or app restart.
+    try {
+      final db = await DatabaseHelper.instance.database;
+      final localOwner = await db.query(
+        'Users',
+        columns: ['username', 'role'],
+        where: 'role = ?',
+        whereArgs: ['Owner'],
+        limit: 1,
+      );
+
+      if (localOwner.isNotEmpty) {
+        final username = (localOwner.first['username'] ?? '').toString();
+        if (username.isNotEmpty && !_users.containsKey(username)) {
+          _users[username] = {'password': '', 'role': 'Owner'};
+        }
+        _ownerRegistered = true;
+        return true;
+      }
+    } catch (_) {
+      // SQLite unavailable — fall through to Firestore
+    }
+
+    // 3. Firestore check — only reached on genuine first-time setup
+    //    (no local owner record found). Requires authentication.
     try {
       final query = await FirebaseFirestore.instance
           .collection('users')
@@ -327,7 +357,6 @@ class UserStorage {
       if (query.docs.isNotEmpty) {
         final data = query.docs.first.data();
         final username = data['username'] as String? ?? '';
-
         if (username.isNotEmpty && !_users.containsKey(username)) {
           _users[username] = {'password': '', 'role': 'Owner'};
         }
@@ -339,6 +368,7 @@ class UserStorage {
       return _ownerRegistered;
     }
   }
+  // ─────────────────────────────────────────────────────────────────────────
 
   static Future<void> syncUsersFromFirestore() async {
     try {

@@ -243,9 +243,9 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
     }
 
     try {
-      final currentUserId = await UserStorage.resolveCurrentUserId();
+      /*final currentUserId = await UserStorage.resolveCurrentUserId();*/
       await DatabaseHelper.instance.recordSale(
-        userId: currentUserId,
+        userId: 1,                                          //change//
         totalAmount: savedTotal.toDouble(),
         items: itemsForDB,
         paymentMethod: paymentMethod,

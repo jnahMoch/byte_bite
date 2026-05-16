@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import '../data/inventory_data.dart';
 import '../data/sales_data.dart';
@@ -195,9 +193,9 @@ class _MenuContentState extends State<MenuContent> {
 
     // persist header row so dashboard can query it
     try {
-      final currentUserId = await UserStorage.resolveCurrentUserId();
+      /*final currentUserId = await UserStorage.resolveCurrentUserId();*/
       await DatabaseHelper.instance.recordSale(
-        userId: currentUserId,
+        userId: 1,                                          //change//
         totalAmount: total.toDouble(),
         items: [],
         paymentMethod: paymentMethod,
