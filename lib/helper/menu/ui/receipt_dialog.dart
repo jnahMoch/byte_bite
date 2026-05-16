@@ -49,6 +49,12 @@ class ReceiptDialog extends StatelessWidget {
             _buildDottedDivider(),
             const SizedBox(height: 16),
             _buildThankYouMessage(),
+            const SizedBox(height: 12),
+            const Text(
+              'System‑generated sales slip. Official BIR receipt issued separately.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: Colors.grey),
+            ),
             const SizedBox(height: 20),
             _buildActionButtons(context),
           ],

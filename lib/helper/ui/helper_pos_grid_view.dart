@@ -964,6 +964,12 @@ class _HelperPOSGridViewState extends State<HelperPOSGridView> {
                 'Come again soon!',
                 style: const pw.TextStyle(fontSize: 10),
               ),
+              pw.SizedBox(height: 8),
+              pw.Text(
+                'System‑generated sales slip. Official BIR receipt issued separately.',
+                textAlign: pw.TextAlign.center,
+                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey),
+              ),
               pw.SizedBox(height: 16),
             ],
           );

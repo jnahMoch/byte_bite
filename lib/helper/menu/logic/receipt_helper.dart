@@ -106,6 +106,12 @@ class ReceiptHelper {
               pw.SizedBox(height: 12),
               pw.Text('Thank you for your purchase!', style: const pw.TextStyle(fontSize: 10)),
               pw.Text('Come again soon!', style: const pw.TextStyle(fontSize: 10)),
+              pw.SizedBox(height: 8),
+              pw.Text(
+                'System‑generated sales slip. Official BIR receipt issued separately.',
+                textAlign: pw.TextAlign.center,
+                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey),
+              ),
               pw.SizedBox(height: 16),
             ],
           );

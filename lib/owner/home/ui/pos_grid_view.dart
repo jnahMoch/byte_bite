@@ -665,6 +665,15 @@ class _POSGridViewState extends State<POSGridView> {
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'System‑generated sales slip. Official BIR receipt issued separately.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -933,6 +942,12 @@ class _POSGridViewState extends State<POSGridView> {
               pw.Text(
                 'Come again soon!',
                 style: const pw.TextStyle(fontSize: 10),
+              ),
+              pw.SizedBox(height: 8),
+              pw.Text(
+                'System‑generated sales slip. Official BIR receipt issued separately.',
+                textAlign: pw.TextAlign.center,
+                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey),
               ),
               pw.SizedBox(height: 16),
             ],
