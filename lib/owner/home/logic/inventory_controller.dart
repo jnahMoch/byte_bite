@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -179,7 +180,8 @@ class InventoryController {
       stock: (row['stock_quantity'] as num?)?.toInt() ?? 0,
       unit: 'pcs',
       lowStockAlert: (row['min_threshold'] as num?)?.toInt() ?? 0,
-      image: expectedSeedImage ??
+      image:
+          expectedSeedImage ??
           (description == null || description.isEmpty ? null : description),
     );
   }
@@ -382,6 +384,33 @@ class InventoryController {
     }
   }
 
+  Future<T> _withFirestoreRetry<T>(
+    Future<T> Function() operation, {
+    int attempts = 3,
+    Duration delay = const Duration(seconds: 2),
+  }) async {
+    Object? lastError;
+    StackTrace? lastStack;
+
+    for (var attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        return await operation();
+      } catch (e, st) {
+        lastError = e;
+        lastStack = st;
+        if (attempt >= attempts) {
+          rethrow;
+        }
+        debugPrint(
+          'inventory_controller firestore sync attempt $attempt failed: $e\n$st',
+        );
+        await Future.delayed(delay * attempt);
+      }
+    }
+
+    throw lastError ?? StateError('Unexpected Firestore retry failure');
+  }
+
   /// Sync a product's updated stock to Firestore after local SQLite changes.
   /// Called AFTER local stock is decremented in sales transaction.
   /// Uses merge:true to preserve other cloud fields (e.g., description, price).
@@ -395,20 +424,22 @@ class InventoryController {
     _ensureAuthenticatedForSync();
 
     // Firestore caches writes offline and syncs automatically when online.
-    await FirebaseFirestore.instance
-        .collection(_productsCollection)
-        .doc(productId.toString())
-        .set({
-          'product_id': productId,
-          'name': item.name,
-          'category': item.category,
-          'price': item.price,
-          'stock': item.stock,
-          'unit': item.unit,
-          'lowStockAlert': item.lowStockAlert,
-          'image': item.image,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    await _withFirestoreRetry(
+      () => FirebaseFirestore.instance
+          .collection(_productsCollection)
+          .doc(productId.toString())
+          .set({
+            'product_id': productId,
+            'name': item.name,
+            'category': item.category,
+            'price': item.price,
+            'stock': item.stock,
+            'unit': item.unit,
+            'lowStockAlert': item.lowStockAlert,
+            'image': item.image,
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true)),
+    );
   }
 
   Future<int?> _resolveProductId(POSItem original) async {
@@ -498,7 +529,9 @@ class InventoryController {
             .doc(productId.toString())
             .delete();
       } catch (e) {
-        debugPrint('inventory_controller.deleteProduct: Firebase delete failed: $e');
+        debugPrint(
+          'inventory_controller.deleteProduct: Firebase delete failed: $e',
+        );
         // Continue even if Firebase delete fails; local delete is the priority
       }
     }

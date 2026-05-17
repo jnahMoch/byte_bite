@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -269,6 +270,27 @@ class TransactionsController {
     } catch (_) {}
   }
 
+  Future<T> _withFirestoreRetry<T>(
+    Future<T> Function() operation, {
+    int attempts = 3,
+    Duration delay = const Duration(seconds: 2),
+  }) async {
+    for (var attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        return await operation();
+      } catch (e, st) {
+        if (attempt >= attempts) {
+          rethrow;
+        }
+        debugPrint(
+          'transactions_controller firestore retry attempt $attempt failed: $e\n$st',
+        );
+        await Future.delayed(delay * attempt);
+      }
+    }
+    throw StateError('Unexpected Firestore retry failure');
+  }
+
   Future<void> syncTodaysTransactionsToFirebase() async {
     await ensureTodaysTransactionsPersisted();
     final user = FirebaseAuth.instance.currentUser;
@@ -297,19 +319,27 @@ class TransactionsController {
       final saleId = (row['sale_id'] as num?)?.toInt();
       if (saleId == null) continue;
 
-      await FirebaseFirestore.instance
-          .collection('transactions')
-          .doc(saleId.toString())
-          .set({
-            'sale_id': saleId,
-            'user_uid': user.uid,
-            'local_user_id': row['user_id'],
-            'date_time': row['date_time'],
-            'total_amount': row['total_amount'],
-            'payment_method': row['payment_method'],
-            'payment_status': row['payment_status'],
-            'updated_at': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
+      try {
+        await _withFirestoreRetry(
+          () => FirebaseFirestore.instance
+              .collection('transactions')
+              .doc(saleId.toString())
+              .set({
+                'sale_id': saleId,
+                'user_uid': user.uid,
+                'local_user_id': row['user_id'],
+                'date_time': row['date_time'],
+                'total_amount': row['total_amount'],
+                'payment_method': row['payment_method'],
+                'payment_status': row['payment_status'],
+                'updated_at': FieldValue.serverTimestamp(),
+              }, SetOptions(merge: true)),
+        );
+      } catch (e, st) {
+        debugPrint(
+          'syncTodaysTransactionsToFirebase failed for sale $saleId: $e\n$st',
+        );
+      }
     }
   }
 }

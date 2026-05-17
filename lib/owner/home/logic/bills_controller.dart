@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../database_helper.dart';
 import '../../../model/bill_model.dart';
@@ -132,6 +134,27 @@ class BillsController {
     return (total as num?)?.toDouble() ?? 0.0;
   }
 
+  Future<T> _withFirestoreRetry<T>(
+    Future<T> Function() operation, {
+    int attempts = 3,
+    Duration delay = const Duration(seconds: 2),
+  }) async {
+    for (var attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        return await operation();
+      } catch (e, st) {
+        if (attempt >= attempts) {
+          rethrow;
+        }
+        debugPrint(
+          'bills_controller firestore retry attempt $attempt failed: $e\n$st',
+        );
+        await Future.delayed(delay * attempt);
+      }
+    }
+    throw StateError('Unexpected Firestore retry failure');
+  }
+
   Future<void> syncTodaysPaidBillsToFirebase() async {
     await _ensurePaidAtColumn();
     final user = FirebaseAuth.instance.currentUser;
@@ -151,17 +174,23 @@ class BillsController {
       if (expenseId == null) continue;
 
       try {
-        await FirebaseFirestore.instance
-            .collection('bills')
-            .doc(expenseId.toString())
-            .set({
-              'expense_id': expenseId,
-              'user_id': user.uid,
-              'reminder_status': 'Dismissed',
-              'paid_at': row['paid_at'],
-              'updated_at': FieldValue.serverTimestamp(),
-            }, SetOptions(merge: true));
-      } catch (_) {}
+        await _withFirestoreRetry(
+          () => FirebaseFirestore.instance
+              .collection('bills')
+              .doc(expenseId.toString())
+              .set({
+                'expense_id': expenseId,
+                'user_id': user.uid,
+                'reminder_status': 'Dismissed',
+                'paid_at': row['paid_at'],
+                'updated_at': FieldValue.serverTimestamp(),
+              }, SetOptions(merge: true)),
+        );
+      } catch (e, st) {
+        debugPrint(
+          'syncTodaysPaidBillsToFirebase failed for expense $expenseId: $e\n$st',
+        );
+      }
     }
   }
 
@@ -176,19 +205,21 @@ class BillsController {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    await FirebaseFirestore.instance
-        .collection('bills')
-        .doc(expenseId.toString())
-        .set({
-          'expense_id': expenseId,
-          'user_id': user.uid,
-          'title': title,
-          'category': category,
-          'amount': amount,
-          'due_date': dueDate.toIso8601String(),
-          'reminder_status': reminderStatus,
-          'updated_at': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    await _withFirestoreRetry(
+      () => FirebaseFirestore.instance
+          .collection('bills')
+          .doc(expenseId.toString())
+          .set({
+            'expense_id': expenseId,
+            'user_id': user.uid,
+            'title': title,
+            'category': category,
+            'amount': amount,
+            'due_date': dueDate.toIso8601String(),
+            'reminder_status': reminderStatus,
+            'updated_at': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true)),
+    );
   }
 
   Future<void> _syncBillStatusToFirebase({
@@ -199,15 +230,17 @@ class BillsController {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    await FirebaseFirestore.instance
-        .collection('bills')
-        .doc(expenseId.toString())
-        .set({
-          'user_id': user.uid,
-          'reminder_status': reminderStatus,
-          'paid_at': paidAt,
-          'updated_at': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    await _withFirestoreRetry(
+      () => FirebaseFirestore.instance
+          .collection('bills')
+          .doc(expenseId.toString())
+          .set({
+            'user_id': user.uid,
+            'reminder_status': reminderStatus,
+            'paid_at': paidAt,
+            'updated_at': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true)),
+    );
   }
 
   String _extractCategory(String rawDescription) {
