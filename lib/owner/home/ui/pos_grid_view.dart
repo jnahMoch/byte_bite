@@ -227,6 +227,9 @@ class _POSGridViewState extends State<POSGridView> {
         items: itemsForDB,
         paymentMethod: _selectedPayment,
         paymentStatus: 'Success',
+        amountReceived: amountPaid,
+        changeAmount: change,
+        transactionStatus: 'Completed',
       );
     } catch (e) {
       debugPrint('pos_grid_view recordSale failed: $e');

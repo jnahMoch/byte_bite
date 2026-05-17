@@ -319,6 +319,18 @@ class _DashboardViewState extends State<DashboardView> {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _transactionLogButton(context),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(child: SizedBox()),
+              const SizedBox(width: 12),
+              const Expanded(child: SizedBox()),
+            ],
+          ),
           const SizedBox(height: 24),
 
           if (lowStockItems > 0) ...[
@@ -488,6 +500,50 @@ class _DashboardViewState extends State<DashboardView> {
             const SizedBox(height: 8),
             Text(
               label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _transactionLogButton(BuildContext context) {
+    const color = Color(0xFF009661);
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(context, '/transaction-log');
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.manage_search_outlined, size: 24, color: color),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Transactions',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,

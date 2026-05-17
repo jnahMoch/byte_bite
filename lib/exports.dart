@@ -16,6 +16,7 @@ export 'data/notification_integration_helpers.dart';
 // ── UI Exports ──
 export 'ui/notification_widgets.dart';
 export 'ui/enhanced_notification_ui.dart';
+export 'shared/transaction_log/transaction_log_page.dart';
 
 // ── Security & Auth Exports ──
 export 'auth/permission_service.dart';

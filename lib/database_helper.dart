@@ -19,7 +19,7 @@ class DatabaseHelper {
 
   Future<Database> _initDB(String file) async => await openDatabase(
     join(await getDatabasesPath(), file),
-    version: 2,
+    version: 3,
     onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
     onCreate: _createDB,
     onUpgrade: _upgradeDB,
@@ -28,6 +28,24 @@ class DatabaseHelper {
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE Users ADD COLUMN phone TEXT');
+    }
+    if (oldVersion < 3) {
+      // Add transaction status, amount received and change amount to Sales
+      try {
+        await db.execute(
+          "ALTER TABLE Sales ADD COLUMN transaction_status TEXT NOT NULL DEFAULT 'Completed'",
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          "ALTER TABLE Sales ADD COLUMN amount_received REAL NOT NULL DEFAULT 0",
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          "ALTER TABLE Sales ADD COLUMN change_amount REAL NOT NULL DEFAULT 0",
+        );
+      } catch (_) {}
     }
   }
 
@@ -72,10 +90,13 @@ class DatabaseHelper {
     });
 
     await db.execute('''CREATE TABLE Sales (
-      sale_id      INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id      INTEGER NOT NULL REFERENCES Users(user_id),
-      date_time    TEXT NOT NULL DEFAULT (datetime('now')),
-      total_amount REAL NOT NULL CHECK(total_amount >= 0))''');
+      sale_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id        INTEGER NOT NULL REFERENCES Users(user_id),
+      date_time      TEXT NOT NULL DEFAULT (datetime('now')),
+      total_amount   REAL NOT NULL CHECK(total_amount >= 0),
+      transaction_status TEXT NOT NULL DEFAULT 'Completed',
+      amount_received REAL NOT NULL DEFAULT 0,
+      change_amount   REAL NOT NULL DEFAULT 0)''');
 
     await db.execute('''CREATE TABLE SaleItems (
       item_id    INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -168,6 +189,9 @@ class DatabaseHelper {
     required List<Map<String, dynamic>> items,
     required String paymentMethod,
     required String paymentStatus,
+    double amountReceived = 0,
+    double changeAmount = 0,
+    String transactionStatus = 'Completed',
   }) async {
     final db = await database;
     return db.transaction((txn) async {
@@ -206,6 +230,9 @@ class DatabaseHelper {
         'user_id': effectiveUserId,
         'date_time': DateTime.now().toIso8601String(),
         'total_amount': totalAmount,
+        'transaction_status': transactionStatus,
+        'amount_received': amountReceived,
+        'change_amount': changeAmount,
       });
       for (final item in items) {
         await txn.insert('SaleItems', {
@@ -294,8 +321,9 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> getAllSales() async =>
       (await database).rawQuery('''
-        SELECT s.sale_id, s.date_time, s.total_amount,
-               u.name AS cashier, pay.method, pay.status
+     SELECT s.sale_id, s.date_time, s.total_amount,
+       s.transaction_status, s.amount_received, s.change_amount,
+       u.name AS cashier, pay.method, pay.status
         FROM Sales s
         JOIN Users u      ON s.user_id  = u.user_id
         JOIN Payments pay ON s.sale_id  = pay.sale_id

@@ -1,6 +1,7 @@
 import 'package:byte_bite/auth/backup_service.dart';
 import 'package:byte_bite/owner/homepage.dart';
 import 'package:byte_bite/helper/homepage.dart';
+import 'package:byte_bite/shared/transaction_log/transaction_log_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -77,6 +78,12 @@ class ByteAndBiteApp extends StatelessWidget {
         if (settings.name == '/helper-dashboard') {
           return MaterialPageRoute(
             builder: (context) => const HelperHomePage(),
+            settings: settings,
+          );
+        }
+        if (settings.name == TransactionLogPage.routeName) {
+          return MaterialPageRoute(
+            builder: (context) => const TransactionLogPage(),
             settings: settings,
           );
         }

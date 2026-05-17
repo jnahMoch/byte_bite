@@ -67,21 +67,18 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
     _firestoreSub = FirebaseFirestore.instance
         .collection('inventory')
         .snapshots()
-        .listen(
-          (snapshot) async {
-            if (!mounted) return;
+        .listen((snapshot) async {
+      if (!mounted) return;
 
-            // Let the controller re-evaluate low stock alerts against fresh data
-            await _controller.syncLowStockAlertsWithInventory();
-            await _loadPersistedAlerts();
+      // Let the controller re-evaluate low stock alerts against fresh data
+      await _controller.syncLowStockAlertsWithInventory();
+      await _loadPersistedAlerts();
 
-            if (mounted) setState(() => _isFirestoreSynced = true);
-          },
-          onError: (_) {
-            // Offline or error — keep showing local data silently
-            if (mounted) setState(() => _isFirestoreSynced = false);
-          },
-        );
+      if (mounted) setState(() => _isFirestoreSynced = true);
+    }, onError: (_) {
+      // Offline or error — keep showing local data silently
+      if (mounted) setState(() => _isFirestoreSynced = false);
+    });
   }
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -189,8 +186,8 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
               ),
             ],
           ),
-
           // ────────────────────────────────────────────────────────────────
+
           const SizedBox(height: 16),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -291,7 +288,9 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
               ),
             )
           else ...[
-            ...filteredNotifications.map((alert) => _alertCard(context, alert)),
+            ...filteredNotifications.map(
+              (alert) => _alertCard(context, alert),
+            ),
           ],
         ],
       ),
@@ -347,7 +346,6 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
           GestureDetector(
             onTap: () async {
               final id = (alert['id'] ?? '').toString();
-              final navigator = Navigator.of(context);
               if (id.isNotEmpty && isLowStock) {
                 await _controller.markAsRead(id);
               }
@@ -361,38 +359,38 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
               final lowStockThreshold = item is Map<String, dynamic>
                   ? (item['lowStockAlert'] as num?)?.toInt() ?? 0
                   : (item.lowStockAlert as int? ?? 0);
-
-              if (!mounted) return;
-              final route = MaterialPageRoute(
-                builder: (ctx) => NotificationDetailView(
-                  productName: alert['name'],
-                  alertType: alert['type'],
-                  currentStock: currentStock,
-                  unit: unit,
-                  lowStockThreshold: lowStockThreshold,
-                  amountDue:
-                      (alert['amountDue'] as num?)?.toDouble() ??
-                      (item is Map<String, dynamic>
-                          ? (item['amountDue'] as num?)?.toDouble()
-                          : null),
-                  dueDate:
-                      (alert['dueDate'] as String?) ??
-                      (item is Map<String, dynamic>
-                          ? (item['dueDate'] as String?)
-                          : null),
-                  paymentStatus:
-                      (alert['paymentStatus'] as String?) ??
-                      (item is Map<String, dynamic>
-                          ? (item['paymentStatus'] as String?)
-                          : null),
+              if (!context.mounted) return;
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NotificationDetailView(
+                    productName: alert['name'],
+                    alertType: alert['type'],
+                    currentStock: currentStock,
+                    unit: unit,
+                    lowStockThreshold: lowStockThreshold,
+                    amountDue:
+                        (alert['amountDue'] as num?)?.toDouble() ??
+                        (item is Map<String, dynamic>
+                            ? (item['amountDue'] as num?)?.toDouble()
+                            : null),
+                    dueDate:
+                        (alert['dueDate'] as String?) ??
+                        (item is Map<String, dynamic>
+                            ? (item['dueDate'] as String?)
+                            : null),
+                    paymentStatus:
+                        (alert['paymentStatus'] as String?) ??
+                        (item is Map<String, dynamic>
+                            ? (item['paymentStatus'] as String?)
+                            : null),
+                  ),
                 ),
               );
-
-              navigator.push(route).then((result) {
-                if (result != null && mounted) {
-                  navigator.pop(result);
-                }
-              });
+              if (result != null && mounted) {
+                // ignore: use_build_context_synchronously
+                Navigator.pop(context, result);
+              }
             },
             child: const Icon(Icons.chevron_right, color: Colors.grey),
           ),

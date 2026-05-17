@@ -212,6 +212,9 @@ class _MenuContentState extends State<MenuContent> {
         items: [],
         paymentMethod: paymentMethod,
         paymentStatus: 'Success',
+        amountReceived: paid,
+        changeAmount: change,
+        transactionStatus: 'Completed',
       );
     } catch (e) {
       debugPrint('menu_page db recordSale failed: $e');
