@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:csv/csv.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import 'package:sqflite/sqflite.dart';
 import '../database_helper.dart';
 import 'permission_service.dart';
@@ -377,6 +380,117 @@ class BackupService {
       return file.path;
     } catch (e) {
       throw BackupException('Failed to export as text: $e');
+    }
+  }
+
+  /// Export selected SQLite tables into a single CSV file
+  Future<String> exportBackupAsCsv() async {
+    try {
+      final permService = PermissionService();
+      permService.requirePermission(
+        Permission.exportBackup,
+        'export backup as CSV',
+      );
+
+      final db = await DatabaseHelper.instance.database;
+      final tables = ['Products', 'Sales', 'SaleItems', 'Payments', 'InventoryLogs'];
+      final converter = const ListToCsvConverter();
+      final buffer = StringBuffer();
+
+      for (final table in tables) {
+        final rows = await db.query(table);
+        buffer.writeln('TABLE: $table');
+
+        if (rows.isEmpty) {
+          buffer.writeln('No records');
+          buffer.writeln();
+          continue;
+        }
+
+        final headers = rows.first.keys.toList();
+        final csvRows = <List<dynamic>>[headers];
+
+        for (final row in rows) {
+          csvRows.add(headers.map((column) => row[column] ?? '').toList());
+        }
+
+        buffer.writeln(converter.convert(csvRows));
+        buffer.writeln();
+      }
+
+      final appDir = await getApplicationDocumentsDirectory();
+      final timestamp = DateTime.now();
+      final filename =
+          'byte_bite_export_${timestamp.year}${timestamp.month.toString().padLeft(2, '0')}${timestamp.day.toString().padLeft(2, '0')}_${timestamp.hour.toString().padLeft(2, '0')}${timestamp.minute.toString().padLeft(2, '0')}${timestamp.second.toString().padLeft(2, '0')}.csv';
+      final file = File('${appDir.path}/$filename');
+      await file.writeAsString(buffer.toString());
+      return file.path;
+    } catch (e) {
+      throw BackupException('Failed to export backup as CSV: $e');
+    }
+  }
+
+  /// Export selected SQLite tables into a PDF file
+  Future<String> exportBackupAsPdf() async {
+    try {
+      final permService = PermissionService();
+      permService.requirePermission(
+        Permission.exportBackup,
+        'export backup as PDF',
+      );
+
+      final db = await DatabaseHelper.instance.database;
+      final tables = ['Products', 'Sales', 'SaleItems', 'Payments', 'InventoryLogs'];
+      final tableData = <String, List<Map<String, Object?>>>{};
+
+      for (final table in tables) {
+        tableData[table] = await db.query(table);
+      }
+
+      final document = pw.Document();
+      document.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          build: (context) {
+            return tables.map((table) {
+              final rows = tableData[table]!;
+              final headers = rows.isNotEmpty ? rows.first.keys.toList() : <String>[];
+              final data = rows
+                  .map((row) => headers.map((column) => row[column]?.toString() ?? '').toList())
+                  .toList();
+
+              return <pw.Widget>[
+                pw.Text(table, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 8),
+                if (rows.isEmpty) pw.Text('No records available.'),
+                if (rows.isNotEmpty)
+                  pw.Table.fromTextArray(
+                    headers: headers,
+                    data: data,
+                    border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+                    headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+                    cellStyle: pw.TextStyle(fontSize: 9),
+                    cellAlignment: pw.Alignment.centerLeft,
+                    headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                    cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                  ),
+                pw.SizedBox(height: 20),
+              ];
+            }).expand((widgetList) => widgetList).toList();
+          },
+        ),
+      );
+
+      final appDir = await getApplicationDocumentsDirectory();
+      final timestamp = DateTime.now();
+      final filename =
+          'byte_bite_export_${timestamp.year}${timestamp.month.toString().padLeft(2, '0')}${timestamp.day.toString().padLeft(2, '0')}_${timestamp.hour.toString().padLeft(2, '0')}${timestamp.minute.toString().padLeft(2, '0')}${timestamp.second.toString().padLeft(2, '0')}.pdf';
+      final file = File('${appDir.path}/$filename');
+      final bytes = await document.save();
+      await file.writeAsBytes(bytes);
+      return file.path;
+    } catch (e) {
+      throw BackupException('Failed to export backup as PDF: $e');
     }
   }
 

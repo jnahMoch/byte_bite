@@ -1,6 +1,34 @@
+import 'dart:io';
+
+import 'package:byte_bite/auth/backup_service.dart';
 import 'package:flutter/material.dart';
 
 import '../../../data/inventory_data.dart';
+
+enum _ExportFormat { csv, pdf }
+
+Future<_ExportFormat?> _showExportFormatDialog(BuildContext context) async {
+  return showDialog<_ExportFormat>(
+    context: context,
+    builder: (context) => SimpleDialog(
+      title: const Text('Choose export format'),
+      children: [
+        SimpleDialogOption(
+          onPressed: () => Navigator.pop(context, _ExportFormat.csv),
+          child: const Text('Export CSV'),
+        ),
+        SimpleDialogOption(
+          onPressed: () => Navigator.pop(context, _ExportFormat.pdf),
+          child: const Text('Export PDF'),
+        ),
+        SimpleDialogOption(
+          onPressed: () => Navigator.pop(context, null),
+          child: const Text('Cancel'),
+        ),
+      ],
+    ),
+  );
+}
 
 class DataManagementView extends StatelessWidget {
   const DataManagementView({super.key});
@@ -196,13 +224,37 @@ class DataManagementView extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                    onPressed: () async {
+                      final format = await _showExportFormatDialog(context);
+                      if (format == null) return;
+
+                      final messenger = ScaffoldMessenger.of(context);
+                      messenger.showSnackBar(
                         const SnackBar(
                           content: Text('Exporting data...'),
                           backgroundColor: Color(0xFF009661),
                         ),
                       );
+
+                      try {
+                        final filePath = format == _ExportFormat.csv
+                            ? await BackupService().exportBackupAsCsv()
+                            : await BackupService().exportBackupAsPdf();
+
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text('Export complete: ${filePath.split(Platform.pathSeparator).last}'),
+                            backgroundColor: const Color(0xFF009661),
+                          ),
+                        );
+                      } catch (e) {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text('Export failed: $e'),
+                            backgroundColor: Colors.red.shade700,
+                          ),
+                        );
+                      }
                     },
                     icon: const Icon(Icons.download, size: 18, color: Colors.white),
                     label: const Text('Export Data', style: TextStyle(color: Colors.white)),
