@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:csv/csv.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -491,6 +493,128 @@ class BackupService {
       return file.path;
     } catch (e) {
       throw BackupException('Failed to export backup as PDF: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _loadFirestoreCollection(String collectionName) async {
+    final snapshot = await FirebaseFirestore.instance.collection(collectionName).get();
+    return snapshot.docs.map((doc) {
+      final data = Map<String, dynamic>.from(doc.data());
+      data['_id'] = doc.id;
+      return data;
+    }).toList();
+  }
+
+  Future<String> exportFirebaseDataAsCsv() async {
+    try {
+      final permService = PermissionService();
+      permService.requirePermission(Permission.exportData, 'export Firebase data as CSV');
+
+      final collections = ['transactions', 'inventory', 'bills'];
+      final converter = const ListToCsvConverter();
+      final buffer = StringBuffer();
+
+      for (final collection in collections) {
+        final rows = await _loadFirestoreCollection(collection);
+        buffer.writeln('COLLECTION: $collection');
+
+        if (rows.isEmpty) {
+          buffer.writeln('No records');
+          buffer.writeln();
+          continue;
+        }
+
+        final allKeys = <String>{};
+        for (final row in rows) {
+          allKeys.addAll(row.keys);
+        }
+        final headers = ['_id', ...allKeys.where((k) => k != '_id').toList()];
+        final csvRows = <List<dynamic>>[headers];
+
+        for (final row in rows) {
+          csvRows.add(headers.map((key) => row[key]?.toString() ?? '').toList());
+        }
+
+        buffer.writeln(converter.convert(csvRows));
+        buffer.writeln();
+      }
+
+      final appDir = await getApplicationDocumentsDirectory();
+      final timestamp = DateTime.now();
+      final filename =
+          'byte_bite_firebase_export_${timestamp.year}${timestamp.month.toString().padLeft(2, '0')}${timestamp.day.toString().padLeft(2, '0')}_${timestamp.hour.toString().padLeft(2, '0')}${timestamp.minute.toString().padLeft(2, '0')}${timestamp.second.toString().padLeft(2, '0')}.csv';
+      final file = File('${appDir.path}/$filename');
+      await file.writeAsString(buffer.toString());
+      return file.path;
+    } catch (e) {
+      throw BackupException('Failed to export Firebase data as CSV: $e');
+    }
+  }
+
+  Future<String> exportFirebaseDataAsPdf() async {
+    try {
+      final permService = PermissionService();
+      permService.requirePermission(Permission.exportData, 'export Firebase data as PDF');
+
+      final collections = ['transactions', 'inventory', 'bills'];
+      final tableData = <String, List<Map<String, dynamic>>>{};
+      for (final collection in collections) {
+        tableData[collection] = await _loadFirestoreCollection(collection);
+      }
+
+      final document = pw.Document();
+      document.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          build: (context) {
+            return collections
+                .expand((collection) {
+                  final rows = tableData[collection]!;
+                  final allKeys = <String>{};
+                  for (final row in rows) {
+                    allKeys.addAll(row.keys);
+                  }
+                  final headers = rows.isNotEmpty
+                      ? ['_id', ...allKeys.where((key) => key != '_id').toList()]
+                      : <String>[];
+                  final data = rows
+                      .map((row) => headers.map((key) => row[key]?.toString() ?? '').toList())
+                      .toList();
+
+                  return <pw.Widget>[
+                    pw.Text(collection, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                    pw.SizedBox(height: 8),
+                    if (rows.isEmpty)
+                      pw.Text('No records available.'),
+                    if (rows.isNotEmpty)
+                      pw.Table.fromTextArray(
+                        headers: headers,
+                        data: data,
+                        border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+                        headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+                        cellStyle: pw.TextStyle(fontSize: 9),
+                        cellAlignment: pw.Alignment.centerLeft,
+                        headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                        cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                      ),
+                    pw.SizedBox(height: 20),
+                  ];
+                })
+                .toList();
+          },
+        ),
+      );
+
+      final appDir = await getApplicationDocumentsDirectory();
+      final timestamp = DateTime.now();
+      final filename =
+          'byte_bite_firebase_export_${timestamp.year}${timestamp.month.toString().padLeft(2, '0')}${timestamp.day.toString().padLeft(2, '0')}_${timestamp.hour.toString().padLeft(2, '0')}${timestamp.minute.toString().padLeft(2, '0')}${timestamp.second.toString().padLeft(2, '0')}.pdf';
+      final file = File('${appDir.path}/$filename');
+      final bytes = await document.save();
+      await file.writeAsBytes(bytes);
+      return file.path;
+    } catch (e) {
+      throw BackupException('Failed to export Firebase data as PDF: $e');
     }
   }
 

@@ -269,7 +269,91 @@ class DataManagementView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.cloud_queue, color: Colors.grey[700], size: 22),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'Export Firebase Data',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF333333),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Export sales and inventory data from Firebase to CSV or PDF format.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final format = await _showExportFormatDialog(context);
+                      if (format == null) return;
+
+                      final messenger = ScaffoldMessenger.of(context);
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Exporting Firebase data...'),
+                          backgroundColor: Color(0xFF009661),
+                        ),
+                      );
+
+                      try {
+                        final filePath = format == _ExportFormat.csv
+                            ? await BackupService().exportFirebaseDataAsCsv()
+                            : await BackupService().exportFirebaseDataAsPdf();
+
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text('Firebase export complete: ${filePath.split(Platform.pathSeparator).last}'),
+                            backgroundColor: const Color(0xFF009661),
+                          ),
+                        );
+                      } catch (e) {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text('Firebase export failed: $e'),
+                            backgroundColor: Colors.red.shade700,
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.cloud_download, size: 18, color: Colors.white),
+                    label: const Text('Export Firebase Data', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF009661),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
