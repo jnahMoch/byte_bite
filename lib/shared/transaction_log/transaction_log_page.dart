@@ -11,10 +11,19 @@ class TransactionLogPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final role = UserStorage.currentUserRole ?? 'Helper';
-    debugPrint('[TLog Page] Building with role=$role, currentUser=${UserStorage.currentUser}');
+    debugPrint(
+      '[TLog Page] Building with role=$role, currentUser=${UserStorage.currentUser}',
+    );
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transaction Log'),
+        title: const Text(
+          'Transaction Log',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF18212F),
+          ),
+        ),
         elevation: 0,
         centerTitle: false,
       ),

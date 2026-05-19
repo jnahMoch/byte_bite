@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../../database_helper.dart';
 import 'bills_controller.dart';
 import 'transactions_controller.dart';
@@ -46,13 +48,17 @@ class DashboardController {
     final monthlyNetIncome = monthlySales - monthlyExpenses;
 
     // Cloud sync is best-effort and must never block local dashboard metrics.
-    try {
-      await transactionsController.syncTodaysTransactionsToFirebase();
-    } catch (_) {}
+    unawaited(
+      Future<void>(() async {
+        try {
+          await transactionsController.syncTodaysTransactionsToFirebase();
+        } catch (_) {}
 
-    try {
-      await billsController.syncTodaysPaidBillsToFirebase();
-    } catch (_) {}
+        try {
+          await billsController.syncTodaysPaidBillsToFirebase();
+        } catch (_) {}
+      }),
+    );
 
     return DashboardSummary(
       transactions: transactions,

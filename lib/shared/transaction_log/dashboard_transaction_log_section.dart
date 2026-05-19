@@ -30,8 +30,14 @@ class DashboardTransactionLogSection extends StatefulWidget {
 class _DashboardTransactionLogSectionState
     extends State<DashboardTransactionLogSection> {
   static const Color _green = Color(0xFF009661);
+  static const Color _pageBg = Colors.white;
+  static const Color _surface = Colors.white;
+  static const Color _border = Color(0xFFE3EBE6);
   static const Color _dark = Color(0xFF18212F);
-  
+  static const Color _coolBlue = Color(0xFF2563EB);
+  static const Color _coolTeal = Color(0xFF0F766E);
+  static const Color _slate = Color(0xFF475569);
+
   final _controller = const _DashboardTransactionController();
   final _searchController = TextEditingController();
 
@@ -60,13 +66,17 @@ class _DashboardTransactionLogSectionState
   }
 
   Future<void> _load() async {
-    debugPrint('[TLog] _load() called, currentUser=${UserStorage.currentUser}, currentRole=${UserStorage.currentUserRole}');
-    
+    debugPrint(
+      '[TLog] _load() called, currentUser=${UserStorage.currentUser}, currentRole=${UserStorage.currentUserRole}',
+    );
+
     // DEBUG: Check total transactions in database
     final db = await DatabaseHelper.instance.database;
     final totalCount = await db.rawQuery('SELECT COUNT(*) as count FROM Sales');
-    debugPrint('[TLog] Total transactions in database: ${totalCount.first['count']}');
-    
+    debugPrint(
+      '[TLog] Total transactions in database: ${totalCount.first['count']}',
+    );
+
     final entries = await _controller.loadTransactions(
       isOwner: widget.isOwner,
       username: UserStorage.currentUser ?? '',
@@ -131,7 +141,13 @@ class _DashboardTransactionLogSectionState
       _DashboardTransactionSummary.fromEntries(_filteredEntries);
 
   List<String> get _helpers {
-    final values = _entries.map((e) => e.cashierName).toSet().toList()..sort();
+    final values =
+        _entries
+            .map((e) => e.cashierName)
+            .where((name) => name != 'Default Owner')
+            .toSet()
+            .toList()
+          ..sort();
     return ['All', ...values];
   }
 
@@ -202,64 +218,58 @@ class _DashboardTransactionLogSectionState
             ? 'Owner = Full Access'
             : 'Helper = Own Transactions Only';
 
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.manage_search_outlined,
-                    color: _green,
-                  ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Transaction Log',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: _dark,
-                      ),
-                    ),
-                  ),
-                  _accessPill(accessText),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _summaryCards(),
-              const SizedBox(height: 12),
-              _filters(),
-              const SizedBox(height: 12),
-              if (_loading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: CircularProgressIndicator(),
-                  ),
-                )
-              else
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final wide = constraints.maxWidth >= 980;
-                    final table = _transactionTable(filtered);
-                    final preview = _receiptPreview();
-                    if (!wide) {
-                      return Column(
-                        children: [table, const SizedBox(height: 12), preview],
-                      );
-                    }
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 3, child: table),
-                        const SizedBox(width: 12),
-                        Expanded(flex: 1, child: preview),
-                      ],
-                    );
-                  },
+        return Container(
+          color: _pageBg,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.manage_search_outlined, color: _green),
+                    const SizedBox(width: 8),
+                    _accessPill(accessText),
+                  ],
                 ),
-            ],
+                const SizedBox(height: 12),
+                _summaryCards(),
+                const SizedBox(height: 12),
+                _filters(),
+                const SizedBox(height: 12),
+                if (_loading)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final wide = constraints.maxWidth >= 980;
+                      final table = _transactionTable(filtered);
+                      final preview = _receiptPreview();
+                      if (!wide) {
+                        return Column(
+                          children: [
+                            table,
+                            const SizedBox(height: 12),
+                            preview,
+                          ],
+                        );
+                      }
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 3, child: table),
+                          const SizedBox(width: 12),
+                          Expanded(flex: 1, child: preview),
+                        ],
+                      );
+                    },
+                  ),
+              ],
+            ),
           ),
         );
       },
@@ -286,25 +296,19 @@ class _DashboardTransactionLogSectionState
           'Total Sales',
           _currency(summary.totalSales),
           Icons.trending_up,
-          const Color(0xFF2563EB),
+          _coolBlue,
         ),
         _summaryCard(
           'Cash Sales',
           _currency(summary.cashSales),
           Icons.payments_outlined,
-          const Color(0xFF0F766E),
+          _coolTeal,
         ),
         _summaryCard(
           'QR/Online Sales',
           _currency(summary.qrSales),
           Icons.qr_code_2_outlined,
-          const Color(0xFF7C3AED),
-        ),
-        _summaryCard(
-          'Refunded/Cancelled',
-          '${summary.cancelledOrRefunded}',
-          Icons.assignment_late_outlined,
-          const Color(0xFFDC2626),
+          _slate,
         ),
       ],
     );
@@ -314,9 +318,9 @@ class _DashboardTransactionLogSectionState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: _border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -334,14 +338,22 @@ class _DashboardTransactionLogSectionState
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: _dark),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: _dark,
+            ),
           ),
           const SizedBox(height: 3),
           Text(
             label,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280), fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF6B7280),
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -352,9 +364,9 @@ class _DashboardTransactionLogSectionState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: _border),
       ),
       child: Wrap(
         spacing: 10,
@@ -398,7 +410,7 @@ class _DashboardTransactionLogSectionState
             ),
           _dropdown<String>(
             value: _paymentFilter,
-            items: const ['All', 'Cash', 'QR', 'Card'],
+            items: const ['All', 'Cash', 'QR'],
             label: (value) => value,
             onChanged: (value) => setState(() {
               _paymentFilter = value ?? 'All';
@@ -431,84 +443,130 @@ class _DashboardTransactionLogSectionState
 
   Widget _transactionTable(List<_DashboardTransactionEntry> filtered) {
     return Container(
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: _border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columnSpacing: 22,
-              headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
-              columns: const [
-                DataColumn(label: Text('Transaction ID')),
-                DataColumn(label: Text('Date & Time')),
-                DataColumn(label: Text('Helper/Cashier')),
-                DataColumn(label: Text('Products Purchased')),
-                DataColumn(label: Text('Qty')),
-                DataColumn(label: Text('Total Amount')),
-                DataColumn(label: Text('Amount Received')),
-                DataColumn(label: Text('Change')),
-                DataColumn(label: Text('Payment')),
-                DataColumn(label: Text('Status')),
-                DataColumn(label: Text('Receipt')),
-              ],
-              rows: _pageEntries.map((entry) {
-                return DataRow(
-                  selected: _selectedEntry?.saleId == entry.saleId,
-                  onSelectChanged: (_) =>
-                      setState(() => _selectedEntry = entry),
-                  cells: [
-                    DataCell(Text(entry.transactionId)),
-                    DataCell(Text(_formatDateTime(entry.dateTime))),
-                    DataCell(Text(entry.cashierName)),
-                    DataCell(
-                      SizedBox(
-                        width: 220,
-                        child: Text(
-                          entry.productSummary,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: DataTable(
+                columnSpacing: 18,
+                horizontalMargin: 12,
+                headingRowColor: WidgetStateProperty.all(
+                  const Color(0xFFF8FAFC),
+                ),
+                dataRowColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return _green.withValues(alpha: 0.15);
+                  }
+                  return null;
+                }),
+                headingRowHeight: 48,
+                dataRowMinHeight: 56,
+                dataRowMaxHeight: 56,
+                dividerThickness: 0.5,
+                headingTextStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF374151),
+                ),
+                dataTextStyle: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF0F1724),
+                ),
+                columns: const [
+                  DataColumn(label: Text('Transaction ID')),
+                  DataColumn(label: Text('Date & Time')),
+                  DataColumn(label: Text('Helper/Cashier')),
+                  DataColumn(label: Text('Products Purchased')),
+                  DataColumn(label: Text('Qty')),
+                  DataColumn(label: Text('Total Amount')),
+                  DataColumn(label: Text('Amount Received')),
+                  DataColumn(label: Text('Change')),
+                  DataColumn(label: Text('Payment')),
+                  DataColumn(label: Text('Status')),
+                  DataColumn(label: Text('Receipt')),
+                ],
+                rows: _pageEntries.map((entry) {
+                  return DataRow(
+                    selected: _selectedEntry?.saleId == entry.saleId,
+                    onSelectChanged: (_) =>
+                        setState(() => _selectedEntry = entry),
+                    cells: [
+                      DataCell(Text(entry.transactionId)),
+                      DataCell(Text(_formatDateTime(entry.dateTime))),
+                      DataCell(Text(entry.cashierName)),
+                      DataCell(
+                        SizedBox(
+                          width: 260,
+                          child: Text(
+                            entry.productSummary,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                    ),
-                    DataCell(Text('${entry.totalQuantity}')),
-                    DataCell(Text(_currency(entry.totalAmount))),
-                    DataCell(Text(_currency(entry.amountReceived))),
-                    DataCell(Text(_currency(entry.changeAmount))),
-                    DataCell(
-                      _pill(
-                        entry.paymentMethod,
-                        _paymentColor(entry.paymentMethod),
+                      DataCell(Text('${entry.totalQuantity}')),
+                      DataCell(Text(_currency(entry.totalAmount))),
+                      DataCell(Text(_currency(entry.amountReceived))),
+                      DataCell(Text(_currency(entry.changeAmount))),
+                      DataCell(
+                        _pill(
+                          entry.paymentMethod,
+                          _paymentColor(entry.paymentMethod),
+                        ),
                       ),
-                    ),
-                    DataCell(_pill(entry.status, _statusColor(entry.status))),
-                    DataCell(
-                      TextButton.icon(
-                        onPressed: () => setState(() => _selectedEntry = entry),
-                        icon: const Icon(Icons.visibility_outlined, size: 16),
-                        label: const Text('View'),
+                      DataCell(_pill(entry.status, _statusColor(entry.status))),
+                      DataCell(
+                        OutlinedButton.icon(
+                          onPressed: () => _showReceiptModal(context, entry),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(64, 36),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            side: BorderSide(
+                              color: _dark.withValues(alpha: 0.08),
+                            ),
+                          ),
+                          icon: const Icon(Icons.visibility_outlined, size: 16),
+                          label: const Text('View'),
+                        ),
                       ),
-                    ),
-                  ],
-                );
-              }).toList(),
+                    ],
+                  );
+                }).toList(),
+              ),
             ),
           ),
           if (filtered.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Text('No transactions match the current filters'),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'No transactions match the current filters',
+                style: TextStyle(color: _dark.withValues(alpha: 0.65)),
+              ),
             ),
           Padding(
             padding: const EdgeInsets.all(10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text('Page ${_page + 1} of $_pageCount'),
+                Text(
+                  'Page ${_page + 1} of $_pageCount',
+                  style: TextStyle(color: _dark.withValues(alpha: 0.75)),
+                ),
                 IconButton(
                   onPressed: _page == 0 ? null : () => setState(() => _page--),
                   icon: const Icon(Icons.chevron_left),
@@ -533,9 +591,9 @@ class _DashboardTransactionLogSectionState
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: _border),
       ),
       child: entry == null
           ? const Text('Select a transaction to preview receipt details')
@@ -576,13 +634,80 @@ class _DashboardTransactionLogSectionState
     );
   }
 
+  void _showReceiptModal(
+    BuildContext context,
+    _DashboardTransactionEntry entry,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Receipt Details'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _detail('Transaction', entry.transactionId),
+              _detail('Date', _formatDateTime(entry.dateTime)),
+              _detail('Cashier', entry.cashierName),
+              _detail('Payment', entry.paymentMethod),
+              _detail('Status', entry.status),
+              const Divider(height: 24),
+              const Text(
+                'Items:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+              const SizedBox(height: 8),
+              ...entry.items.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${item.productName} x${item.quantity}',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                      Text(
+                        _currency(item.subtotal),
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const Divider(height: 24),
+              _detail('Amount Received', _currency(entry.amountReceived)),
+              _detail('Change', _currency(entry.changeAmount)),
+              const Divider(height: 8),
+              _detail('Total', _currency(entry.totalAmount), bold: true),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _detail(String label, String value, {bool bold = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
           Expanded(
-            child: Text(label, style: const TextStyle(color: Color(0xFF6B7280), fontWeight: FontWeight.w500)),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
           Text(
             value,
@@ -647,7 +772,10 @@ class _DashboardTransactionLogSectionState
         isDense: true,
         decoration: InputDecoration(
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 10,
+          ),
         ),
         items: items
             .map(
@@ -684,8 +812,10 @@ class _DashboardTransactionController {
     required String username,
   }) async {
     final db = await DatabaseHelper.instance.database;
-    debugPrint('[TLog] Loading transactions: isOwner=$isOwner, username=$username');
-    
+    debugPrint(
+      '[TLog] Loading transactions: isOwner=$isOwner, username=$username',
+    );
+
     final rows = await db.rawQuery('''
       SELECT
         s.sale_id,
@@ -704,7 +834,7 @@ class _DashboardTransactionController {
       ${isOwner ? '' : 'WHERE u.username = ?'}
       ORDER BY s.date_time DESC, s.sale_id DESC
       ''', isOwner ? const [] : [username]);
-    
+
     debugPrint('[TLog] Query returned ${rows.length} rows');
 
     final entries = <_DashboardTransactionEntry>[];
@@ -742,7 +872,7 @@ class _DashboardTransactionController {
 
       final paymentStatus = (row['payment_status'] ?? '').toString();
       entries.add(
-          _DashboardTransactionEntry(
+        _DashboardTransactionEntry(
           saleId: saleId,
           transactionId: 'TXN-${saleId.toString().padLeft(6, '0')}',
           dateTime:
@@ -900,7 +1030,7 @@ String _currency(double value) => 'PHP ${value.toStringAsFixed(2)}';
 Color _statusColor(String status) {
   return switch (status) {
     'Completed' => const Color(0xFF009661),
-    'Refunded' => const Color(0xFF7C3AED),
+    'Refunded' => const Color(0xFF475569),
     'Cancelled' => const Color(0xFFDC2626),
     _ => const Color(0xFF667085),
   };
@@ -909,7 +1039,7 @@ Color _statusColor(String status) {
 Color _paymentColor(String method) {
   return switch (method) {
     'Cash' => const Color(0xFF0F766E),
-    'QR' => const Color(0xFF7C3AED),
+    'QR' => const Color(0xFF2563EB),
     'Card' => const Color(0xFF2563EB),
     _ => const Color(0xFF667085),
   };

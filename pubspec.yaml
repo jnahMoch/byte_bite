@@ -26,6 +26,7 @@ dependencies:
   path_provider: ^2.1.4
   csv: ^6.0.0
   share_plus: ^11.0.0
+  open_file: ^3.5.10
   excel: ^4.0.6
   # ── Offline + Cloud Sync ──────────────────────────────────────────────────
   # Used by homepage.dart to detect network status and show sync indicator.
