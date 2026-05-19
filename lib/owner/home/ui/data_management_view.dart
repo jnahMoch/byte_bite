@@ -36,15 +36,14 @@ class DataManagementView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     int productCount = InventoryData.items.length;
-    int transactionCount = 0; 
-    int billCount = 3; 
+    int transactionCount = 0;
+    int billCount = 3;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          
           const Text(
             'Data Management',
             style: TextStyle(
@@ -54,7 +53,7 @@ class DataManagementView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -185,7 +184,7 @@ class DataManagementView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -199,7 +198,11 @@ class DataManagementView extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.cloud_download_outlined, color: Colors.grey[700], size: 22),
+                    Icon(
+                      Icons.cloud_download_outlined,
+                      color: Colors.grey[700],
+                      size: 22,
+                    ),
                     const SizedBox(width: 10),
                     const Text(
                       'Export Backup',
@@ -226,6 +229,7 @@ class DataManagementView extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       final format = await _showExportFormatDialog(context);
+                      if (!context.mounted) return;
                       if (format == null) return;
 
                       final messenger = ScaffoldMessenger.of(context);
@@ -243,7 +247,9 @@ class DataManagementView extends StatelessWidget {
 
                         messenger.showSnackBar(
                           SnackBar(
-                            content: Text('Export complete: ${filePath.split(Platform.pathSeparator).last}'),
+                            content: Text(
+                              'Export complete: ${filePath.split(Platform.pathSeparator).last}',
+                            ),
                             backgroundColor: const Color(0xFF009661),
                           ),
                         );
@@ -256,12 +262,21 @@ class DataManagementView extends StatelessWidget {
                         );
                       }
                     },
-                    icon: const Icon(Icons.download, size: 18, color: Colors.white),
-                    label: const Text('Export Data', style: TextStyle(color: Colors.white)),
+                    icon: const Icon(
+                      Icons.download,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      'Export Data',
+                      style: TextStyle(color: Colors.white),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF009661),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),
@@ -310,6 +325,7 @@ class DataManagementView extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       final format = await _showExportFormatDialog(context);
+                      if (!context.mounted) return;
                       if (format == null) return;
 
                       final messenger = ScaffoldMessenger.of(context);
@@ -327,7 +343,9 @@ class DataManagementView extends StatelessWidget {
 
                         messenger.showSnackBar(
                           SnackBar(
-                            content: Text('Firebase export complete: ${filePath.split(Platform.pathSeparator).last}'),
+                            content: Text(
+                              'Firebase export complete: ${filePath.split(Platform.pathSeparator).last}',
+                            ),
                             backgroundColor: const Color(0xFF009661),
                           ),
                         );
@@ -340,12 +358,21 @@ class DataManagementView extends StatelessWidget {
                         );
                       }
                     },
-                    icon: const Icon(Icons.cloud_download, size: 18, color: Colors.white),
-                    label: const Text('Export Firebase Data', style: TextStyle(color: Colors.white)),
+                    icon: const Icon(
+                      Icons.cloud_download,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      'Export Firebase Data',
+                      style: TextStyle(color: Colors.white),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF009661),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),
@@ -367,7 +394,11 @@ class DataManagementView extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.cloud_upload_outlined, color: Colors.grey[700], size: 22),
+                    Icon(
+                      Icons.cloud_upload_outlined,
+                      color: Colors.grey[700],
+                      size: 22,
+                    ),
                     const SizedBox(width: 10),
                     const Text(
                       'Import Backup',
@@ -400,11 +431,16 @@ class DataManagementView extends StatelessWidget {
                       );
                     },
                     icon: Icon(Icons.upload, size: 18, color: Colors.grey[700]),
-                    label: Text('Import Data', style: TextStyle(color: Colors.grey[700])),
+                    label: Text(
+                      'Import Data',
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),
@@ -412,7 +448,7 @@ class DataManagementView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -426,7 +462,11 @@ class DataManagementView extends StatelessWidget {
               children: [
                 Row(
                   children: const [
-                    Icon(Icons.warning_amber_outlined, color: Colors.red, size: 22),
+                    Icon(
+                      Icons.warning_amber_outlined,
+                      color: Colors.red,
+                      size: 22,
+                    ),
                     SizedBox(width: 10),
                     Text(
                       'Reset Data',
@@ -456,11 +496,15 @@ class DataManagementView extends StatelessWidget {
                         context: context,
                         builder: (context) => AlertDialog(
                           title: const Text('Reset All Data?'),
-                          content: const Text('This will permanently delete all products, transactions, and bills. This action cannot be undone.'),
+                          content: const Text(
+                            'This will permanently delete all products, transactions, and bills. This action cannot be undone.',
+                          ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
-                              style: TextButton.styleFrom(foregroundColor: Colors.red),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
                               child: const Text(
                                 'Cancel',
                                 style: TextStyle(
@@ -480,19 +524,33 @@ class DataManagementView extends StatelessWidget {
                                   ),
                                 );
                               },
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                              child: const Text('Reset', style: TextStyle(color: Colors.white)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                              ),
+                              child: const Text(
+                                'Reset',
+                                style: TextStyle(color: Colors.white),
+                              ),
                             ),
                           ],
                         ),
                       );
                     },
-                    icon: const Icon(Icons.delete_forever, size: 18, color: Colors.red),
-                    label: const Text('Reset All Data', style: TextStyle(color: Colors.red)),
+                    icon: const Icon(
+                      Icons.delete_forever,
+                      size: 18,
+                      color: Colors.red,
+                    ),
+                    label: const Text(
+                      'Reset All Data',
+                      style: TextStyle(color: Colors.red),
+                    ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       side: const BorderSide(color: Colors.red),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),

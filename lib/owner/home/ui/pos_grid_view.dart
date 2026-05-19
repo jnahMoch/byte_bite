@@ -1,9 +1,9 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
+import 'package:flutter/rendering.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../model/pos_item_model.dart';
 import '../../../model/sales_transaction_model.dart';
@@ -291,6 +291,7 @@ class _POSGridViewState extends State<POSGridView> {
     String receiptNumber,
   ) {
     bool isPrintingStarted = false;
+    final receiptBoundaryKey = GlobalKey();
 
     showDialog(
       context: context,
@@ -309,379 +310,387 @@ class _POSGridViewState extends State<POSGridView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Premium Header
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 24,
-                    horizontal: 20,
-                  ),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF00A86B), Color(0xFF008450)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'BYTE & BITE',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'OFFICIAL RECEIPT',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Receipt #: $receiptNumber',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Receipt Content
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Transaction Info
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.blue.shade100,
-                                width: 1,
-                              ),
+                  child: RepaintBoundary(
+                    key: receiptBoundaryKey,
+                    child: Column(
+                      children: [
+                        // Premium Header
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 24,
+                            horizontal: 20,
+                          ),
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Color(0xFF00A86B), Color(0xFF008450)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Date',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      _formatDate(now),
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Time',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      _formatTime(now),
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Payment',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      _selectedPayment,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              topRight: Radius.circular(16),
                             ),
                           ),
-                          const SizedBox(height: 16),
-
-                          // Items Section Header
-                          const Text(
-                            'ITEMS PURCHASED',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.grey,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-
-                          // Items List
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border(
-                                top: BorderSide(color: Colors.grey.shade300),
-                                bottom: BorderSide(color: Colors.grey.shade300),
+                          child: Column(
+                            children: [
+                              const Text(
+                                'BYTE & BITE',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  letterSpacing: 1,
+                                ),
                               ),
-                            ),
-                            child: Column(
-                              children: [
-                                ...savedCart.asMap().entries.map((entry) {
-                                  final item = entry.value;
-                                  final isLast =
-                                      entry.key == savedCart.length - 1;
-                                  return Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 10),
+                              const SizedBox(height: 3),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  'System‑Generated Sales Slip',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'System Receipt #: $receiptNumber',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Receipt Content
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Transaction Info
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: Colors.blue.shade100,
+                                        width: 1,
+                                      ),
+                                    ),
                                     child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
                                           children: [
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    item.item.name,
-                                                    style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 13,
-                                                      color: Colors.black87,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 3),
-                                                  Text(
-                                                    'P${item.item.price}.00 × ${item.quantity}',
-                                                    style: const TextStyle(
-                                                      fontSize: 11,
-                                                      color: Colors.grey,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ],
+                                            const Text(
+                                              'Date',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey,
+                                                fontWeight: FontWeight.w500,
                                               ),
                                             ),
                                             Text(
-                                              'P${item.total}.00',
+                                              _formatDate(now),
                                               style: const TextStyle(
-                                                fontWeight: FontWeight.w700,
-                                                fontSize: 13,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
                                                 color: Colors.black87,
                                               ),
                                             ),
                                           ],
                                         ),
-                                        if (!isLast)
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 10,
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              'Time',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
-                                            child: Divider(
-                                              height: 1,
-                                              color: Colors.grey.shade200,
+                                            Text(
+                                              _formatTime(now),
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black87,
+                                              ),
                                             ),
-                                          ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              'Payment',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            Text(
+                                              _selectedPayment,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ],
                                     ),
-                                  );
-                                }),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
+                                  ),
+                                  const SizedBox(height: 16),
 
-                          // Summary Section
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.grey.shade200,
-                                width: 1,
+                                  // Items Section Header
+                                  const Text(
+                                    'ITEMS PURCHASED',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.grey,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  // Items List
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      border: Border(
+                                        top: BorderSide(
+                                          color: Colors.grey.shade300,
+                                        ),
+                                        bottom: BorderSide(
+                                          color: Colors.grey.shade300,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        ...savedCart.asMap().entries.map((
+                                          entry,
+                                        ) {
+                                          final item = entry.value;
+                                          final isLast =
+                                              entry.key == savedCart.length - 1;
+                                          return Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 10,
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Text(
+                                                            item.item.name,
+                                                            style:
+                                                                const TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                  fontSize: 13,
+                                                                  color: Colors
+                                                                      .black87,
+                                                                ),
+                                                          ),
+                                                          const SizedBox(
+                                                            height: 3,
+                                                          ),
+                                                          Text(
+                                                            'P${item.item.price}.00 × ${item.quantity}',
+                                                            style:
+                                                                const TextStyle(
+                                                                  fontSize: 11,
+                                                                  color: Colors
+                                                                      .grey,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      'P${item.total}.00',
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        fontSize: 13,
+                                                        color: Colors.black87,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                if (!isLast)
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                          top: 10,
+                                                        ),
+                                                    child: Divider(
+                                                      height: 1,
+                                                      color:
+                                                          Colors.grey.shade200,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          );
+                                        }),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Summary Section
+                                  Container(
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: Colors.grey.shade200,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              'Subtotal',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            Text(
+                                              'P$savedTotal.00',
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              'Amount Paid',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            Text(
+                                              'P${amountPaid.toStringAsFixed(2)}',
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            vertical: 8,
+                                          ),
+                                          child: Divider(height: 1),
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              'CHANGE',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            Text(
+                                              'P${change.toStringAsFixed(2)}',
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Center(
+                                    child: Text(
+                                      'System‑generated sales slip. Official BIR receipt issued separately.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Subtotal',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    Text(
-                                      'P$savedTotal.00',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Amount Paid',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    Text(
-                                      'P${amountPaid.toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 8),
-                                  child: Divider(height: 1),
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'CHANGE',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    Text(
-                                      'P${change.toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
                           ),
-                          const SizedBox(height: 12),
-
-                          // Thank You Message
-                          Center(
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Thank you for your purchase!',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontStyle: FontStyle.italic,
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const Text(
-                                  'Come again soon!',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontStyle: FontStyle.italic,
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                const Text(
-                                  'System‑generated sales slip. Official BIR receipt issued separately.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -704,14 +713,9 @@ class _POSGridViewState extends State<POSGridView> {
                                   setDialogState(
                                     () => isPrintingStarted = true,
                                   );
-                                  await _printReceipt(
-                                    cartItems: savedCart,
-                                    total: savedTotal,
-                                    paid: amountPaid,
-                                    change: change,
+                                  await _downloadReceipt(
+                                    receiptBoundaryKey: receiptBoundaryKey,
                                     receiptNumber: receiptNumber,
-                                    paymentMethod: _selectedPayment,
-                                    date: now,
                                   );
                                   if (ctx.mounted) {
                                     setDialogState(
@@ -722,11 +726,11 @@ class _POSGridViewState extends State<POSGridView> {
                           icon: Icon(
                             isPrintingStarted
                                 ? Icons.hourglass_bottom
-                                : Icons.print_outlined,
+                                : Icons.download_outlined,
                             size: 18,
                           ),
                           label: Text(
-                            isPrintingStarted ? 'Printing...' : 'Print',
+                            isPrintingStarted ? 'Downloading...' : 'Download',
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
@@ -787,181 +791,60 @@ class _POSGridViewState extends State<POSGridView> {
     );
   }
 
-  Future<void> _printReceipt({
-    required List<CartItem> cartItems,
-    required int total,
-    required double paid,
-    required double change,
+  Future<void> _downloadReceipt({
+    required GlobalKey receiptBoundaryKey,
     required String receiptNumber,
-    required String paymentMethod,
-    required DateTime date,
   }) async {
-    final pdf = pw.Document();
+    try {
+      final buildContext = receiptBoundaryKey.currentContext;
+      if (buildContext == null) {
+        throw StateError('Receipt view is not ready for export.');
+      }
 
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.roll80,
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.center,
-            children: [
-              pw.Text(
-                'BYTE & BITE',
-                style: pw.TextStyle(
-                  fontSize: 18,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-              pw.Text(
-                'Smart POS Solution',
-                style: const pw.TextStyle(fontSize: 10),
-              ),
-              pw.Text(
-                'Visayan Village, Tagum City',
-                style: const pw.TextStyle(fontSize: 10),
-              ),
-              pw.SizedBox(height: 12),
-              pw.Container(
-                alignment: pw.Alignment.centerLeft,
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text(
-                      'Date: ${_formatDate(date)}',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                    pw.Text(
-                      'Time: ${_formatTime(date)}',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                    pw.Text(
-                      'Receipt #: $receiptNumber',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                    pw.Text(
-                      'Payment: $paymentMethod',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 8),
-              pw.Divider(thickness: 0.5),
-              pw.SizedBox(height: 8),
-              // Items
-              ...cartItems.map(
-                (item) => pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        pw.Text(
-                          item.item.name,
-                          style: const pw.TextStyle(fontSize: 10),
-                        ),
-                        pw.Text(
-                          'P${item.item.price}.00',
-                          style: const pw.TextStyle(fontSize: 10),
-                        ),
-                      ],
-                    ),
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        pw.Text(
-                          'x${item.quantity}',
-                          style: const pw.TextStyle(
-                            fontSize: 9,
-                            color: PdfColors.grey,
-                          ),
-                        ),
-                        pw.Text(
-                          'P${item.total}.00',
-                          style: const pw.TextStyle(
-                            fontSize: 9,
-                            color: PdfColors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                    pw.SizedBox(height: 4),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 4),
-              pw.Divider(thickness: 0.5),
-              pw.SizedBox(height: 8),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'TOTAL:',
-                    style: pw.TextStyle(
-                      fontSize: 12,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                  pw.Text(
-                    'P$total.00',
-                    style: pw.TextStyle(
-                      fontSize: 12,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 4),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'Amount Paid:',
-                    style: const pw.TextStyle(fontSize: 10),
-                  ),
-                  pw.Text(
-                    'P${paid.toStringAsFixed(2)}',
-                    style: const pw.TextStyle(fontSize: 10),
-                  ),
-                ],
-              ),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text('Change:', style: const pw.TextStyle(fontSize: 10)),
-                  pw.Text(
-                    'P${change.toStringAsFixed(2)}',
-                    style: const pw.TextStyle(fontSize: 10),
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 8),
-              pw.Divider(thickness: 0.5),
-              pw.SizedBox(height: 12),
-              pw.Text(
-                'Thank you for your purchase!',
-                style: const pw.TextStyle(fontSize: 10),
-              ),
-              pw.Text(
-                'Come again soon!',
-                style: const pw.TextStyle(fontSize: 10),
-              ),
-              pw.SizedBox(height: 8),
-              pw.Text(
-                'System‑generated sales slip. Official BIR receipt issued separately.',
-                textAlign: pw.TextAlign.center,
-                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey),
-              ),
-              pw.SizedBox(height: 16),
-            ],
-          );
-        },
-      ),
-    );
+      final renderObject = buildContext.findRenderObject();
+      if (renderObject is! RenderRepaintBoundary) {
+        throw StateError('Receipt boundary is unavailable.');
+      }
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
+      await WidgetsBinding.instance.endOfFrame;
+
+      if (renderObject.debugNeedsPaint) {
+        await Future<void>.delayed(const Duration(milliseconds: 16));
+        await WidgetsBinding.instance.endOfFrame;
+      }
+
+      final ui.Image image = await renderObject.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        throw StateError('Unable to encode receipt image.');
+      }
+
+      final directory = await getDownloadsDirectory();
+      final targetDirectory =
+          directory ?? await getApplicationDocumentsDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'Receipt_${receiptNumber}_$timestamp.png';
+      final file = File('${targetDirectory.path}/$fileName');
+      await file.writeAsBytes(byteData.buffer.asUint8List(), flush: true);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Receipt image saved: $fileName'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to download receipt image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   String _formatDate(DateTime dt) {

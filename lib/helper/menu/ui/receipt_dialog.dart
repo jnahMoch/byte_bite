@@ -24,6 +24,8 @@ class ReceiptDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final receiptBoundaryKey = GlobalKey();
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
@@ -34,29 +36,35 @@ class ReceiptDialog extends StatelessWidget {
           children: [
             _buildHeader(context),
             const SizedBox(height: 16),
-            _buildStoreInfo(),
-            const SizedBox(height: 16),
-            _buildReceiptDetails(),
-            const SizedBox(height: 12),
-            _buildDottedDivider(),
-            const SizedBox(height: 12),
-            _buildItemsList(),
-            const SizedBox(height: 8),
-            _buildDottedDivider(),
-            const SizedBox(height: 12),
-            _buildTotals(),
-            const SizedBox(height: 12),
-            _buildDottedDivider(),
-            const SizedBox(height: 16),
-            _buildThankYouMessage(),
-            const SizedBox(height: 12),
-            const Text(
-              'System‑generated sales slip. Official BIR receipt issued separately.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: Colors.grey),
+            RepaintBoundary(
+              key: receiptBoundaryKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildStoreInfo(),
+                  const SizedBox(height: 16),
+                  _buildReceiptDetails(),
+                  const SizedBox(height: 12),
+                  _buildDottedDivider(),
+                  const SizedBox(height: 12),
+                  _buildItemsList(),
+                  const SizedBox(height: 8),
+                  _buildDottedDivider(),
+                  const SizedBox(height: 12),
+                  _buildTotals(),
+                  const SizedBox(height: 12),
+                  _buildDottedDivider(),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'System‑generated sales slip. Official BIR receipt issued separately.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
-            _buildActionButtons(context),
+            _buildActionButtons(context, receiptBoundaryKey),
           ],
         ),
       ),
@@ -67,7 +75,10 @@ class ReceiptDialog extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text('Receipt', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const Text(
+          'Receipt',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
         GestureDetector(
           onTap: () => Navigator.pop(context),
           child: const Icon(Icons.close, size: 20, color: Colors.grey),
@@ -79,9 +90,18 @@ class ReceiptDialog extends StatelessWidget {
   Widget _buildStoreInfo() {
     return Column(
       children: const [
-        Text('BYTE & BITE', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        Text('Smart POS Solution', style: TextStyle(fontSize: 12, color: Colors.grey)),
-        Text('Visayan Village, Tagum City', style: TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(
+          'BYTE & BITE',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        Text(
+          'Smart POS Solution',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        Text(
+          'Visayan Village, Tagum City',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
       ],
     );
   }
@@ -92,9 +112,18 @@ class ReceiptDialog extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Date: ${ReceiptHelper.formatDate(date)}', style: const TextStyle(fontSize: 12)),
-          Text('Time: ${ReceiptHelper.formatTime(date)}', style: const TextStyle(fontSize: 12)),
-          Text('Receipt #: $receiptNumber', style: const TextStyle(fontSize: 12)),
+          Text(
+            'Date: ${ReceiptHelper.formatDate(date)}',
+            style: const TextStyle(fontSize: 12),
+          ),
+          Text(
+            'Time: ${ReceiptHelper.formatTime(date)}',
+            style: const TextStyle(fontSize: 12),
+          ),
+          Text(
+            'System Receipt #: $receiptNumber',
+            style: const TextStyle(fontSize: 12),
+          ),
           Text('Payment: $paymentMethod', style: const TextStyle(fontSize: 12)),
         ],
       ),
@@ -103,28 +132,47 @@ class ReceiptDialog extends StatelessWidget {
 
   Widget _buildItemsList() {
     return Column(
-      children: cartItems.map((item) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(item['name'], style: const TextStyle(fontSize: 13)),
-                Text('₱${item['price']}.00', style: const TextStyle(fontSize: 13)),
-              ],
+      children: cartItems
+          .map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(item['name'], style: const TextStyle(fontSize: 13)),
+                      Text(
+                        '₱${item['price']}.00',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'x${item['quantity']}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      Text(
+                        '₱${item['price'] * item['quantity']}.00',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('x${item['quantity']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                Text('₱${item['price'] * item['quantity']}.00', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              ],
-            ),
-          ],
-        ),
-      )).toList(),
+          )
+          .toList(),
     );
   }
 
@@ -135,7 +183,10 @@ class ReceiptDialog extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('TOTAL:', style: TextStyle(fontWeight: FontWeight.bold)),
-            Text('₱$total.00', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              '₱$total.00',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -143,7 +194,10 @@ class ReceiptDialog extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('Amount Paid:', style: TextStyle(fontSize: 13)),
-            Text('₱${paid.toStringAsFixed(2)}', style: const TextStyle(fontSize: 13)),
+            Text(
+              '₱${paid.toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 13),
+            ),
           ],
         ),
         const SizedBox(height: 4),
@@ -151,7 +205,10 @@ class ReceiptDialog extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('Change:', style: TextStyle(fontSize: 13)),
-            Text('₱${change.toStringAsFixed(2)}', style: const TextStyle(fontSize: 13)),
+            Text(
+              '₱${change.toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 13),
+            ),
           ],
         ),
       ],
@@ -172,38 +229,45 @@ class ReceiptDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildThankYouMessage() {
-    return const Column(
-      children: [
-        Text('Thank you for your purchase!', style: TextStyle(fontSize: 12, color: Color(0xFF009661))),
-        Text('Come again soon!', style: TextStyle(fontSize: 12, color: Color(0xFF009661))),
-      ],
-    );
-  }
-
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButtons(
+    BuildContext context,
+    GlobalKey receiptBoundaryKey,
+  ) {
     return Row(
       children: [
         Expanded(
           child: OutlinedButton.icon(
             onPressed: () async {
-              Navigator.pop(context);
-              await ReceiptHelper.generateAndPrintReceipt(
-                cartItems: cartItems,
-                total: total,
-                paid: paid,
-                change: change,
-                receiptNumber: receiptNumber,
-                paymentMethod: paymentMethod,
-                date: date,
-              );
+              try {
+                await ReceiptHelper.generateAndExportReceipt(
+                  receiptBoundaryKey: receiptBoundaryKey,
+                  receiptNumber: receiptNumber,
+                );
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Receipt image saved successfully.'),
+                  ),
+                );
+                Navigator.pop(context);
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to download receipt image: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
-            icon: const Icon(Icons.print, size: 18),
-            label: const Text('Print'),
+            icon: const Icon(Icons.download, size: 18),
+            label: const Text('Download'),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
               side: const BorderSide(color: Colors.grey),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           ),
         ),
@@ -214,7 +278,9 @@ class ReceiptDialog extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF009661),
               padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Text('Close', style: TextStyle(color: Colors.white)),
           ),

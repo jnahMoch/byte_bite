@@ -29,18 +29,17 @@ class BackupService {
   }) async {
     try {
       final permService = PermissionService();
-      permService.requirePermission(
-        Permission.exportBackup,
-        'create backup',
-      );
+      permService.requirePermission(Permission.exportBackup, 'create backup');
 
       final db = await DatabaseHelper.instance.database;
       final backupDir = await _getBackupDirectory();
 
       // Create timestamp-based filename
       final timestamp = DateTime.now();
-      final dateStr = '${timestamp.year}${timestamp.month.toString().padLeft(2, '0')}${timestamp.day.toString().padLeft(2, '0')}';
-      final timeStr = '${timestamp.hour.toString().padLeft(2, '0')}${timestamp.minute.toString().padLeft(2, '0')}${timestamp.second.toString().padLeft(2, '0')}';
+      final dateStr =
+          '${timestamp.year}${timestamp.month.toString().padLeft(2, '0')}${timestamp.day.toString().padLeft(2, '0')}';
+      final timeStr =
+          '${timestamp.hour.toString().padLeft(2, '0')}${timestamp.minute.toString().padLeft(2, '0')}${timestamp.second.toString().padLeft(2, '0')}';
       final filename = customName ?? 'backup_${dateStr}_$timeStr.sqlite';
       final backupPath = '${backupDir.path}/$filename';
 
@@ -48,11 +47,11 @@ class BackupService {
       final dbPath = db.path;
       final sourceFile = File(dbPath);
       final backupFile = File(backupPath);
-      
+
       if (!backupFile.existsSync()) {
         backupFile.createSync(recursive: true);
       }
-      
+
       await sourceFile.copy(backupFile.path);
 
       // Create metadata file with backup info
@@ -69,10 +68,7 @@ class BackupService {
   Future<bool> restoreBackup(String backupPath) async {
     try {
       final permService = PermissionService();
-      permService.requirePermission(
-        Permission.importData,
-        'restore backup',
-      );
+      permService.requirePermission(Permission.importData, 'restore backup');
 
       final backupFile = File(backupPath);
       if (!backupFile.existsSync()) {
@@ -138,15 +134,17 @@ class BackupService {
         if (file is File && file.path.endsWith('.sqlite')) {
           try {
             final metadata = await _loadBackupMetadata(file.path);
-            backups.add(BackupInfo(
-              name: file.path.split('/').last,
-              path: file.path,
-              size: file.lengthSync(),
-              created: metadata['createdAt'] != null
-                  ? DateTime.parse(metadata['createdAt'])
-                  : file.statSync().changed,
-              hash: metadata['hash'] ?? '',
-            ));
+            backups.add(
+              BackupInfo(
+                name: file.path.split('/').last,
+                path: file.path,
+                size: file.lengthSync(),
+                created: metadata['createdAt'] != null
+                    ? DateTime.parse(metadata['createdAt'])
+                    : file.statSync().changed,
+                hash: metadata['hash'] ?? '',
+              ),
+            );
           } catch (e) {
             // Skip backups without valid metadata
           }
@@ -165,15 +163,12 @@ class BackupService {
   Future<bool> deleteBackup(String backupPath) async {
     try {
       final permService = PermissionService();
-      permService.requirePermission(
-        Permission.manageBackups,
-        'delete backup',
-      );
+      permService.requirePermission(Permission.manageBackups, 'delete backup');
 
       final file = File(backupPath);
       if (file.existsSync()) {
         await file.delete();
-        
+
         // Delete metadata file
         final metadataPath = backupPath.replaceAll('.sqlite', '.json');
         final metadataFile = File(metadataPath);
@@ -197,10 +192,7 @@ class BackupService {
       }
 
       // Try to open it as a SQLite database
-      final tempDb = await openDatabase(
-        backupPath,
-        readOnly: true,
-      );
+      final tempDb = await openDatabase(backupPath, readOnly: true);
 
       // Run some basic queries to verify structure
       await tempDb.rawQuery('SELECT COUNT(*) FROM Users LIMIT 1');
@@ -225,7 +217,10 @@ class BackupService {
   }
 
   /// Create metadata file for backup (JSON format with timestamp and hash)
-  Future<void> _createBackupMetadata(String backupPath, DateTime timestamp) async {
+  Future<void> _createBackupMetadata(
+    String backupPath,
+    DateTime timestamp,
+  ) async {
     try {
       final backupFile = File(backupPath);
       final hash = await _calculateFileHash(backupFile);
@@ -288,16 +283,16 @@ class BackupService {
   Future<void> scheduleAutomaticBackups() async {
     // This uses a simple implementation; for production use
     // consider using background_fetch or workmanager package
-    
+
     final lastBackupTime = await _getLastBackupTime();
     final now = DateTime.now();
-    
+
     // Check if a backup has been created today
-    if (lastBackupTime == null || 
-        _isDifferentDay(lastBackupTime, now)) {
+    if (lastBackupTime == null || _isDifferentDay(lastBackupTime, now)) {
       try {
         await createBackup(
-          customName: 'auto_backup_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}.sqlite',
+          customName:
+              'auto_backup_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}.sqlite',
         );
         await _saveLastBackupTime(now);
       } catch (e) {
@@ -329,7 +324,7 @@ class BackupService {
     try {
       final appDir = await getApplicationDocumentsDirectory();
       final file = File('${appDir.path}/.last_backup_time');
-      
+
       if (!file.existsSync()) {
         return null;
       }
@@ -351,8 +346,16 @@ class BackupService {
       );
 
       final db = await DatabaseHelper.instance.database;
-      final tables = ['Users', 'Products', 'Sales', 'SaleItems', 'Expenses', 'Bills', 'Payments'];
-      
+      final tables = [
+        'Users',
+        'Products',
+        'Sales',
+        'SaleItems',
+        'Expenses',
+        'Bills',
+        'Payments',
+      ];
+
       final buffer = StringBuffer();
       buffer.writeln('=== Byte & Bite Database Export ===');
       buffer.writeln('Exported: ${DateTime.now().toIso8601String()}');
@@ -363,7 +366,7 @@ class BackupService {
           final results = await db.query(table);
           buffer.writeln('TABLE: $table');
           buffer.writeln('Records: ${results.length}');
-          
+
           if (results.isNotEmpty) {
             buffer.writeln(results.map((row) => jsonEncode(row)).join('\n'));
           }
@@ -375,9 +378,10 @@ class BackupService {
 
       final appDir = await getApplicationDocumentsDirectory();
       final timestamp = DateTime.now();
-      final filename = 'export_${timestamp.year}${timestamp.month.toString().padLeft(2, '0')}${timestamp.day.toString().padLeft(2, '0')}_${timestamp.hour.toString().padLeft(2, '0')}${timestamp.minute.toString().padLeft(2, '0')}.txt';
+      final filename =
+          'export_${timestamp.year}${timestamp.month.toString().padLeft(2, '0')}${timestamp.day.toString().padLeft(2, '0')}_${timestamp.hour.toString().padLeft(2, '0')}${timestamp.minute.toString().padLeft(2, '0')}.txt';
       final file = File('${appDir.path}/$filename');
-      
+
       await file.writeAsString(buffer.toString());
       return file.path;
     } catch (e) {
@@ -395,7 +399,13 @@ class BackupService {
       );
 
       final db = await DatabaseHelper.instance.database;
-      final tables = ['Products', 'Sales', 'SaleItems', 'Payments', 'InventoryLogs'];
+      final tables = [
+        'Products',
+        'Sales',
+        'SaleItems',
+        'Payments',
+        'InventoryLogs',
+      ];
       final converter = const ListToCsvConverter();
       final buffer = StringBuffer();
 
@@ -442,7 +452,13 @@ class BackupService {
       );
 
       final db = await DatabaseHelper.instance.database;
-      final tables = ['Products', 'Sales', 'SaleItems', 'Payments', 'InventoryLogs'];
+      final tables = [
+        'Products',
+        'Sales',
+        'SaleItems',
+        'Payments',
+        'InventoryLogs',
+      ];
       final tableData = <String, List<Map<String, Object?>>>{};
 
       for (final table in tables) {
@@ -454,31 +470,57 @@ class BackupService {
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
           build: (context) {
-            return tables.map((table) {
-              final rows = tableData[table]!;
-              final headers = rows.isNotEmpty ? rows.first.keys.toList() : <String>[];
-              final data = rows
-                  .map((row) => headers.map((column) => row[column]?.toString() ?? '').toList())
-                  .toList();
+            return tables
+                .map((table) {
+                  final rows = tableData[table]!;
+                  final headers = rows.isNotEmpty
+                      ? rows.first.keys.toList()
+                      : <String>[];
+                  final data = rows
+                      .map(
+                        (row) => headers
+                            .map((column) => row[column]?.toString() ?? '')
+                            .toList(),
+                      )
+                      .toList();
 
-              return <pw.Widget>[
-                pw.Text(table, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 8),
-                if (rows.isEmpty) pw.Text('No records available.'),
-                if (rows.isNotEmpty)
-                  pw.Table.fromTextArray(
-                    headers: headers,
-                    data: data,
-                    border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-                    headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
-                    cellStyle: pw.TextStyle(fontSize: 9),
-                    cellAlignment: pw.Alignment.centerLeft,
-                    headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
-                    cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                  ),
-                pw.SizedBox(height: 20),
-              ];
-            }).expand((widgetList) => widgetList).toList();
+                  return <pw.Widget>[
+                    pw.Text(
+                      table,
+                      style: pw.TextStyle(
+                        fontSize: 18,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                    pw.SizedBox(height: 8),
+                    if (rows.isEmpty) pw.Text('No records available.'),
+                    if (rows.isNotEmpty)
+                      pw.TableHelper.fromTextArray(
+                        headers: headers,
+                        data: data,
+                        border: pw.TableBorder.all(
+                          color: PdfColors.grey300,
+                          width: 0.5,
+                        ),
+                        headerStyle: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                        cellStyle: pw.TextStyle(fontSize: 9),
+                        cellAlignment: pw.Alignment.centerLeft,
+                        headerDecoration: const pw.BoxDecoration(
+                          color: PdfColors.grey200,
+                        ),
+                        cellPadding: const pw.EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 6,
+                        ),
+                      ),
+                    pw.SizedBox(height: 20),
+                  ];
+                })
+                .expand((widgetList) => widgetList)
+                .toList();
           },
         ),
       );
@@ -496,8 +538,12 @@ class BackupService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _loadFirestoreCollection(String collectionName) async {
-    final snapshot = await FirebaseFirestore.instance.collection(collectionName).get();
+  Future<List<Map<String, dynamic>>> _loadFirestoreCollection(
+    String collectionName,
+  ) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection(collectionName)
+        .get();
     return snapshot.docs.map((doc) {
       final data = Map<String, dynamic>.from(doc.data());
       data['_id'] = doc.id;
@@ -508,7 +554,10 @@ class BackupService {
   Future<String> exportFirebaseDataAsCsv() async {
     try {
       final permService = PermissionService();
-      permService.requirePermission(Permission.exportData, 'export Firebase data as CSV');
+      permService.requirePermission(
+        Permission.exportData,
+        'export Firebase data as CSV',
+      );
 
       final collections = ['transactions', 'inventory', 'bills'];
       final converter = const ListToCsvConverter();
@@ -528,11 +577,13 @@ class BackupService {
         for (final row in rows) {
           allKeys.addAll(row.keys);
         }
-        final headers = ['_id', ...allKeys.where((k) => k != '_id').toList()];
+        final headers = ['_id', ...allKeys.where((k) => k != '_id')];
         final csvRows = <List<dynamic>>[headers];
 
         for (final row in rows) {
-          csvRows.add(headers.map((key) => row[key]?.toString() ?? '').toList());
+          csvRows.add(
+            headers.map((key) => row[key]?.toString() ?? '').toList(),
+          );
         }
 
         buffer.writeln(converter.convert(csvRows));
@@ -554,7 +605,10 @@ class BackupService {
   Future<String> exportFirebaseDataAsPdf() async {
     try {
       final permService = PermissionService();
-      permService.requirePermission(Permission.exportData, 'export Firebase data as PDF');
+      permService.requirePermission(
+        Permission.exportData,
+        'export Firebase data as PDF',
+      );
 
       final collections = ['transactions', 'inventory', 'bills'];
       final tableData = <String, List<Map<String, dynamic>>>{};
@@ -567,40 +621,58 @@ class BackupService {
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
           build: (context) {
-            return collections
-                .expand((collection) {
-                  final rows = tableData[collection]!;
-                  final allKeys = <String>{};
-                  for (final row in rows) {
-                    allKeys.addAll(row.keys);
-                  }
-                  final headers = rows.isNotEmpty
-                      ? ['_id', ...allKeys.where((key) => key != '_id').toList()]
-                      : <String>[];
-                  final data = rows
-                      .map((row) => headers.map((key) => row[key]?.toString() ?? '').toList())
-                      .toList();
+            return collections.expand((collection) {
+              final rows = tableData[collection]!;
+              final allKeys = <String>{};
+              for (final row in rows) {
+                allKeys.addAll(row.keys);
+              }
+              final headers = rows.isNotEmpty
+                  ? ['_id', ...allKeys.where((key) => key != '_id')]
+                  : <String>[];
+              final data = rows
+                  .map(
+                    (row) => headers
+                        .map((key) => row[key]?.toString() ?? '')
+                        .toList(),
+                  )
+                  .toList();
 
-                  return <pw.Widget>[
-                    pw.Text(collection, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
-                    pw.SizedBox(height: 8),
-                    if (rows.isEmpty)
-                      pw.Text('No records available.'),
-                    if (rows.isNotEmpty)
-                      pw.Table.fromTextArray(
-                        headers: headers,
-                        data: data,
-                        border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-                        headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
-                        cellStyle: pw.TextStyle(fontSize: 9),
-                        cellAlignment: pw.Alignment.centerLeft,
-                        headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
-                        cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                      ),
-                    pw.SizedBox(height: 20),
-                  ];
-                })
-                .toList();
+              return <pw.Widget>[
+                pw.Text(
+                  collection,
+                  style: pw.TextStyle(
+                    fontSize: 18,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+                if (rows.isEmpty) pw.Text('No records available.'),
+                if (rows.isNotEmpty)
+                  pw.TableHelper.fromTextArray(
+                    headers: headers,
+                    data: data,
+                    border: pw.TableBorder.all(
+                      color: PdfColors.grey300,
+                      width: 0.5,
+                    ),
+                    headerStyle: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                    cellStyle: pw.TextStyle(fontSize: 9),
+                    cellAlignment: pw.Alignment.centerLeft,
+                    headerDecoration: const pw.BoxDecoration(
+                      color: PdfColors.grey200,
+                    ),
+                    cellPadding: const pw.EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 6,
+                    ),
+                  ),
+                pw.SizedBox(height: 20),
+              ];
+            }).toList();
           },
         ),
       );
@@ -647,7 +719,8 @@ class BackupInfo {
   String get sizeInMB => (size / (1024 * 1024)).toStringAsFixed(2);
 
   @override
-  String toString() => 'BackupInfo(name: $name, size: $sizeInMB MB, created: $created)';
+  String toString() =>
+      'BackupInfo(name: $name, size: $sizeInMB MB, created: $created)';
 }
 
 /// Exception thrown during backup operations

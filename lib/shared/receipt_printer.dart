@@ -173,14 +173,11 @@ pw.Document buildReceiptDocument({
             ),
             pw.SizedBox(height: 8),
             pw.Divider(thickness: 0.5),
-            pw.SizedBox(height: 12),
+            pw.SizedBox(height: 8),
             pw.Text(
-              'Thank you for your purchase!',
-              style: const pw.TextStyle(fontSize: 10),
-            ),
-            pw.Text(
-              'Come again soon!',
-              style: const pw.TextStyle(fontSize: 10),
+              'System‑generated sales slip. Official BIR receipt issued separately.',
+              textAlign: pw.TextAlign.center,
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey),
             ),
             pw.SizedBox(height: 16),
           ],
