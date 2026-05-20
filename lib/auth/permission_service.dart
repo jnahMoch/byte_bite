@@ -44,10 +44,7 @@ enum Permission {
   viewSettings,
 }
 
-enum Role {
-  owner,
-  helper,
-}
+enum Role { owner, helper }
 
 class PermissionService {
   static final PermissionService _instance = PermissionService._();
@@ -114,9 +111,9 @@ class PermissionService {
 
   /// Get the current user's role
   Role? getCurrentUserRole() {
-    final roleString = UserStorage.currentUserRole;
-    if (roleString == 'Owner') return Role.owner;
-    if (roleString == 'Helper') return Role.helper;
+    final roleString = UserStorage.currentUserRole?.trim().toLowerCase();
+    if (roleString == 'owner') return Role.owner;
+    if (roleString == 'helper') return Role.helper;
     return null;
   }
 
@@ -160,7 +157,9 @@ class PermissionService {
   /// Throw exception if user is not an Owner
   void requireOwner() {
     if (!isOwner()) {
-      throw PermissionDeniedException('This action is only available to the Owner.');
+      throw PermissionDeniedException(
+        'This action is only available to the Owner.',
+      );
     }
   }
 

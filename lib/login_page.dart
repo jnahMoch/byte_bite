@@ -99,7 +99,7 @@ class _LoginPageState extends State<LoginPage> {
         email: profile['email'] ?? UserStorage.toFirebaseEmail(username),
         name: profile['name'] ?? username,
       );
-      _showSnackBar('Logged in (offline mode)', Colors.orange);
+      _showSnackBar('Logged in', Colors.orange);
       _navigateByRole(offlineRole);
       return;
     }

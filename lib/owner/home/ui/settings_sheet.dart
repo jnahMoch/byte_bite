@@ -1,5 +1,8 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../../auth/backup_service.dart';
+import '../../../auth/permission_service.dart';
 import '../../../database_helper.dart';
 import '../../../user_storage.dart';
 import '../../../shared/settings/profile_panel.dart';
@@ -96,6 +99,18 @@ class _SettingsSheetState extends State<SettingsSheet> {
             onTap: () {
               Navigator.pop(context);
               _showChangePasswordDialog(context);
+            },
+          ),
+          _settingsTile(
+            context,
+            Icons.backup_outlined,
+            'Backup Management',
+            'Export and restore backups',
+            onTap: () {
+              Navigator.pop(context);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _showBackupManagementDialog(context);
+              });
             },
           ),
           const SizedBox(height: 20),
@@ -477,10 +492,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
         limit: 3,
       );
 
-      helperSales[username] = {
-        'summary': summary,
-        'recentSales': recentSales,
-      };
+      helperSales[username] = {'summary': summary, 'recentSales': recentSales};
     }
 
     if (!mounted) return;
@@ -710,20 +722,23 @@ class _SettingsSheetState extends State<SettingsSheet> {
                                   child: Builder(
                                     builder: (context) {
                                       final username = helper['username']!;
-                                      final salesData = helperSales[username] ??
+                                      final salesData =
+                                          helperSales[username] ??
                                           {'summary': {}, 'recentSales': []};
-                                      final summary = salesData['summary']
-                                          as Map<String, dynamic>;
-                                      final recentSales = salesData['recentSales']
-                                          as List<Map<String, dynamic>>;
+                                      final summary =
+                                          salesData['summary']
+                                              as Map<String, dynamic>;
+                                      final recentSales =
+                                          salesData['recentSales']
+                                              as List<Map<String, dynamic>>;
                                       final saleCount =
                                           (summary['sale_count'] as num?)
-                                                  ?.toInt() ??
-                                              0;
+                                              ?.toInt() ??
+                                          0;
                                       final totalSales =
                                           (summary['total_sales'] as num?)
-                                                  ?.toDouble() ??
-                                              0.0;
+                                              ?.toDouble() ??
+                                          0.0;
 
                                       return Column(
                                         crossAxisAlignment:
@@ -763,8 +778,9 @@ class _SettingsSheetState extends State<SettingsSheet> {
                                                   bottom: 8,
                                                 ),
                                                 child: Container(
-                                                  padding:
-                                                      const EdgeInsets.all(10),
+                                                  padding: const EdgeInsets.all(
+                                                    10,
+                                                  ),
                                                   decoration: BoxDecoration(
                                                     color: Colors.white,
                                                     borderRadius:
@@ -1804,6 +1820,386 @@ class _SettingsSheetState extends State<SettingsSheet> {
           ),
         ],
       ],
+    );
+  }
+
+  Future<void> _showBackupManagementDialog(BuildContext context) async {
+    final backupService = BackupService();
+
+    Future<List<BackupInfo>> loadBackups() => backupService.listBackups();
+
+    void showBusyDialog(BuildContext dialogContext) {
+      showDialog(
+        context: dialogContext,
+        barrierDismissible: false,
+        builder: (ctx) => const AlertDialog(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
+              ),
+              SizedBox(width: 12),
+              Expanded(child: Text('Preparing backup...')),
+            ],
+          ),
+        ),
+      );
+    }
+
+    Future<void> showResultDialog(
+      BuildContext dialogContext, {
+      required String title,
+      required String message,
+      bool isError = false,
+    }) async {
+      await showDialog<void>(
+        context: dialogContext,
+        builder: (ctx) => AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(isError ? 'Close' : 'OK'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Future<void> createAndExportBackup(
+      BuildContext dialogContext,
+      VoidCallback refresh,
+    ) async {
+      bool loadingShown = false;
+      final nav = Navigator.of(dialogContext, rootNavigator: true);
+      try {
+        final permService = PermissionService();
+        if (!permService.hasPermission(Permission.exportBackup)) {
+          final username = UserStorage.currentUser ?? '';
+          if (username.isNotEmpty) {
+            final dbUser = await DatabaseHelper.instance.getUserByUsername(
+              username,
+            );
+            final dbRole = (dbUser?['role'] ?? '').toString().trim();
+            if (dbRole.isNotEmpty) {
+              UserStorage.setCurrentUserWithRole(username, dbRole);
+            }
+          }
+        }
+
+        if (!permService.hasPermission(Permission.exportBackup)) {
+          final role = UserStorage.currentUserRole ?? '(null)';
+          final user = UserStorage.currentUser ?? '(null)';
+          throw PermissionDeniedException(
+            'Backup access denied for user=$user, role=$role. Please re-login as Owner.',
+          );
+        }
+
+        showBusyDialog(dialogContext);
+        loadingShown = true;
+        final backupPath = await backupService.createBackup();
+        if (loadingShown && mounted) {
+          nav.pop();
+          loadingShown = false;
+        }
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [XFile(backupPath)],
+            subject: 'Byte & Bite backup export',
+            text: 'SQLite backup from Byte & Bite',
+          ),
+        );
+        if (!mounted) return;
+        await showResultDialog(
+          nav.context,
+          title: 'Backup Ready',
+          message: 'Backup created successfully and opened in share sheet.',
+        );
+        refresh();
+      } catch (e) {
+        if (loadingShown && mounted) {
+          nav.pop();
+          loadingShown = false;
+        }
+        if (!mounted) return;
+        await showResultDialog(
+          nav.context,
+          title: 'Backup Export Failed',
+          message: '$e',
+          isError: true,
+        );
+      }
+    }
+
+    Future<void> restoreBackup(
+      BuildContext dialogContext,
+      BackupInfo backup,
+      VoidCallback refresh,
+    ) async {
+      final shouldRestore = await showDialog<bool>(
+        context: dialogContext,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Restore backup?'),
+          content: Text(
+            'This will replace current local data with ${backup.name}. Continue?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text(
+                'Restore',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldRestore != true) return;
+
+      final nav = Navigator.of(dialogContext, rootNavigator: true);
+      try {
+        await backupService.restoreBackup(backup.path);
+        if (!mounted) return;
+        await showResultDialog(
+          nav.context,
+          title: 'Restore Complete',
+          message: 'Backup restored successfully.',
+        );
+        refresh();
+      } catch (e) {
+        if (!mounted) return;
+        await showResultDialog(
+          nav.context,
+          title: 'Restore Failed',
+          message: '$e',
+          isError: true,
+        );
+      }
+    }
+
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              constraints: const BoxConstraints(maxWidth: 520, maxHeight: 640),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Backup Management',
+                          maxLines: 2,
+                          softWrap: true,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            height: 1.15,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        icon: const Icon(Icons.close),
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(4),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Create/export backups and restore previous versions.',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Export → Save a copy of your current data as a backup file (e.g., for safekeeping or transfer to another device).',
+                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Import/Restore → Load a previously saved backup file to recover past data or revert to an earlier version.',
+                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 8),
+                  FilledButton.icon(
+                    onPressed: () => createAndExportBackup(dialogContext, () {
+                      setDialogState(() {});
+                    }),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF009661),
+                    ),
+                    icon: const Icon(Icons.upload_file, color: Colors.white),
+                    label: const Text(
+                      'Create & Export Backup',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Available Backups',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: FutureBuilder<List<BackupInfo>>(
+                      future: loadBackups(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+
+                        final backups = snapshot.data ?? const <BackupInfo>[];
+                        if (backups.isEmpty) {
+                          return Center(
+                            child: Text(
+                              'No backups yet. Create one to get started.',
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          );
+                        }
+
+                        return ListView.separated(
+                          itemCount: backups.length,
+                          separatorBuilder: (context, _) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final backup = backups[index];
+                            return Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    backup.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${backup.created} • ${backup.sizeInMB} MB',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: SizedBox(
+                                          height: 42,
+                                          child: OutlinedButton(
+                                            onPressed: () =>
+                                                SharePlus.instance.share(
+                                                  ShareParams(
+                                                    files: [XFile(backup.path)],
+                                                    subject:
+                                                        'Byte & Bite backup export',
+                                                  ),
+                                                ),
+                                            child: const FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.ios_share,
+                                                    size: 18,
+                                                  ),
+                                                  SizedBox(width: 6),
+                                                  Text('Export'),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: SizedBox(
+                                          height: 42,
+                                          child: ElevatedButton(
+                                            onPressed: () => restoreBackup(
+                                              dialogContext,
+                                              backup,
+                                              () => setDialogState(() {}),
+                                            ),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(
+                                                0xFF009661,
+                                              ),
+                                            ),
+                                            child: const FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.restore,
+                                                    size: 18,
+                                                    color: Colors.white,
+                                                  ),
+                                                  SizedBox(width: 6),
+                                                  Text(
+                                                    'Import',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 15,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 

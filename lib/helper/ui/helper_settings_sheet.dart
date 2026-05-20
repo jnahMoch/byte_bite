@@ -56,6 +56,18 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
               _showChangePasswordDialog(context);
             },
           ),
+          _settingsTile(
+            context,
+            Icons.backup_outlined,
+            'Backup Management',
+            'Owner-only backup controls',
+            onTap: () {
+              Navigator.pop(context);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _showOwnerOnlyBackupMessage(context);
+              });
+            },
+          ),
           const SizedBox(height: 20),
           _sectionTitle('Support'),
           _settingsTile(
@@ -143,6 +155,24 @@ class _HelperSettingsSheetState extends State<HelperSettingsSheet> {
 
   void _showProfileDialog(BuildContext context) {
     showProfileDialog(context, role: 'Helper');
+  }
+
+  void _showOwnerOnlyBackupMessage(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Backup Management'),
+        content: const Text(
+          'Backup export and import are available for Owner accounts only.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showChangePasswordDialog(BuildContext context) {

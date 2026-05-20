@@ -293,14 +293,22 @@ class UserStorage {
     return email.replaceAll('@bytebite.app', '').replaceAll('_', ' ').trim();
   }
 
+  static String _canonicalRole(String role) {
+    final normalized = role.trim().toLowerCase();
+    if (normalized == 'owner') return 'Owner';
+    if (normalized == 'helper') return 'Helper';
+    return role.trim();
+  }
+
   static void setCurrentUserWithRole(String username, String role) {
+    final canonicalRole = _canonicalRole(role);
     _currentUser = username;
-    _currentUserRole = role;
+    _currentUserRole = canonicalRole;
 
     if (!_users.containsKey(username)) {
-      _users[username] = {'password': '', 'role': role};
+      _users[username] = {'password': '', 'role': canonicalRole};
     }
-    if (role == 'Owner') _ownerRegistered = true;
+    if (canonicalRole == 'Owner') _ownerRegistered = true;
   }
 
   // ── FIXED: checkOwnerExistsInFirestore ───────────────────────────────────
